@@ -1,0 +1,17 @@
+name = "GraphCombinatorics"
+uuid = "d653b97f-30d3-4d96-b482-58626fc91258"
+authors = ["Orjan Ameye <orjan.ameye@hotmail.com"]
+version = "0.1.0-DEV"
+
+[deps]
+Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
+Graphs = "86223c79-3864-5bf0-83f7-82e725a168b6"
+Memoization = "6fafb56a-5788-4b4e-91ca-c0cea6611c73"
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]

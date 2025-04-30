@@ -1,0 +1,5 @@
+[deps]
+GraphCombinatorics = "d653b97f-30d3-4d96-b482-58626fc91258"
+GraphRecipes = "bd48cda9-67a9-57be-86fa-5b3c104eda73"
+Literate = "98b081ad-f1c9-55d3-8b20-4c87d4299306"
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
