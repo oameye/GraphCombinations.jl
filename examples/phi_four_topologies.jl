@@ -19,7 +19,7 @@ n1 = [2, 0, 0, 1]
 topologies_order1 = allgraphs(n1)
 diagram, symmetry_factor = first(topologies_order1)
 
-graphplot(diagram, markersize=0.05, markercolor=:black, nodeshape=:circle)
+graphplot(diagram; markersize=0.05, markercolor=:black, nodeshape=:circle)
 
 # #+ Second Order Calculation (n = [2, 0, 0, 2])
 # This corresponds to 2 external legs (degree 1) and 2 interaction vertices (degree 4).

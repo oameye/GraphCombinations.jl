@@ -85,7 +85,9 @@ function allgraphs(n::Vector{Int})
 
     # 5. Reduce isomorphic graphs
     # reduce_isomorphic_graphs function already returns Vector{Tuple{GraphRep, Int}}
-    reduced_graphs_with_counts = reduce_isomorphic_graphs(connected_graphs, internal_indices)
+    reduced_graphs_with_counts = reduce_isomorphic_graphs(
+        connected_graphs, internal_indices
+    )
 
     # 6. Calculate symmetry factors
     # Factor from permutations of identical internal vertices (degree > 1)
@@ -100,12 +102,12 @@ function allgraphs(n::Vector{Int})
     total_combinatoric_factor = vertex_perms_factor * edge_endpoint_perms_factor
 
     # 7. Combine results
-    final_results = Vector{Tuple{Graphs.SimpleGraphs.SimpleGraph{Int64},Float64}}()
+    final_results = Vector{Tuple{GraphRep,Float64}}()
     for (canonical_graph, count) in reduced_graphs_with_counts
         # count is the number of raw connected graphs mapping to this canonical form
         symmetry_factor = total_combinatoric_factor / count
 
-        push!(final_results, (build_graph(canonical_graph), symmetry_factor))
+        push!(final_results, (canonical_graph, symmetry_factor))
     end
 
     return final_results

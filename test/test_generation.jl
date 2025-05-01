@@ -1,4 +1,4 @@
-using Test,GraphCombinatorics
+using Test, GraphCombinatorics
 using GraphCombinatorics: Propagator
 
 # Helper function to sort allgraphs results for comparison
@@ -22,9 +22,7 @@ sort_allgraphs_results(results) = sort(results, by=x -> x[1]) # Sort by canonica
     @test allgraphs([2, 1, 0]) == expected_2_1
 
     # Test case 5: n = [0, 0, 2]
-    expected_0_0_2 = [
-        ([1 => 2, 1 => 2, 1 => 2], 12.0),
-        ([1 => 1, 1 => 2, 2 => 2], 8.0)]
+    expected_0_0_2 = [([1 => 2, 1 => 2, 1 => 2], 12.0), ([1 => 1, 1 => 2, 2 => 2], 8.0)]
     @test allgraphs([0, 0, 2]) == expected_0_0_2
 
     # Test case 6: n = [2, 0, 0, 1]

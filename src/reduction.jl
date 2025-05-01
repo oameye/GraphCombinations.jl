@@ -15,7 +15,9 @@ Returns:
     A Vector of Pairs, where each Pair contains the canonical representation
     of a unique graph and its count. e.g. `[(canonical_graph1 => count1), ...]`
 """
-function reduce_isomorphic_graphs(graphs::Vector{GraphRep}, internal_indices::UnitRange{Int})
+function reduce_isomorphic_graphs(
+    graphs::Vector{GraphRep}, internal_indices::UnitRange{Int}
+)
     # Base case: If only one graph, return it with count 1 (after canonical sort)
     if length(graphs) == 1
         # Use canonical_form which handles sorting and trivial permutations
