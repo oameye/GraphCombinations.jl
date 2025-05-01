@@ -87,12 +87,15 @@ function build_internal_graph(graph_rep::GraphRep, num_vertices::Int)::SimpleGra
     return g
 end
 
-function build_graph(graph_rep::Vector{Pair{Int64,Int64}})::SimpleGraph
+function build_graph(graph_rep::Vector{Pair{Int64,Int64}})::SimpleDiGraph
     vertices = unique(vcat(first.(graph_rep), last.(graph_rep)))
     num_vertices = length(vertices)
-    g = SimpleGraph(num_vertices)
+    g = SimpleDiGraph(num_vertices)
     for prop in graph_rep
-        add_edge!(g, prop.first, prop.second)
+        created = add_edge!(g, prop.first, prop.second)
+        if !created
+            add_edge!(g, prop.second, prop.first)
+        end
     end
     return g
 end
