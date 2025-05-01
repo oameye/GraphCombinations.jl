@@ -1,4 +1,9 @@
+"""
+$(DocStringExtensions.README)
+"""
 module GraphCombinatorics
+
+using DocStringExtensions
 
 using Graphs
 using Combinatorics

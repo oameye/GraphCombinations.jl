@@ -11,17 +11,18 @@
 
 # ## Setup
 using GraphCombinatorics, Plots, GraphRecipes
+import GraphCombinatorics as GC
 
-# #+ First Order Calculation (n = [2, 0, 0, 1])
+# ## First Order Calculation (n = [2, 0, 0, 1])
 # This corresponds to 2 external legs (degree 1) and 1 interaction vertex (degree 4).
 
 n1 = [2, 0, 0, 1]
 topologies_order1 = allgraphs(n1)
-diagram, symmetry_factor = first(topologies_order1)
+graph, symmetry_factor = first(topologies_order1)
 
-graphplot(diagram; markersize=0.05, markercolor=:black, nodeshape=:circle)
+graphplot(GC.build_graph(graph); markersize=0.05, markercolor=:black, nodeshape=:circle)
 
-# #+ Second Order Calculation (n = [2, 0, 0, 2])
+# ## Second Order Calculation (n = [2, 0, 0, 2])
 # This corresponds to 2 external legs (degree 1) and 2 interaction vertices (degree 4).
 n2 = [2, 0, 0, 2]
 println("Calculating topologies for n = ", n2)

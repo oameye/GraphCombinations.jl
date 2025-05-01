@@ -1,0 +1,46 @@
+```@meta
+EditURL = "../../../examples/phi_four_topologies.jl"
+```
+
+# Phi-Four Theory Feynman Diagram Topologies
+
+This example demonstrates how to compute the unique, connected Feynman diagram topologies
+for a scalar phi-four theory using the `GraphCombinatorics.jl` package.
+
+In phi-four theory, the interaction vertex has degree 4. External lines correspond
+to vertices of degree 1.
+
+We will compute the topologies for the first two orders of the theory involving
+two external particles.
+
+## Setup
+
+````@example phi_four_topologies
+using GraphCombinatorics, Plots, GraphRecipes
+import GraphCombinatorics as GC
+````
+
+#+ First Order Calculation (n = [2, 0, 0, 1])
+This corresponds to 2 external legs (degree 1) and 1 interaction vertex (degree 4).
+
+````@example phi_four_topologies
+n1 = [2, 0, 0, 1]
+topologies_order1 = allgraphs(n1)
+graph, symmetry_factor = first(topologies_order1)
+
+graphplot(GC.build_graph(graph); markersize=0.05, markercolor=:black, nodeshape=:circle)
+````
+
+#+ Second Order Calculation (n = [2, 0, 0, 2])
+This corresponds to 2 external legs (degree 1) and 2 interaction vertices (degree 4).
+
+````@example phi_four_topologies
+n2 = [2, 0, 0, 2]
+println("Calculating topologies for n = ", n2)
+topologies_order2 = allgraphs(n2)
+````
+
+---
+
+*This page was generated using [Literate.jl](https://github.com/fredrikekre/Literate.jl).*
+
