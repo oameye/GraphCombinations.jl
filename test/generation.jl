@@ -33,36 +33,9 @@ sort_allgraphs_results(results) = sort(results, by=x -> x[1]) # Sort by canonica
 
     # Test case 7: n = [2, 0, 0, 2]
     expected_2_0_0_2 = [
-        (
-            [
-                Edge(1, 3),
-                Edge(2, 3),
-                Edge(3, 4),
-                Edge(3, 4),
-                Edge(4, 4),
-            ],
-            4.0,
-        ),
-        (
-            [
-                Edge(1, 3),
-                Edge(2, 4),
-                Edge(3, 3),
-                Edge(3, 4),
-                Edge(4, 4),
-            ],
-            4.0,
-        ),
-        (
-            [
-                Edge(1, 3),
-                Edge(2, 4),
-                Edge(3, 4),
-                Edge(3, 4),
-                Edge(3, 4),
-            ],
-            6.0,
-        ),
+        ([Edge(1, 3), Edge(2, 3), Edge(3, 4), Edge(3, 4), Edge(4, 4)], 4.0),
+        ([Edge(1, 3), Edge(2, 4), Edge(3, 3), Edge(3, 4), Edge(4, 4)], 4.0),
+        ([Edge(1, 3), Edge(2, 4), Edge(3, 4), Edge(3, 4), Edge(3, 4)], 6.0),
     ]
     result_2_0_0_2 = allgraphs([2, 0, 0, 2])
     @test length(result_2_0_0_2) == 3
