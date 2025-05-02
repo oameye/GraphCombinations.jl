@@ -15,11 +15,11 @@ has its edges sorted in canonical order.
 ## Returns
 - `Vector{GraphRep}`: A vector containing only the connected graphs with sorted edge representations
 """
-function filter_graphs(all_pairings)::Vector{GraphRep}
+function filter_graphs(all_pairings, num_total_vertices)::Vector{GraphRep}
     connected_graphs = Vector{GraphRep}()
     for graph_rep in all_pairings
         # Need num_total_vertices for graph construction
-        g = build_graph(graph_rep)
+        g = build_internal_graph(graph_rep, num_total_vertices)
         if is_connected(g)
             # Ensure the graph representation itself is sorted before adding
             push!(connected_graphs, sort_graph_edges(graph_rep))

@@ -63,7 +63,7 @@ function allgraphs(n::Vector{Int})
     all_pairings = corr(points)
 
     # 3. Filter for connected graphs
-    connected_graphs = filter_graphs(all_pairings)
+    connected_graphs = filter_graphs(all_pairings, num_total_vertices)
     if isempty(connected_graphs)
         return Vector{Tuple{GraphRep,Float64}}()
     end
