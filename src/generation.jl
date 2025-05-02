@@ -11,7 +11,7 @@ Args:
 
 Returns:
     A Vector of Tuples `(graph_representation, symmetry_factor)`.
-    `graph_representation` is a canonically sorted `Vector{Propagator}`.
+    `graph_representation` is a canonically sorted `Vector{Edge}`.
     `symmetry_factor` is a Float64.
 """
 function allgraphs(n::Vector{Int})
@@ -40,7 +40,7 @@ function allgraphs(n::Vector{Int})
     # Base case: n = [2] (or [2, 0, 0...]) -> two external vertices
     if num_total_vertices == 2 && num_external == 2 && length(n) == 1
         # Symmetry factor calculation: vertex_perms=1, edge_perms=(1!)^2=1. count=1.
-        return [([Propagator(1, 2)], 1.0)]
+        return [([Edge(1, 2)], 1.0)]
     end
     # Handle case n = [0], should not happen if total_degree is even and non-zero, but good practice
     if num_total_vertices == 0
@@ -66,7 +66,7 @@ function allgraphs(n::Vector{Int})
     connected_graphs = Vector{GraphRep}()
     for graph_rep in all_pairings
         # Need num_total_vertices for graph construction
-        g = build_internal_graph(graph_rep, num_total_vertices)
+        g = build_graph(graph_rep, num_total_vertices)
         if is_connected(g)
             # Ensure the graph representation itself is sorted before adding
             push!(connected_graphs, sort_graph_propagators(graph_rep))
