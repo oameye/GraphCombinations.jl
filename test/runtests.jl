@@ -1,11 +1,11 @@
 using Test, GraphCombinatorics
 
-# if VERSION < v"1.12.0-beta"
-#     @testset "Code linting" begin
-#         using JET
-#         JET.test_package(GraphCombinatorics; target_defined_modules=true)
-#     end
-# end
+if VERSION < v"1.12.0-beta"
+    @testset "Code linting" begin
+        using JET
+        JET.test_package(GraphCombinatorics; target_defined_modules=true)
+    end
+end
 
 @testset "ExplicitImports" begin
     using ExplicitImports
@@ -20,6 +20,10 @@ end
     Aqua.test_all(GraphCombinatorics; ambiguities=false)
 end
 
+@testset "Multigraph wrapper" begin
+    include("MultiGraphWrap.jl")
+end
+
 @testset "wick_contractions" begin
     include("wick_contractions.jl")
 end
@@ -30,4 +34,8 @@ end
 
 @testset "graph_generation" begin
     include("generation.jl")
+end
+
+@testset "graph_generation" begin
+    include("phi-four.jl")
 end

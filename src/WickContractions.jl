@@ -1,8 +1,8 @@
 # --- Wick Contractions ---
 
 # Memoized function using Memoization.jl
-# Input must be immutable and hashable, hence the tuple.
-# Points in the tuple are assumed to be sorted beforehand.
+# by default it caches using IdDict which doesn't work for tuples
+# Hence we specify it should use a Dict
 @memoize Dict function _corr_memo(points::Vector{Int})
     n = length(points)
     if n == 0

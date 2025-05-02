@@ -87,15 +87,12 @@ function build_internal_graph(graph_rep::GraphRep, num_vertices::Int)::SimpleGra
     return g
 end
 
-function build_graph(graph_rep::Vector{Pair{Int64,Int64}})::SimpleDiGraph
+function build_graph(graph_rep::Vector{Pair{Int64,Int64}})::MultigraphWrap
     vertices = unique(vcat(first.(graph_rep), last.(graph_rep)))
     num_vertices = length(vertices)
-    g = SimpleDiGraph(num_vertices)
+    g = Multigraph(num_vertices)
     for prop in graph_rep
-        created = add_edge!(g, prop.first, prop.second)
-        if !created
-            add_edge!(g, prop.second, prop.first)
-        end
+        add_edge!(g, prop.first, prop.second, 1)
     end
-    return g
+    return MultigraphWrap(g)
 end
