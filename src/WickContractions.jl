@@ -3,38 +3,34 @@
 # Memoized function using Memoization.jl
 # Input must be immutable and hashable, hence the tuple.
 # Points in the tuple are assumed to be sorted beforehand.
-@memoize function _corr_memo(points_tuple::NTuple{N,Int}) where {N}
-    n = length(points_tuple)
+@memoize function _corr_memo(points::Vector{Int})
+    n = length(points)
     if n == 0
         # Base case: No points, one term representing coefficient 1 (empty product)
         return [Vector{Propagator}()]
         # n is guaranteed to be even due to checks in the wrapper function `corr`
     elseif n == 2
         # Base case: Two points, single way to pair them
-        a, b = points_tuple # Already sorted
+        a, b = points # Already sorted
         return [[Propagator(a, b)]]
     end
 
     # Recursive step: pair first element 'a' with others
-    a = points_tuple[1]
+    a = points[1]
     all_terms = Vector{Vector{Propagator}}()
-    points_vec = collect(points_tuple) # Work with vector internally
-
     for i in 2:n
-        xi = points_vec[i]
+        xi = points[i]
         propagator = Propagator(a, xi) # a is the smallest
 
         # Remaining points excluding a and xi
         # Construct the tuple for the recursive call directly
-        remaining_points_vec = vcat(points_vec[2:(i - 1)], points_vec[(i + 1):n])
-        remaining_points_tuple = Tuple(remaining_points_vec)
+        remaining_points = vcat(points[2:(i - 1)], points[(i + 1):n])
 
         # Recursively compute pairings for remaining points
-        sub_terms = _corr_memo(remaining_points_tuple)
+        sub_terms = _corr_memo(remaining_points)
 
         # Combine the new propagator with each sub-term
         for term in sub_terms
-            # Prepend the new propagator
             push!(all_terms, vcat([propagator], term))
         end
     end
@@ -61,5 +57,5 @@ function corr(points::Vector{Int})
     # Sort points for canonical representation for memoization
     sorted_points = sort(points)
     # Call the memoized helper function with a tuple
-    return _corr_memo(Tuple(sorted_points))
+    return _corr_memo(sorted_points)
 end

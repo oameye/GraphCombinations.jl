@@ -8,7 +8,7 @@ sort_terms(terms) = sort(terms, by=sort_term)
 @testset "Wick Contractions (corr)" begin
     # Test case: corr([]) - Empty list
     @test corr(Int[]) == [[]]
-
+    @inferred corr(Int[])
     # Test case: corr([1, 2])
     @test corr([1, 2]) == [[(1 => 2)]]
     @test corr([2, 1]) == [[(1 => 2)]] # Test input order invariance
