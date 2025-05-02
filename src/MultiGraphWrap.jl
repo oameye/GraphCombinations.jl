@@ -60,7 +60,7 @@ n = [2, 0, 0, 2]
 
 topologies = allgraphs(n)
 graph, _ = last(topologies)
-g = GC.build_graph(graph)
+g = build_graph(graph)
 
 f, ax, p = graphplot(g;
     layout=NL.Align(NL.Spring()),
