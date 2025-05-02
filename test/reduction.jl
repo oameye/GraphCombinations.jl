@@ -1,12 +1,12 @@
 using Test, GraphCombinatorics
-using GraphCombinatorics: reduce_isomorphic_graphs, Propagator, GraphRep
+using GraphCombinatorics: reduce_isomorphic_graphs, Edge, GraphRep
 
 # Helper function to sort reduce results for comparison
 sort_reduce_results(results) = sort(results, by=x -> x[1])
 # ^ Sort by canonical graph
 
 function sort_graph_props_test(graph::GraphRep)
-    sort([Propagator(minmax(p.first, p.second)...) for p in graph])
+    sort([Edge(minmax(p.first, p.second)...) for p in graph])
 end
 
 @testset "Graph Reduction (reduce_isomorphic_graphs)" begin
@@ -14,22 +14,22 @@ end
     @test reduce_isomorphic_graphs(GraphRep[], 1:0) == [] # Use 1:0 for empty range
 
     # Test case 2: Single graph, no internal vertices
-    graph1 = [Propagator(1, 2)]
+    graph1 = [Edge(1, 2)]
     @test reduce_isomorphic_graphs([graph1], 1:0) == [graph1 => 1] # Use 1:0 for empty range, expect Pair
     # Test single graph, with internal vertices (should still just return it)
-    graph2 = [Propagator(1, 3), Propagator(2, 4)] # 3, 4 internal
+    graph2 = [Edge(1, 3), Edge(2, 4)] # 3, 4 internal
     # Expected canonical form is the sorted graph itself
     expected_graph2_sorted = sort_graph_props_test(graph2)
     @test reduce_isomorphic_graphs([graph2], 3:4) == [expected_graph2_sorted => 1] # Expect Pair
 
     # Test case 3: Two identical graphs, no internal vertices
-    graph3 = [Propagator(1, 2), Propagator(3, 4)]
+    graph3 = [Edge(1, 2), Edge(3, 4)]
     graph3_sorted = sort_graph_props_test(graph3)
     @test reduce_isomorphic_graphs([graph3, graph3], 1:0) == [graph3_sorted => 2] # Use 1:0, expect Pair
 
     # Test case 4: Two different graphs, no internal vertices
-    graph4a = [Propagator(1, 2)] # Already sorted
-    graph4b = [Propagator(1, 3)] # Already sorted
+    graph4a = [Edge(1, 2)] # Already sorted
+    graph4b = [Edge(1, 3)] # Already sorted
     expected4 = [graph4a => 1, graph4b => 1] # Expect Pairs
     @test sort_reduce_results(reduce_isomorphic_graphs([graph4a, graph4b], 1:0)) ==
         sort_reduce_results(expected4) # Use 1:0
@@ -41,13 +41,13 @@ end
     # g5b: 1-4, 2-3. Internal: 3, 4
     # Permutation (3->4, 4->3) maps g5a to g5b and vice versa.
     # Canonical form should be the same (lexicographically smaller one).
-    g5a = [Propagator(1, 3), Propagator(2, 4)]
-    g5b = [Propagator(1, 4), Propagator(2, 3)]
+    g5a = [Edge(1, 3), Edge(2, 4)]
+    g5b = [Edge(1, 4), Edge(2, 3)]
     internal5 = 3:4
     # Canonical form: apply perm {3->3, 4->4} to g5a -> [1=>3, 2=>4] (sorted)
     # apply perm {3->4, 4->3} to g5a -> [1=>4, 2=>3] (sorted)
     # Lexicographically, [1=>3, 2=>4] < [1=>4, 2=>3]
-    canonical5 = [Propagator(1, 3), Propagator(2, 4)] # Expected canonical form
+    canonical5 = [Edge(1, 3), Edge(2, 4)] # Expected canonical form
     result5 = reduce_isomorphic_graphs([g5a, g5b], internal5)
     @test length(result5) == 1
     @test result5[1] == (canonical5 => 2) # Check the Pair directly
@@ -59,10 +59,10 @@ end
     # Test case 6: Non-isomorphic graphs with internal vertices
     # g6a: 1-3, 2-4. Internal 3, 4. Canonical: [1=>3, 2=>4]
     # g6b: 1-2, 3-4. Internal 3, 4. Canonical: [1=>2, 3=>4] (no change by permuting 3,4)
-    g6a = [Propagator(1, 3), Propagator(2, 4)]
-    g6b = [Propagator(1, 2), Propagator(3, 4)]
+    g6a = [Edge(1, 3), Edge(2, 4)]
+    g6b = [Edge(1, 2), Edge(3, 4)]
     internal6 = 3:4
-    canonical6a = [Propagator(1, 3), Propagator(2, 4)] # From test 5
+    canonical6a = [Edge(1, 3), Edge(2, 4)] # From test 5
     canonical6b = sort_graph_props_test(g6b) # [1=>2, 3=>4]
     expected6 = [canonical6a => 1, canonical6b => 1] # Expect Pairs
     result6 = reduce_isomorphic_graphs([g6a, g6b], internal6)
@@ -72,9 +72,9 @@ end
     # g7a: 1-5, 2-6, 3-7, 4-8 (8 is external)
     # g7b: 1-6, 2-5, 3-7, 4-8 (swap 5, 6)
     # g7c: 1-5, 2-7, 3-6, 4-8 (swap 6, 7)
-    g7a = [Propagator(1, 5), Propagator(2, 6), Propagator(3, 7), Propagator(4, 8)]
-    g7b = [Propagator(1, 6), Propagator(2, 5), Propagator(3, 7), Propagator(4, 8)]
-    g7c = [Propagator(1, 5), Propagator(2, 7), Propagator(3, 6), Propagator(4, 8)]
+    g7a = [Edge(1, 5), Edge(2, 6), Edge(3, 7), Edge(4, 8)]
+    g7b = [Edge(1, 6), Edge(2, 5), Edge(3, 7), Edge(4, 8)]
+    g7c = [Edge(1, 5), Edge(2, 7), Edge(3, 6), Edge(4, 8)]
     internal7 = 5:7
     # From thought block: canonical form is the sorted version of g7a
     canonical7 = sort_graph_props_test(g7a) # [1=>5, 2=>6, 3=>7, 4=>8]

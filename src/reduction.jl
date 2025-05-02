@@ -7,7 +7,7 @@ Reduces a list of graphs by identifying unique graphs up to permutations of
 internal vertices and counting their occurrences.
 
 Args:
-    graphs: A vector of graph representations (each a Vector{Propagator}).
+    graphs: A vector of graph representations (each a Vector{Edge}).
     internal_indices: A UnitRange specifying the indices considered internal,
                       which are subject to permutation for isomorphism checks.
 
