@@ -5,7 +5,7 @@ EditURL = "../../../examples/phi_four_topologies.jl"
 # $ϕ^4$ Feynman Diagram Topologies
 
 This example demonstrates how to compute the unique, connected Feynman diagram topologies
-for a scalar phi-four theory using the `GraphCombinatorics.jl` package.
+for a scalar phi-four theory using the `GraphCombinations.jl` package.
 
 In field theory one often want to compute the correlation function of some interaction lagrangian $\mathcal{L}_\mathrm{int}$. To do this one computes the average to k-th order in $\mathcal{L}_\mathrm{int}$: $\langle \phi(1) \bar{\phi}(2) \mathcal{L}_\mathrm{int}^k \rangle_0$, where the zero underscipt indicates that the correlator is dressed by the linear part of the system. $\bar{\phi}(2)$ indicates that a excitation in the field $\phi$ is created at position 2 and $\bar{\phi}(1)$ a excitation being destroyed at position 1. The internal interaction processes are determined by $\mathcal{L}_\mathrm{int}$.
 
@@ -16,9 +16,9 @@ In this example we will compute the topologies for the $\phi^4$ theory, i.e., $\
 We will compute al possible feynman diagram topologies for the first orders of the theory.
 
 ````@example phi_four_topologies
-using GraphCombinatorics, GraphMakie, CairoMakie
+using GraphCombinations, GraphMakie, CairoMakie
 import GraphMakie.NetworkLayout as NL
-import GraphCombinatorics as GC
+import GraphCombinations as GC
 
 function pltkwargs(g)
     (;

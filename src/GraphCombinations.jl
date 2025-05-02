@@ -1,7 +1,7 @@
 """
 $(DocStringExtensions.README)
 """
-module GraphCombinatorics
+module GraphCombinations
 
 using DocStringExtensions
 
@@ -17,4 +17,4 @@ include("generation.jl")
 
 export allgraphs, combinatoric_factor, build_graph, total_degree, canonical_form
 
-end # module GraphCombinatorics
+end # module GraphCombinations

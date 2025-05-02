@@ -1,6 +1,6 @@
 CI = get(ENV, "CI", nothing) == "true" || get(ENV, "GITHUB_TOKEN", nothing) !== nothing
 
-using GraphCombinatorics
+using GraphCombinations
 using Documenter
 
 include("pages.jl")
@@ -19,10 +19,10 @@ end
 # ^ when using LiveServer, this will generate a loop
 
 makedocs(;
-    sitename="GraphCombinatorics.jl",
+    sitename="GraphCombinations.jl",
     authors="Orjan Ameye",
-    modules=GraphCombinatorics,
-    format=Documenter.HTML(; canonical="https://oameye.github.io/GraphCombinatorics.jl"),
+    modules=GraphCombinations,
+    format=Documenter.HTML(; canonical="https://oameye.github.io/GraphCombinations.jl"),
     pages=pages,
     clean=true,
     linkcheck=true,
@@ -34,7 +34,7 @@ makedocs(;
 
 if CI
     deploydocs(;
-        repo="github.com/oameye/GraphCombinatorics.jl",
+        repo="github.com/oameye/GraphCombinations.jl",
         devbranch="main",
         target="build",
         branch="gh-pages",

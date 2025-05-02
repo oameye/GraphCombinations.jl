@@ -1,6 +1,6 @@
 ## Checklist
 
-Thank you for contributing to `GraphCombinatorics.jl`! Please make sure you have finished the following tasks before finishing the PR.
+Thank you for contributing to `GraphCombinations.jl`! Please make sure you have finished the following tasks before finishing the PR.
 
 - [ ] Appropriate tests were added and tested locally by running: `make test`.
 - [ ] Any code changes should be `julia` formatted by running: `make format`.

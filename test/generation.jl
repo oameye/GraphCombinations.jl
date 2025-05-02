@@ -1,5 +1,5 @@
-using Test, GraphCombinatorics
-using GraphCombinatorics: Edge
+using Test, GraphCombinations
+using GraphCombinations: Edge
 
 # Helper function to sort allgraphs results for comparison
 sort_allgraphs_results(results) = sort(results, by=x -> x[1]) # Sort by canonical graph

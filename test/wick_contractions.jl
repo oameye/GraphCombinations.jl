@@ -1,5 +1,5 @@
-using Test, GraphCombinatorics
-using GraphCombinatorics: corr
+using Test, GraphCombinations
+using GraphCombinations: corr
 
 # Helper function to sort terms for comparison
 sort_term(term) = sort(term)

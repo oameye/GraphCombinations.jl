@@ -1,4 +1,4 @@
-using GraphCombinatorics, Graphs, Test
+using GraphCombinations, Graphs, Test
 
 @testset "first order ϕ⁴" begin
     n = [2, 0, 0, 1]

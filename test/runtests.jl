@@ -1,23 +1,23 @@
-using Test, GraphCombinatorics
+using Test, GraphCombinations
 
 if VERSION < v"1.12.0-beta"
     @testset "Code linting" begin
         using JET
-        JET.test_package(GraphCombinatorics; target_defined_modules=true)
+        JET.test_package(GraphCombinations; target_defined_modules=true)
     end
 end
 
 @testset "ExplicitImports" begin
     using ExplicitImports
-    @test check_no_stale_explicit_imports(GraphCombinatorics) == nothing
-    @test check_all_explicit_imports_via_owners(GraphCombinatorics) == nothing
+    @test check_no_stale_explicit_imports(GraphCombinations) == nothing
+    @test check_all_explicit_imports_via_owners(GraphCombinations) == nothing
 end
 
 @testset "best practices" begin
     using Aqua
 
-    Aqua.test_ambiguities([GraphCombinatorics]; broken=false)
-    Aqua.test_all(GraphCombinatorics; ambiguities=false)
+    Aqua.test_ambiguities([GraphCombinations]; broken=false)
+    Aqua.test_all(GraphCombinations; ambiguities=false)
 end
 
 @testset "Multigraph wrapper" begin
@@ -46,5 +46,5 @@ end
 
 @testset "Doctests" begin
     using Documenter
-    Documenter.doctest(GraphCombinatorics)
+    Documenter.doctest(GraphCombinations)
 end
