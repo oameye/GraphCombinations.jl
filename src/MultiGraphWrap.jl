@@ -4,6 +4,19 @@ using Multigraphs
 using Graphs
 using Graphs.SimpleGraphs
 
+"""
+    MultigraphWrap{T} <: AbstractGraph{T}
+
+A wrapper for `Multigraph` that implements the `AbstractGraph` interface from Graphs.jl.
+
+This wrapper is necessary because GraphMakie.jl only supports the Graphs.jl interface,
+but not Multigraphs.jl directly. See the discussion at
+https://github.com/MakieOrg/GraphMakie.jl/issues/52 for more details.
+
+The wrapper provides all necessary methods to make a `Multigraph` compatible with
+functions expecting an `AbstractGraph` from Graphs.jl, especially for visualization
+purposes with GraphMakie.jl.
+"""
 struct MultigraphWrap{T} <: AbstractGraph{T}
     g::Multigraph{T}
 end
