@@ -17,6 +17,9 @@ GraphCombinatorics
 
 ```@docs
 allgraphs
+build_graph
+combinatoric_factor
+total_degree
 ```
 
 ## Private
@@ -27,11 +30,10 @@ allgraphs
 GraphCombinatorics.MultigraphWrap
 ```
 
+### Functions
+
 ```@docs
 GraphCombinatorics.corr
-GraphCombinatorics.reduce_isomorphic_graphs
-GraphCombinatorics.sort_graph_propagators
-GraphCombinatorics.apply_permutation
+GraphCombinatorics.sort_graph_edges
 GraphCombinatorics.canonical_form
-GraphCombinatorics.build_graph
 ```

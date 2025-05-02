@@ -25,8 +25,8 @@ makedocs(;
     format=Documenter.HTML(; canonical="https://oameye.github.io/GraphCombinatorics.jl"),
     pages=pages,
     clean=true,
-    linkcheck=false,
-    warnonly=:missing_docs,
+    linkcheck=true,
+    warnonly=[:missing_docs, :linkcheck],
     draft=false,#,(!CI),
     doctest=false,  # We test it in the CI, no need to run it here
     checkdocs=:exports,
