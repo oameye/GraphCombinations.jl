@@ -3,7 +3,7 @@
 # Memoized function using Memoization.jl
 # Input must be immutable and hashable, hence the tuple.
 # Points in the tuple are assumed to be sorted beforehand.
-@memoize function _corr_memo(points::Vector{Int})
+@memoize Dict function _corr_memo(points::Vector{Int})
     n = length(points)
     if n == 0
         # Base case: No points, one term representing coefficient 1 (empty product)
