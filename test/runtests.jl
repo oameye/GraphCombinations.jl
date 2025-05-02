@@ -20,6 +20,10 @@ end
     Aqua.test_all(GraphCombinatorics; ambiguities=false)
 end
 
+@testset "Multigraph wrapper" begin
+    include("MultiGraphWrap.jl")
+end
+
 @testset "wick_contractions" begin
     include("wick_contractions.jl")
 end
