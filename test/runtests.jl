@@ -35,3 +35,7 @@ end
 @testset "graph_generation" begin
     include("generation.jl")
 end
+
+@testset "graph_generation" begin
+    include("phi-four.jl")
+end
