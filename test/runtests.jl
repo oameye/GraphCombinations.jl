@@ -39,3 +39,8 @@ end
 @testset "graph_generation" begin
     include("phi-four.jl")
 end
+
+@testset "Doctests" begin
+    using Documenter
+    Documenter.doctest(GraphCombinatorics)
+end

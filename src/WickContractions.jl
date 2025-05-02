@@ -43,12 +43,22 @@ end
 
 Computes all possible pairings (Wick contractions) of the given points.
 Points are represented by integers. The function returns a list of "terms",
-where each term is a list of `Edge` (Pair{Int, Int}) objects.
+where each term is a list of `Edge` (`Pair{Int, Int}`) objects.
 
 Edges `a => b` always have `a < b`.
 
-Example: `corr([1, 2, 3, 4])` might return
-`[ [(1=>2), (3=>4)], [(1=>3), (2=>4)], [(1=>4), (2=>3)] ]` (order may vary).
+## Examples
+
+```jldoctest
+julia> import GraphCombinatorics as GC
+
+julia> GC.corr([1,2,3,4])
+3-element Vector{Vector{Pair{Int64, Int64}}}:
+ [1 => 2, 3 => 4]
+ [1 => 3, 2 => 4]
+ [1 => 4, 2 => 3]
+```
+
 """
 function corr(points::Vector{Int})
     if isodd(length(points))
