@@ -1,7 +1,3 @@
-using Preferences: set_preferences!
-
-set_preferences!("GraphCombinatorics", "dispatch_doctor_mode" => "warn")
-
 using Test, GraphCombinatorics
 
 # if VERSION < v"1.12.0-beta"
@@ -25,13 +21,13 @@ end
 end
 
 @testset "wick_contractions" begin
-    include("test_wick_contractions.jl")
+    include("wick_contractions.jl")
 end
 
 @testset "wick_contractions" begin
-    include("test_reduction.jl")
+    include("reduction.jl")
 end
 
 @testset "graph_generation" begin
-    include("test_generation.jl")
+    include("generation.jl")
 end
