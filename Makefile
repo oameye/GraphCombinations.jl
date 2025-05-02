@@ -18,6 +18,10 @@ docs:
 	${JULIA} --project=docs -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
 	${JULIA} --project=docs docs/make.jl
 
+benchmarks:
+	${JULIA} --project=benchmarks -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
+	${JULIA} --project=benchmarks benchmarks/runbenchmarks.jl
+
 all: setup format test docs 
 
 help:
@@ -29,4 +33,4 @@ help:
 	@echo " - make servedocs: serve the documentation locally"
 	@echo " - make all: run every commands in the above order"
 
-.PHONY: default setup format test docs servedocs all help
+.PHONY: default setup format test docs servedocs benchmarks all help
