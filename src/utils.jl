@@ -76,7 +76,7 @@ end
 """
     build_internal_graph(graph_rep::GraphRep, num_vertices::Int)::SimpleGraph
 
-Builds a Graphs.SimpleGraph from a propagator list.
+Builds a Graphs.SimpleGraph from a edges list.
 """
 function build_internal_graph(graph_rep::GraphRep, num_vertices::Int)::SimpleGraph
     g = SimpleGraph(num_vertices)
@@ -87,12 +87,28 @@ function build_internal_graph(graph_rep::GraphRep, num_vertices::Int)::SimpleGra
     return g
 end
 
-function build_graph(graph_rep::Vector{Pair{Int64,Int64}})::MultigraphWrap
-    vertices = unique(vcat(first.(graph_rep), last.(graph_rep)))
-    num_vertices = length(vertices)
+"""
+    $(TYPEDSIGNATURES)
+
+Builds a [`MultigraphWrap`](@ref) from an edges list.
+"""
+function build_graph(graph_rep::GraphRep, num_vertices::Int)::MultigraphWrap
     g = Multigraph(num_vertices)
     for prop in graph_rep
         add_edge!(g, prop.first, prop.second, 1)
     end
     return MultigraphWrap(g)
 end
+
+function build_graph(graph_rep::GraphRep)::MultigraphWrap
+    vertices = unique(vcat(first.(graph_rep), last.(graph_rep)))
+    num_vertices = length(vertices)
+    return build_graph(graph_rep, num_vertices)
+end
+
+"""
+    $(TYPEDSIGNATURES)
+
+Calculates the total degree of a graph topology represented by a vector of the degrees of vertices.
+"""
+total_degree(n::Vector{Int}) = sum(i * n[i] for i in 1:length(n))
