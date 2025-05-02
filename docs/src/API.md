@@ -24,7 +24,7 @@ allgraphs
 ```@docs
 GraphCombinatorics.corr
 GraphCombinatorics.reduce_isomorphic_graphs
-GraphCombinatorics.sort_graph_propagators
+GraphCombinatorics.sort_graph_edges
 GraphCombinatorics.apply_permutation
 GraphCombinatorics.canonical_form
 GraphCombinatorics.build_internal_graph
