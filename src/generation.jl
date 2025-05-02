@@ -3,8 +3,10 @@
 """
     $(TYPEDSIGNATURES)
 
-Generates all unique, connected topologies for a given vertex specification.
-It takes in a vector where `n[k]` is the number of vertices of degree `k`.
+Generates all unique topologies for a given vertex specification.
+It takes in a vector where `n[k]` is the number of vertices of degree `k`. By default,
+it generates connected graphs, unconnected can be computed by setting the keyword argument
+`connected=false`.
 
 Returns a Vector of Tuples `(Vector{Edge}, S)` with `Edge` a `Tuple{Int64,Int64}`
 representing an edge in the graph and `S::Float64` the corresponding symmetry factor.
@@ -21,7 +23,7 @@ julia> allgraphs([2, 0, 0, 2])
  ([1 => 3, 2 => 4, 3 => 4, 3 => 4, 3 => 4], 6.0)
 ```
 """
-function allgraphs(n::Vector{Int})
+function allgraphs(n::Vector{Int}; connected=true)
     # Input validation
     if isempty(n) || any(x -> x < 0, n)
         error("Input vector n must be non-empty and contain non-negative integers.")
@@ -54,10 +56,10 @@ function allgraphs(n::Vector{Int})
         return Vector{Tuple{GraphRep,Float64}}()
     end
 
-    return _allgraphs(n)
+    return _allgraphs(n; connected)
 end
 
-function _allgraphs(n::Vector{Int})
+function _allgraphs(n::Vector{Int}; connected=true)
     # 1. Generate points for correlation function
     points = create_points(n)
 
@@ -66,7 +68,11 @@ function _allgraphs(n::Vector{Int})
 
     # 3. Filter for connected graphs
     num_total_vertices = sum(n)
-    connected_graphs = filter_graphs(all_pairings, num_total_vertices)
+    connected_graphs = if connected
+        filter_graphs(all_pairings, num_total_vertices)
+    else
+        sort_graph_edges.(all_pairings)
+    end
     if isempty(connected_graphs)
         return Vector{Tuple{GraphRep,Float64}}()
     end

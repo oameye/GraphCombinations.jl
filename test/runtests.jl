@@ -40,6 +40,10 @@ end
     include("phi-four.jl")
 end
 
+@testset "unconnected graphs" begin
+    include("unconnected_graphs.jl")
+end
+
 @testset "Doctests" begin
     using Documenter
     Documenter.doctest(GraphCombinations)

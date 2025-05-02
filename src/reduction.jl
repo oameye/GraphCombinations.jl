@@ -65,7 +65,5 @@ function reduce_isomorphic_graphs(
         counts[canon_g] = get(counts, canon_g, 0) + 1
     end
 
-    # Convert the dictionary of counts into a vector of Pairs
-    # collect(pairs(counts)) already does this correctly
     return collect(pairs(counts))
 end
