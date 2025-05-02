@@ -15,6 +15,6 @@ include("WickContractions.jl")
 include("reduction.jl")
 include("generation.jl")
 
-export allgraphs
+export allgraphs, combinatoric_factor, build_graph, total_degree, canonical_form
 
 end # module GraphCombinatorics

@@ -44,6 +44,29 @@ function Graphs.edges(g::MultigraphWrap)
     return out
 end
 
+"""
+    gen_distances(g::MultigraphWrap; inc=0.25)
+
+Generates a list of evenly spaced distances based on the multiplicity of edges in the multigraph. This is useful for plotting the graph for example with GraphMakie.jl.
+
+## Example
+
+```julia
+using GraphCombinatorics, GraphMakie, CairoMakie
+import GraphMakie.NetworkLayout as NL
+import GraphCombinatorics as GC
+
+n = [2, 0, 0, 2]
+
+topologies = allgraphs(n)
+graph, _ = last(topologies)
+g = GC.build_graph(graph)
+
+f, ax, p = graphplot(g;
+    layout=NL.Align(NL.Spring()),
+    curve_distance=GC.gen_distances(g), curve_distance_usage=true)
+```
+"""
 function gen_distances(g::MultigraphWrap; inc=0.25)
     edgearray = edges(g.g)
     distances = Float64[]
