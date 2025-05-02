@@ -52,9 +52,9 @@ Generates a list of evenly spaced distances based on the multiplicity of edges i
 ## Example
 
 ```julia
-using GraphCombinatorics, GraphMakie, CairoMakie
+using GraphCombinations, GraphMakie, CairoMakie
 import GraphMakie.NetworkLayout as NL
-import GraphCombinatorics as GC
+import GraphCombinations as GC
 
 n = [2, 0, 0, 2]
 

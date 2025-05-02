@@ -1,5 +1,5 @@
 using BenchmarkTools
-using GraphCombinatorics
+using GraphCombinations
 
 const SUITE = BenchmarkGroup()
 

@@ -50,7 +50,7 @@ Edges `a => b` always have `a < b`.
 ## Examples
 
 ```jldoctest
-julia> import GraphCombinatorics as GC
+julia> import GraphCombinations as GC
 
 julia> GC.corr([1,2,3,4])
 3-element Vector{Vector{Pair{Int64, Int64}}}:

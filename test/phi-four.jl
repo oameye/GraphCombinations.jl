@@ -1,5 +1,5 @@
-using GraphCombinatorics, Graphs, Test
-import GraphCombinatorics as GC
+using GraphCombinations, Graphs, Test
+import GraphCombinations as GC
 
 n1 = [2, 0, 0, 1]
 topologies_order1 = allgraphs(n1)

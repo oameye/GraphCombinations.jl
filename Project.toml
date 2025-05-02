@@ -1,4 +1,4 @@
-name = "GraphCombinatorics"
+name = "GraphCombinations"
 uuid = "d653b97f-30d3-4d96-b482-58626fc91258"
 authors = ["Orjan Ameye <orjan.ameye@hotmail.com"]
 version = "0.1.0-DEV"

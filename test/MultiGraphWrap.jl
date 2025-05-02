@@ -1,6 +1,6 @@
 using Test
-using GraphCombinatorics
-import GraphCombinatorics as GC
+using GraphCombinations
+import GraphCombinations as GC
 using Multigraphs
 using Graphs
 using Graphs.SimpleGraphs

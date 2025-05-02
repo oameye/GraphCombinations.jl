@@ -1,7 +1,7 @@
 [deps]
 CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
-GraphCombinatorics = "d653b97f-30d3-4d96-b482-58626fc91258"
+GraphCombinations = "d653b97f-30d3-4d96-b482-58626fc91258"
 GraphMakie = "1ecd5474-83a3-4783-bb4f-06765db800d2"
 GraphRecipes = "bd48cda9-67a9-57be-86fa-5b3c104eda73"
 IntervalArithmetic = "d1acc4aa-44c8-5952-acd4-ba5d80a2a253"

@@ -12,7 +12,7 @@ representing an edge in the graph and `S::Float64` the corresponding symmetry fa
 ## Example
 For input `n = [2, 0, 0, 2]` (2 vertices of degree 1, 2 vertex of degree 4):
 ```jldoctest
-julia> using GraphCombinatorics
+julia> using GraphCombinations
 
 julia> allgraphs([2, 0, 0, 2])
 3-element Vector{Tuple{Vector{Pair{Int64, Int64}}, Float64}}:
@@ -105,7 +105,7 @@ pairings in the correlation function calculation.
 ## Example
 For input `n = [2, 1]` (2 vertices of degree 1, 1 vertex of degree 2):
 ```jldoctest
-julia> import GraphCombinatorics as GC
+julia> import GraphCombinations as GC
 
 julia> GC.create_points([2, 1])
 4-element Vector{Int64}:

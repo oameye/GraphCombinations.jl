@@ -1,6 +1,6 @@
 using Literate
 
-using GraphCombinatorics
+using GraphCombinations
 
 ### Process examples
 # Always rerun examples

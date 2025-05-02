@@ -1,5 +1,5 @@
-using Test, GraphCombinatorics
-using GraphCombinatorics: reduce_isomorphic_graphs, Edge, GraphRep
+using Test, GraphCombinations
+using GraphCombinations: reduce_isomorphic_graphs, Edge, GraphRep
 
 # Helper function to sort reduce results for comparison
 sort_reduce_results(results) = sort(results, by=x -> x[1])

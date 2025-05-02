@@ -10,7 +10,7 @@ Depth = 2:3
 ```
 
 ```@docs
-GraphCombinatorics
+GraphCombinations
 ```
 
 ## Public
@@ -28,13 +28,13 @@ canonical_form
 ### Types
 
 ```@docs
-GraphCombinatorics.MultigraphWrap
+GraphCombinations.MultigraphWrap
 ```
 
 ### Functions
 
 ```@docs
-GraphCombinatorics.corr
-GraphCombinatorics.sort_graph_edges
-GraphCombinatorics.create_points
+GraphCombinations.corr
+GraphCombinations.sort_graph_edges
+GraphCombinations.create_points
 ```
