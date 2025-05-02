@@ -2,6 +2,9 @@
 $(DocStringExtensions.README)
 """
 module GraphCombinatorics
+using DispatchDoctor
+@stable default_mode="disable" begin
+
 using DocStringExtensions
 
 using Graphs
@@ -15,4 +18,5 @@ include("generation.jl")
 
 export allgraphs
 
+end # @stable
 end # module GraphCombinatorics

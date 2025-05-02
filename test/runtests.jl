@@ -1,3 +1,7 @@
+using Preferences: set_preferences!
+
+set_preferences!("GraphCombinatorics", "dispatch_doctor_mode" => "warn")
+
 using Test, GraphCombinatorics
 
 # if VERSION < v"1.12.0-beta"

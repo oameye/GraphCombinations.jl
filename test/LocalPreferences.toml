@@ -1,0 +1,4 @@
+[GraphCombinatorics]
+dispatch_doctor_mode = "warn"
+dispatch_doctor_codegen_level = "min"
+default_codegen_level = "min"
