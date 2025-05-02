@@ -28,7 +28,7 @@ end
     include("wick_contractions.jl")
 end
 
-@testset "wick_contractions" begin
+@testset "reduction" begin
     include("reduction.jl")
 end
 
@@ -36,7 +36,7 @@ end
     include("generation.jl")
 end
 
-@testset "graph_generation" begin
+@testset "phi-four" begin
     include("phi-four.jl")
 end
 
