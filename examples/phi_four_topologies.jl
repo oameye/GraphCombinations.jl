@@ -32,7 +32,7 @@ topologies_order1 = allgraphs(n1)
 # Only one topology is possible for the first order.
 
 graph, symmetry_factor = first(topologies_order1)
-g = GC.build_graph(graph)
+g = build_graph(graph)
 f, ax, p = graphplot(g; pltkwargs(g)...)
 hidedecorations!(ax);
 hidespines!(ax);
@@ -51,7 +51,7 @@ f = Figure(; size=(500, 500))
 axs = map(i -> Axis(f[i, 1]), 1:3)
 for (i, ax) in pairs(axs)
     graph, symmetry_factor = topologies_order2[i]
-    g = GC.build_graph(graph)
+    g = build_graph(graph)
     graphplot!(ax, g; pltkwargs(g)...)
     hidedecorations!(ax)
     hidespines!(ax)
@@ -71,7 +71,7 @@ axs_idx = [(1, 1), (1, 2), (1, 3), (2, 1), (2, 2), (2, 3), (3, 1), (3, 2), (3, 3
 axs = map(i -> Axis(f[i...]), axs_idx)
 for (i, ax) in pairs(axs)
     graph, symmetry_factor = topologies_order3[i]
-    g = GC.build_graph(graph)
+    g = build_graph(graph)
     graphplot!(ax, g; pltkwargs(g)...)
     hidedecorations!(ax)
     hidespines!(ax)
