@@ -17,15 +17,24 @@ GraphCombinatorics
 
 ```@docs
 allgraphs
+build_graph
+combinatoric_factor
+total_degree
+canonical_form
 ```
 
 ## Private
 
+### Types
+
+```@docs
+GraphCombinatorics.MultigraphWrap
+```
+
+### Functions
+
 ```@docs
 GraphCombinatorics.corr
-GraphCombinatorics.reduce_isomorphic_graphs
 GraphCombinatorics.sort_graph_edges
-GraphCombinatorics.apply_permutation
-GraphCombinatorics.canonical_form
-GraphCombinatorics.build_internal_graph
+GraphCombinatorics.create_points
 ```
