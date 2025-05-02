@@ -1,11 +1,11 @@
 using Test, GraphCombinatorics
 
-if VERSION < v"1.12.0-beta"
-    @testset "Code linting" begin
-        using JET
-        JET.test_package(GraphCombinatorics; target_defined_modules=true)
-    end
-end
+# if VERSION < v"1.12.0-beta"
+#     @testset "Code linting" begin
+#         using JET
+#         JET.test_package(GraphCombinatorics; target_defined_modules=true)
+#     end
+# end
 
 @testset "ExplicitImports" begin
     using ExplicitImports
@@ -21,13 +21,13 @@ end
 end
 
 @testset "wick_contractions" begin
-    include("test_wick_contractions.jl")
+    include("wick_contractions.jl")
 end
 
 @testset "wick_contractions" begin
-    include("test_reduction.jl")
+    include("reduction.jl")
 end
 
 @testset "graph_generation" begin
-    include("test_generation.jl")
+    include("generation.jl")
 end

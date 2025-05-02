@@ -7,7 +7,7 @@ using DocStringExtensions
 
 using Graphs
 using Combinatorics
-using Memoization # Seems to be newer Memoize.jl
+using Memoization # Seems to be newer then Memoize.jl
 
 include("utils.jl")
 include("WickContractions.jl")
