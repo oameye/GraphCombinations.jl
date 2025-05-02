@@ -10,4 +10,6 @@
 
 GraphCombinatorics.jl is a package for the generation of graphs for a given set of different vertices. Given a set of [valent vertices](https://en.wikipedia.org/wiki/Degree_%28graph_theory%29) (vertices of degree k), the package generates all possible graphs that can be constructed with these vertices.
 
+The implementation is rather naive and I am sure it can be significiantly improved. Any contributions or suggestions are welcome :)
+
 This package is heavily inspired by this [StackExachange post](https://mathematica.stackexchange.com/questions/170268/how-to-generate-all-feynman-diagrams-with-mathematica) by AccidentalFourierTransform. A mathematica notebook using his code can be found in the [examples folder](https://github.com/oameye/GraphCombinatorics.jl/tree/main/examples). 

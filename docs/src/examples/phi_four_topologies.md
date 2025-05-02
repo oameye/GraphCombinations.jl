@@ -19,11 +19,17 @@ We will compute al possible feynman diagram topologies for the first orders of t
 using GraphCombinatorics, GraphMakie, CairoMakie
 import GraphMakie.NetworkLayout as NL
 import GraphCombinatorics as GC
-arrow_show=false
-layout=NL.Align(NL.Spring())
+
+function pltkwargs(g)
+    (;
+        layout=NL.Align(NL.Spring()),
+        curve_distance=GC.gen_distances(g),
+        curve_distance_usage=true,
+    )
+end
 ````
 
-## First Order Calculation
+## First Order
 As discussed above the diagrams to first order will have 2 external legs (degree 1) and 1 interaction vertex with degree 4.
 
 ````@example phi_four_topologies
@@ -36,14 +42,14 @@ Only one topology is possible for the first order.
 ````@example phi_four_topologies
 graph, symmetry_factor = first(topologies_order1)
 g = GC.build_graph(graph)
-f, ax, p = graphplot(g; layout, arrow_show)
+f, ax, p = graphplot(g; pltkwargs(g)...)
 hidedecorations!(ax);
 hidespines!(ax);
 ax.aspect = DataAspect();
 f
 ````
 
-## Second Order Calculation
+## Second Order
 
 In second order the graphs will have to 2 external legs (degree 1) and 2 interaction vertices of degree 4.
 
@@ -60,7 +66,7 @@ axs = map(i -> Axis(f[i, 1]), 1:3)
 for (i, ax) in pairs(axs)
     graph, symmetry_factor = topologies_order2[i]
     g = GC.build_graph(graph)
-    graphplot!(ax, g; layout, arrow_show)
+    graphplot!(ax, g; pltkwargs(g)...)
     hidedecorations!(ax)
     hidespines!(ax)
     ax.aspect = DataAspect()
@@ -68,7 +74,7 @@ end
 f
 ````
 
-## Third Order Calculation
+## Third Order
 
 ````@example phi_four_topologies
 n3 = [2, 0, 0, 3]
@@ -84,7 +90,7 @@ axs = map(i -> Axis(f[i...]), axs_idx)
 for (i, ax) in pairs(axs)
     graph, symmetry_factor = topologies_order3[i]
     g = GC.build_graph(graph)
-    graphplot!(ax, g; layout, arrow_show)
+    graphplot!(ax, g; pltkwargs(g)...)
     hidedecorations!(ax)
     hidespines!(ax)
     ax.aspect = DataAspect()
