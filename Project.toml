@@ -1,7 +1,7 @@
 name = "GraphCombinations"
 uuid = "d653b97f-30d3-4d96-b482-58626fc91258"
-authors = ["Orjan Ameye <orjan.ameye@hotmail.com"]
 version = "0.1.0"
+authors = ["Orjan Ameye <orjan.ameye@hotmail.com"]
 
 [deps]
 Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
@@ -14,13 +14,13 @@ Multigraphs = "7ebac608-6c66-46e6-9856-b5f43e107bac"
 Aqua = "0.8.11"
 CheckConcreteStructs = "0.1"
 Combinatorics = "1"
-Documenter = "1.10"
 DocStringExtensions = "0.9"
+Documenter = "1.10"
 ExplicitImports = "1.11"
 Graphs = "1.12"
-Multigraphs = "0.3"
-JET = "0.9.18, 0.10"
+JET = "0.9.18, 0.10, 0.11"
 Memoization = "0.2"
+Multigraphs = "0.3"
 Test = "1.10"
 julia = "1.10"
 
