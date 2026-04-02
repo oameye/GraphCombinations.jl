@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1773300825645,
+  "lastUpdate": 1775117666633,
   "repoUrl": "https://github.com/oameye/GraphCombinations.jl",
   "entries": {
     "Benchmark Results": [
@@ -540,6 +540,42 @@ window.BENCHMARK_DATA = {
             "value": 1741162,
             "unit": "ns",
             "extra": "gctime=0\nmemory=3991824\nallocs=42955\nparams={\"gctrial\":true,\"time_tolerance\":0.05,\"evals_set\":false,\"samples\":10000,\"evals\":1,\"gcsample\":false,\"seconds\":10,\"overhead\":0,\"memory_tolerance\":0.01}"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8bba03d6b99c7b2929d22d76dcbcbc0e9da4177e",
+          "message": "build(deps): bump codecov/codecov-action from 5 to 6 (#50)\n\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2026-04-02T10:12:46+02:00",
+          "tree_id": "ada2a8af0919e99a3ed98eac3083bbec06175b61",
+          "url": "https://github.com/oameye/GraphCombinations.jl/commit/8bba03d6b99c7b2929d22d76dcbcbc0e9da4177e"
+        },
+        "date": 1775117665390,
+        "tool": "julia",
+        "benches": [
+          {
+            "name": "Phi^4 theory/2 loops",
+            "value": 1768414,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=3991824\nallocs=42955\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Phi^4 theory/3 loops",
+            "value": 730873506.5,
+            "unit": "ns",
+            "extra": "gctime=110540320.5\nmemory=1216383200\nallocs=11720485\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
           }
         ]
       }
