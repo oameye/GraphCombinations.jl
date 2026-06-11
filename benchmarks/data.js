@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1776933921603,
+  "lastUpdate": 1781163139478,
   "repoUrl": "https://github.com/oameye/GraphCombinations.jl",
   "entries": {
     "Benchmark Results": [
@@ -648,6 +648,42 @@ window.BENCHMARK_DATA = {
             "value": 743475782,
             "unit": "ns",
             "extra": "gctime=110962746.5\nmemory=1216383200\nallocs=11720485\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "349bdde37353cdff7ddc96d809a8d1c3afb6de1c",
+          "message": "build(deps): bump codecov/codecov-action from 6 to 7 (#61)\n\nBumps [codecov/codecov-action](https://github.com/codecov/codecov-action) from 6 to 7.\n- [Release notes](https://github.com/codecov/codecov-action/releases)\n- [Changelog](https://github.com/codecov/codecov-action/blob/main/CHANGELOG.md)\n- [Commits](https://github.com/codecov/codecov-action/compare/v6...v7)\n\n---\nupdated-dependencies:\n- dependency-name: codecov/codecov-action\n  dependency-version: '7'\n  dependency-type: direct:production\n  update-type: version-update:semver-major\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2026-06-11T09:30:43+02:00",
+          "tree_id": "455d663b5d26dedb2d3e9401ccd8c754e9be4fb7",
+          "url": "https://github.com/oameye/GraphCombinations.jl/commit/349bdde37353cdff7ddc96d809a8d1c3afb6de1c"
+        },
+        "date": 1781163138599,
+        "tool": "julia",
+        "benches": [
+          {
+            "name": "Phi^4 theory/2 loops",
+            "value": 1768028,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=3991824\nallocs=42955\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Phi^4 theory/3 loops",
+            "value": 760851190,
+            "unit": "ns",
+            "extra": "gctime=119825368.5\nmemory=1216383200\nallocs=11720485\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
           }
         ]
       }
