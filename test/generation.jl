@@ -2,7 +2,7 @@ using Test, GraphCombinations
 using GraphCombinations: Edge
 
 # Helper function to sort allgraphs results for comparison
-sort_allgraphs_results(results) = sort(results, by=x -> x[1]) # Sort by canonical graph
+sort_allgraphs_results(results) = sort(results; by=x -> x[1]) # Sort by canonical graph
 
 @testset "Graph Generation (allgraphs)" begin
     # Test case 1: Invalid input - odd total degree
@@ -23,7 +23,7 @@ sort_allgraphs_results(results) = sort(results, by=x -> x[1]) # Sort by canonica
 
     # Test case 5: n = [0, 0, 2]
     expected_0_0_2 = [([1 => 2, 1 => 2, 1 => 2], 12.0), ([1 => 1, 1 => 2, 2 => 2], 8.0)]
-    @test allgraphs([0, 0, 2]) == expected_0_0_2
+    @test sort_allgraphs_results(allgraphs([0, 0, 2])) == sort_allgraphs_results(expected_0_0_2)
 
     # Test case 6: n = [2, 0, 0, 1]
     expected_2_0_0_1 = [([Edge(1, 3), Edge(2, 3), Edge(3, 3)], 2.0)]
