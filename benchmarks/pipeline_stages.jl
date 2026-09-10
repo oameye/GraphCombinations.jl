@@ -106,25 +106,25 @@ function pipeline_stages!(SUITE)
     canonical_indices4 = 3:6
     canonical_indices5 = 3:7
 
-    SUITE["Canonical"]["reference - 2 internal"] = @benchmarkable GC.canonical_form(
+    SUITE["Canonical"]["reference - 2 internal"] = @benchmarkable GC._canonical_form_reference(
         $canonical2, $canonical_indices2
     ) seconds = 10
     SUITE["Canonical"]["scratch - 2 internal"] = @benchmarkable GC._canonical_form_scratch(
         $canonical2, $canonical_indices2
     ) seconds = 10
-    SUITE["Canonical"]["reference - 3 internal"] = @benchmarkable GC.canonical_form(
+    SUITE["Canonical"]["reference - 3 internal"] = @benchmarkable GC._canonical_form_reference(
         $canonical3, $canonical_indices3
     ) seconds = 10
     SUITE["Canonical"]["scratch - 3 internal"] = @benchmarkable GC._canonical_form_scratch(
         $canonical3, $canonical_indices3
     ) seconds = 10
-    SUITE["Canonical"]["reference - 4 internal"] = @benchmarkable GC.canonical_form(
+    SUITE["Canonical"]["reference - 4 internal"] = @benchmarkable GC._canonical_form_reference(
         $canonical4, $canonical_indices4
     ) seconds = 10
     SUITE["Canonical"]["scratch - 4 internal"] = @benchmarkable GC._canonical_form_scratch(
         $canonical4, $canonical_indices4
     ) seconds = 10
-    SUITE["Canonical"]["reference - 5 internal"] = @benchmarkable GC.canonical_form(
+    SUITE["Canonical"]["reference - 5 internal"] = @benchmarkable GC._canonical_form_reference(
         $canonical5, $canonical_indices5
     ) seconds = 10
     SUITE["Canonical"]["scratch - 5 internal"] = @benchmarkable GC._canonical_form_scratch(
