@@ -73,6 +73,39 @@ function canonical_form(graph::GraphRep, internal_indices::UnitRange{Int})::Grap
     return current_canonical
 end
 
+# Allocation-lean reference candidate for #20. It deliberately performs the same exhaustive
+# permutation search and chooses the same lexicographically smallest `GraphRep` as
+# `canonical_form`; only the representation of a permutation and the scratch storage differ.
+# Keeping this separate lets the exhaustive oracle and benchmarks certify the optimization before
+# the production canonicalizer changes.
+function _canonical_form_scratch(
+    graph::GraphRep, internal_indices::UnitRange{Int}
+)::GraphRep
+    if length(internal_indices) < 2
+        return sort_graph_edges(graph)
+    end
+
+    internal_vec = collect(internal_indices)
+    first_internal = first(internal_indices)
+    last_internal = last(internal_indices)
+    current_canonical = sort_graph_edges(graph)
+    candidate = similar(graph)
+
+    for p in permutations(internal_vec)
+        @inbounds for i in eachindex(graph)
+            prop = graph[i]
+            u, v = prop.first, prop.second
+            u_new = first_internal <= u <= last_internal ? p[u - first_internal + 1] : u
+            v_new = first_internal <= v <= last_internal ? p[v - first_internal + 1] : v
+            candidate[i] = Edge(minmax(u_new, v_new)...)
+        end
+        sort!(candidate)
+        candidate < current_canonical && copyto!(current_canonical, candidate)
+    end
+
+    return current_canonical
+end
+
 """
     build_internal_graph(graph_rep::GraphRep, num_vertices::Int)::SimpleGraph
 
