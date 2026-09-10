@@ -67,14 +67,13 @@ end
         @test reconstructed_labeled == GC._count_labeled_multigraphs(n)
         @test reconstructed_pairings == prod(big(k) for k in 1:2:(total_degree(n) - 1))
 
-        # Production canonicalization and the in-place candidate must both reproduce the exact
-        # legacy canonical label for every labelled graph in the exhaustive domain.
+        # Production and the previous scratch baseline must both reproduce the exact legacy
+        # canonical label for every labelled graph in the exhaustive domain.
         canonical_checks = Ref(0)
         GC._foreach_labeled_multigraph(GC._vertex_degrees(n)) do graph
             reference = GC._canonical_form_reference(graph, internal_indices)
+            @test GC._canonical_form_scratch(graph, internal_indices) == reference
             @test canonical_form(graph, internal_indices) == reference
-            @test GC._canonical_form_inplace_permutations(graph, internal_indices) ==
-                reference
             canonical_checks[] += 1
             return nothing
         end
