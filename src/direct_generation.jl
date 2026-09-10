@@ -118,11 +118,10 @@ end
 """
     _allgraphs_direct(n::Vector{Int}; connected=true)
 
-Experimental direct graph generator used to validate the replacement for Wick-pairing
-enumeration. It enumerates degree-constrained labelled multigraphs directly, canonicalizes them,
-and obtains the internal automorphism factor from orbit--stabilizer. Production `allgraphs`
-continues to use `_allgraphs_wick_reference` until the two implementations are certified
-identical on the reference domain.
+Direct degree-constrained graph generator used by the production `allgraphs` path. It enumerates
+labelled multigraphs directly, canonicalizes them, and obtains the internal automorphism factor
+from orbit--stabilizer. The brute-force `_allgraphs_wick_reference` implementation remains as an
+independent small-system oracle for correctness testing.
 """
 function _allgraphs_direct(n::Vector{Int}; connected=true)
     isodd(total_degree(n)) && return Vector{Tuple{GraphRep,BigInt}}()
