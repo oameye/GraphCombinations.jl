@@ -37,14 +37,12 @@ function apply_permutation(
     return sort(new_graph)
 end
 
-"""
-    canonical_form(graph::GraphRep, internal_indices::UnitRange{Int})::GraphRep
-
-Finds the canonical representation of a graph under permutations of internal vertices.
-The canonical form is the lexicographically smallest graph representation achievable
-through permutation of `internal_indices`.
-"""
-function canonical_form(graph::GraphRep, internal_indices::UnitRange{Int})::GraphRep
+# Exact legacy implementation retained as an independent correctness oracle. Production uses the
+# allocation-lean implementation below, but keeping this path lets tests compare exact canonical
+# labels rather than only final isomorphism classes.
+function _canonical_form_reference(
+    graph::GraphRep, internal_indices::UnitRange{Int}
+)::GraphRep
     # Handle cases with 0 or 1 internal vertex (no non-trivial permutations)
     if length(internal_indices) < 2
         # Just ensure the graph edges themselves are sorted
@@ -73,11 +71,9 @@ function canonical_form(graph::GraphRep, internal_indices::UnitRange{Int})::Grap
     return current_canonical
 end
 
-# Allocation-lean reference candidate for #20. It deliberately performs the same exhaustive
-# permutation search and chooses the same lexicographically smallest `GraphRep` as
-# `canonical_form`; only the representation of a permutation and the scratch storage differ.
-# Keeping this separate lets the exhaustive oracle and benchmarks certify the optimization before
-# the production canonicalizer changes.
+# Allocation-lean exhaustive canonicalizer for #20. It performs the same internal-vertex
+# permutation search and chooses the same lexicographically smallest `GraphRep` as the reference;
+# only the representation of a permutation and the scratch storage differ.
 function _canonical_form_scratch(
     graph::GraphRep, internal_indices::UnitRange{Int}
 )::GraphRep
@@ -104,6 +100,17 @@ function _canonical_form_scratch(
     end
 
     return current_canonical
+end
+
+"""
+    canonical_form(graph::GraphRep, internal_indices::UnitRange{Int})::GraphRep
+
+Finds the canonical representation of a graph under permutations of internal vertices.
+The canonical form is the lexicographically smallest graph representation achievable
+through permutation of `internal_indices`.
+"""
+function canonical_form(graph::GraphRep, internal_indices::UnitRange{Int})::GraphRep
+    return _canonical_form_scratch(graph, internal_indices)
 end
 
 """
