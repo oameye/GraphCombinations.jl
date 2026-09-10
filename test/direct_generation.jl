@@ -67,16 +67,35 @@ end
         @test reconstructed_labeled == GC._count_labeled_multigraphs(n)
         @test reconstructed_pairings == prod(big(k) for k in 1:2:(total_degree(n) - 1))
 
-        # Production canonicalization must reproduce the exact legacy canonical label for every
-        # labelled graph in the exhaustive domain, not merely the same isomorphism classes.
+        # Production canonicalization and the in-place candidate must both reproduce the exact
+        # legacy canonical label for every labelled graph in the exhaustive domain.
         canonical_checks = Ref(0)
         GC._foreach_labeled_multigraph(GC._vertex_degrees(n)) do graph
-            @test canonical_form(graph, internal_indices) ==
-                GC._canonical_form_reference(graph, internal_indices)
+            reference = GC._canonical_form_reference(graph, internal_indices)
+            @test canonical_form(graph, internal_indices) == reference
+            @test GC._canonical_form_inplace_permutations(graph, internal_indices) ==
+                reference
             canonical_checks[] += 1
             return nothing
         end
         @test canonical_checks[] == GC._count_labeled_multigraphs(n)
+    end
+
+    # The in-place lexicographic successor must visit every permutation exactly once, in strictly
+    # increasing lexicographic order, and finish at the descending permutation.
+    @test !GC._next_permutation!(Int[])
+    @test !GC._next_permutation!([1])
+    for n in 2:7
+        permutation = collect(1:n)
+        previous = copy(permutation)
+        count = 1
+        while GC._next_permutation!(permutation)
+            @test previous < permutation
+            copyto!(previous, permutation)
+            count += 1
+        end
+        @test count == factorial(n)
+        @test permutation == collect(n:-1:1)
     end
 
     # Candidate-space regression checks for the phi^4 two-point function. The corresponding

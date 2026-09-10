@@ -102,6 +102,65 @@ function _canonical_form_scratch(
     return current_canonical
 end
 
+# Advance a permutation in-place to its lexicographic successor. The vector must contain distinct
+# ordered values. Returns `false` after the final descending permutation, leaving it unchanged.
+function _next_permutation!(p::Vector{Int})::Bool
+    length(p) < 2 && return false
+
+    i = length(p) - 1
+    while i >= 1 && p[i] >= p[i + 1]
+        i -= 1
+    end
+    i == 0 && return false
+
+    j = length(p)
+    while p[j] <= p[i]
+        j -= 1
+    end
+    p[i], p[j] = p[j], p[i]
+
+    lo = i + 1
+    hi = length(p)
+    while lo < hi
+        p[lo], p[hi] = p[hi], p[lo]
+        lo += 1
+        hi -= 1
+    end
+    return true
+end
+
+# Second mechanical #20 candidate. It keeps the same exhaustive lexicographic permutation search
+# as `_canonical_form_scratch`, but mutates one permutation vector in-place instead of allocating a
+# fresh vector from `Combinatorics.permutations` for every candidate labeling.
+function _canonical_form_inplace_permutations(
+    graph::GraphRep, internal_indices::UnitRange{Int}
+)::GraphRep
+    if length(internal_indices) < 2
+        return sort_graph_edges(graph)
+    end
+
+    perm = collect(internal_indices)
+    first_internal = first(internal_indices)
+    last_internal = last(internal_indices)
+    current_canonical = sort_graph_edges(graph)
+    candidate = similar(graph)
+
+    while true
+        @inbounds for i in eachindex(graph)
+            prop = graph[i]
+            u, v = prop.first, prop.second
+            u_new = first_internal <= u <= last_internal ? perm[u - first_internal + 1] : u
+            v_new = first_internal <= v <= last_internal ? perm[v - first_internal + 1] : v
+            candidate[i] = Edge(minmax(u_new, v_new)...)
+        end
+        sort!(candidate)
+        candidate < current_canonical && copyto!(current_canonical, candidate)
+        _next_permutation!(perm) || break
+    end
+
+    return current_canonical
+end
+
 """
     canonical_form(graph::GraphRep, internal_indices::UnitRange{Int})::GraphRep
 
