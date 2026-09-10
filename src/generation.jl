@@ -98,7 +98,7 @@ function _allgraphs(n::Vector{Int}; connected=true)
         # `count` is the number of raw contractions mapping to this canonical graph.
         symmetry_factor, remainder = divrem(_combinatoric_factor, count)
         iszero(remainder) || error(
-            "Internal error: combinatorial factor $(_combinatoric_factor) is not divisible by contraction count $(count)."
+            "Internal error: combinatorial factor $(_combinatoric_factor) is not divisible by contraction count $(count).",
         )
 
         push!(final_results, (canonical_graph, symmetry_factor))
