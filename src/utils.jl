@@ -71,9 +71,9 @@ function _canonical_form_reference(
     return current_canonical
 end
 
-# Allocation-lean exhaustive canonicalizer for #20. It performs the same internal-vertex
-# permutation search and chooses the same lexicographically smallest `GraphRep` as the reference;
-# only the representation of a permutation and the scratch storage differ.
+# First allocation-lean exhaustive canonicalizer for #20. It performs the same internal-vertex
+# permutation search and chooses the same lexicographically smallest `GraphRep` as the reference,
+# but reuses one edge-vector scratch buffer while `Combinatorics.permutations` supplies labels.
 function _canonical_form_scratch(
     graph::GraphRep, internal_indices::UnitRange{Int}
 )::GraphRep
@@ -129,9 +129,9 @@ function _next_permutation!(p::Vector{Int})::Bool
     return true
 end
 
-# Second mechanical #20 candidate. It keeps the same exhaustive lexicographic permutation search
-# as `_canonical_form_scratch`, but mutates one permutation vector in-place instead of allocating a
-# fresh vector from `Combinatorics.permutations` for every candidate labeling.
+# Production exhaustive canonicalizer. It keeps the same lexicographic permutation search as the
+# reference and scratch implementations, but mutates one permutation vector in-place instead of
+# allocating a fresh vector for every candidate labeling.
 function _canonical_form_inplace_permutations(
     graph::GraphRep, internal_indices::UnitRange{Int}
 )::GraphRep
@@ -169,7 +169,7 @@ The canonical form is the lexicographically smallest graph representation achiev
 through permutation of `internal_indices`.
 """
 function canonical_form(graph::GraphRep, internal_indices::UnitRange{Int})::GraphRep
-    return _canonical_form_scratch(graph, internal_indices)
+    return _canonical_form_inplace_permutations(graph, internal_indices)
 end
 
 """
