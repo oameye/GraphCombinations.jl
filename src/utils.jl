@@ -91,13 +91,26 @@ end
     $(TYPEDSIGNATURES)
 
 Builds a [`MultigraphWrap`](@ref) from an edges list and an explicit number of vertices.
+
+Vertex labels must lie in `1:num_vertices`. Parallel edges and self-loops are preserved exactly.
 """
 function build_graph(graph_rep::GraphRep, num_vertices::Int)::MultigraphWrap
-    g = Multigraph(num_vertices)
+    num_vertices >= 0 || throw(ArgumentError("num_vertices must be non-negative."))
+
+    adjacency = zeros(Int, num_vertices, num_vertices)
     for prop in graph_rep
-        add_edge!(g, prop.first, prop.second, 1)
+        u, v = prop.first, prop.second
+        1 <= u <= num_vertices || throw(
+            ArgumentError("Vertex label $u is outside 1:$num_vertices.")
+        )
+        1 <= v <= num_vertices || throw(
+            ArgumentError("Vertex label $v is outside 1:$num_vertices.")
+        )
+
+        adjacency[u, v] += 1
+        u == v || (adjacency[v, u] += 1)
     end
-    return MultigraphWrap(g)
+    return MultigraphWrap(Multigraph(adjacency))
 end
 
 """
