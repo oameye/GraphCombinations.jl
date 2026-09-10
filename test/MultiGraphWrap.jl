@@ -57,6 +57,14 @@ using Graphs.SimpleGraphs
         @test is_connected(g2) == false
     end
 
+    @testset "build_graph label inference" begin
+        sparse = build_graph([1 => 3])
+        @test nv(sparse) == 3
+        @test has_vertex(sparse, 2)
+        @test has_edge(sparse, 1, 3)
+        @test !is_connected(sparse)
+    end
+
     @testset " GC.gen_distances" begin
         # Test case 1: Single edges
         mg_single = Multigraph(3)

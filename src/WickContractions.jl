@@ -23,7 +23,6 @@
         propagator = Edge(a, xi) # a is the smallest
 
         # Remaining points excluding a and xi
-        # Construct the tuple for the recursive call directly
         remaining_points = vcat(points[2:(i - 1)], points[(i + 1):n])
 
         # Recursively compute pairings for remaining points
@@ -45,7 +44,7 @@ Computes all possible pairings (Wick contractions) of the given points.
 Points are represented by integers. The function returns a list of "terms",
 where each term is a list of `Edge` (`Pair{Int, Int}`) objects.
 
-Edges `a => b` always have `a < b`.
+Edges `a => b` are stored with `a ≤ b`, so self-contractions `a => a` are valid.
 
 ## Examples
 
@@ -66,6 +65,5 @@ function corr(points::Vector{Int})
     end
     # Sort points for canonical representation for memoization
     sorted_points = sort(points)
-    # Call the memoized helper function with a tuple
     return _corr_memo(sorted_points)
 end

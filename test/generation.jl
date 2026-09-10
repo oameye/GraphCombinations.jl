@@ -5,6 +5,19 @@ using GraphCombinations: Edge
 sort_allgraphs_results(results) = sort(results; by=x -> x[1]) # Sort by canonical graph
 
 @testset "Graph Generation (allgraphs)" begin
+    @testset "input contract" begin
+        @test_throws ErrorException allgraphs(Int[])
+        @test_throws ErrorException allgraphs([2, -1])
+
+        n = [2, 0, 0, 1, 0, 0]
+        original_n = copy(n)
+        @test allgraphs(n) == allgraphs([2, 0, 0, 1])
+        @test n == original_n
+
+        @test allgraphs(Int32[2, 0, 0, 1]) == allgraphs([2, 0, 0, 1])
+        @test total_degree(Int32[2, 1]) == 4
+    end
+
     # Test case 1: Invalid input - odd total degree
     @test isempty(allgraphs([1]))
     @test isempty(allgraphs([3]))
