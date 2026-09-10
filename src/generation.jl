@@ -61,7 +61,7 @@ function allgraphs(n::AbstractVector{<:Integer}; connected=true)
         return Vector{Tuple{GraphRep,BigInt}}()
     end
 
-    return _allgraphs_wick_reference(normalized_n; connected)
+    return _allgraphs_direct(normalized_n; connected)
 end
 
 # Brute-force Wick-pairing implementation. Keep this path stable as a small-system reference
@@ -136,7 +136,7 @@ function create_points(n::Vector{Int})
     points = Vector{Int}()
     current_vertex_index = 1
     for i in 1:length(n) # Degree i
-        for _ in 1:n[i] # Number of vertices with degree i
+        for _ in 1:n[i] # Number of vertices of degree i
             for _ in 1:i # Add vertex index 'i' times
                 push!(points, current_vertex_index)
             end

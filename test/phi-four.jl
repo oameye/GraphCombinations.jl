@@ -24,3 +24,14 @@ for (graph, _) in topologies_order3
     g = build_graph(graph)
     @test is_connected(g)
 end
+
+# This order is impractical for the Wick production path (17!! = 34,459,425 pairings) but
+# remains cheap with direct degree-constrained multigraph generation. Keeping it in the public
+# API test guards against accidentally routing `allgraphs` back through Wick enumeration.
+n4 = [2, 0, 0, 4]
+topologies_order4 = allgraphs(n4)
+@test length(topologies_order4) == 39
+for (graph, _) in topologies_order4
+    g = build_graph(graph)
+    @test is_connected(g)
+end

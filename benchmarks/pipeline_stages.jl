@@ -38,13 +38,12 @@ function pipeline_stages!(SUITE)
         $connected2, $internal_indices2
     ) seconds = 10
 
-    # Keep a separate cold end-to-end measurement. The historical Phi^4 benchmarks remain
-    # untouched, preserving the existing benchmark time series.
-    SUITE["Pipeline"]["allgraphs cold"] = @benchmarkable allgraphs($vertices2) setup = (GC._clear_corr_cache!()) evals =
+    # End-to-end production measurement. The historical Phi^4 benchmarks remain untouched and
+    # now naturally track the direct production implementation as well.
+    SUITE["Pipeline"]["allgraphs production"] = @benchmarkable allgraphs($vertices2) evals =
         1 seconds = 10
 
-    # The direct path remains experimental here: these measurements compare candidate-space and
-    # complete-topology costs without switching the public `allgraphs` implementation.
+    # Isolate direct candidate-space growth from complete topology reduction costs.
     SUITE["Direct"]["labeled candidates - 2 loops"] = @benchmarkable GC._count_labeled_multigraphs(
         $vertices2
     ) seconds = 10
