@@ -42,6 +42,10 @@ end
     include("reference_oracle.jl")
 end
 
+@testset "direct generation" begin
+    include("direct_generation.jl")
+end
+
 @testset "phi-four" begin
     include("phi-four.jl")
 end
