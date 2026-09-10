@@ -9,8 +9,9 @@ it generates connected graphs; disconnected graphs can be computed by setting
 `connected=false`.
 
 Returns a vector of tuples `(edges, S)`, where `edges` is a `Vector{Pair{Int,Int}}`
-representing the graph and `S::Float64` is the corresponding symmetry factor. Each edge
-`a => b` is stored with `a ≤ b`; therefore self-loops such as `a => a` are valid.
+representing the graph and `S::BigInt` is the exact symmetry denominator associated with the
+topology. Each edge `a => b` is stored with `a ≤ b`; therefore self-loops such as `a => a`
+are valid.
 
 The input vertex specification is not modified.
 
@@ -20,10 +21,10 @@ For input `n = [2, 0, 0, 2]` (2 vertices of degree 1, 2 vertex of degree 4):
 julia> using GraphCombinations
 
 julia> sort(allgraphs([2, 0, 0, 2]); by=first)
-3-element Vector{Tuple{Vector{Pair{Int64, Int64}}, Float64}}:
- ([1 => 3, 2 => 3, 3 => 4, 3 => 4, 4 => 4], 4.0)
- ([1 => 3, 2 => 4, 3 => 3, 3 => 4, 4 => 4], 4.0)
- ([1 => 3, 2 => 4, 3 => 4, 3 => 4, 3 => 4], 6.0)
+3-element Vector{Tuple{Vector{Pair{Int64, Int64}}, BigInt}}:
+ ([1 => 3, 2 => 3, 3 => 4, 3 => 4, 4 => 4], 4)
+ ([1 => 3, 2 => 4, 3 => 3, 3 => 4, 4 => 4], 4)
+ ([1 => 3, 2 => 4, 3 => 4, 3 => 4, 3 => 4], 6)
 ```
 """
 function allgraphs(n::AbstractVector{<:Integer}; connected=true)
@@ -44,7 +45,7 @@ function allgraphs(n::AbstractVector{<:Integer}; connected=true)
     _total_degree = total_degree(normalized_n)
     if isodd(_total_degree)
         # Cannot form pairings with an odd number of connection points
-        return Vector{Tuple{GraphRep,Float64}}()
+        return Vector{Tuple{GraphRep,BigInt}}()
     end
 
     num_external = normalized_n[1]
@@ -53,11 +54,11 @@ function allgraphs(n::AbstractVector{<:Integer}; connected=true)
     # Base case: n = [2] (or [2, 0, 0...]) -> two external vertices
     if num_total_vertices == 2 && num_external == 2 && length(normalized_n) == 1
         # Symmetry factor calculation: vertex_perms=1, edge_perms=(1!)^2=1. count=1.
-        return [([Edge(1, 2)], 1.0)]
+        return [([Edge(1, 2)], big(1))]
     end
     # Handle case n = [0], should not happen if total_degree is even and non-zero, but good practice
     if num_total_vertices == 0
-        return Vector{Tuple{GraphRep,Float64}}()
+        return Vector{Tuple{GraphRep,BigInt}}()
     end
 
     return _allgraphs(normalized_n; connected)
@@ -78,7 +79,7 @@ function _allgraphs(n::Vector{Int}; connected=true)
         sort_graph_edges.(all_pairings)
     end
     if isempty(connected_graphs)
-        return Vector{Tuple{GraphRep,Float64}}()
+        return Vector{Tuple{GraphRep,BigInt}}()
     end
 
     # 5. Reduce isomorphic graphs
@@ -92,10 +93,13 @@ function _allgraphs(n::Vector{Int}; connected=true)
     _combinatoric_factor = combinatoric_factor(n)
 
     # 7. Combine results
-    final_results = Vector{Tuple{GraphRep,Float64}}()
+    final_results = Vector{Tuple{GraphRep,BigInt}}()
     for (canonical_graph, count) in reduced_graphs_with_counts
-        # count is the number of raw connected graphs mapping to this canonical form
-        symmetry_factor = _combinatoric_factor / count
+        # `count` is the number of raw contractions mapping to this canonical graph.
+        symmetry_factor, remainder = divrem(_combinatoric_factor, count)
+        iszero(remainder) || error(
+            "Internal error: combinatorial factor $(_combinatoric_factor) is not divisible by contraction count $(count).",
+        )
 
         push!(final_results, (canonical_graph, symmetry_factor))
     end
@@ -143,30 +147,24 @@ end
 """
 $(TYPEDSIGNATURES)
 
-Computes the combinatorial factor for graph symmetry calculations.
+Computes the exact combinatorial normalization used to obtain graph symmetry denominators.
 
-This function calculates the product of two factors:
-1. The vertex permutation factor: number of ways to permute identical internal vertices
-2. The edge endpoint permutation factor: number of ways to permute edge endpoints
-   attached to vertices of the same degree
+For `n[k]` vertices of degree `k`, the normalization is
+`(∏_{k≥2} n_k!) (∏_{k≥1} (k!)^{n_k})`.
 
-This factor is used in the calculation of symmetry factors for Feynman diagrams.
+The first product counts permutations of identical internal vertices; degree-1 vertices are
+external and remain fixed. The second product counts permutations of edge endpoints at each
+vertex.
 
-## Parameters
-- `n`: Vector where `n[k]` is the number of vertices with degree `k`
-
-## Returns
-- A floating point number representing the total combinatorial factor
+Returns a `BigInt` so the result remains exact even when the factorial products exceed machine
+integer range.
 """
-function combinatoric_factor(n)
-    vertex_perms_factor = 1.0
-    if length(n) > 1 # Factor from permutations of identical internal vertices (degree > 1)
-        vertex_perms_factor = prod(factorial.(n[2:end]))
+function combinatoric_factor(n::AbstractVector{<:Integer})
+    factor = big(1)
+    for (degree, count) in enumerate(n)
+        count < 0 && throw(ArgumentError("Vertex counts must be non-negative."))
+        degree > 1 && (factor *= factorial(big(count)))
+        factor *= factorial(big(degree))^count
     end
-
-    # Factor from permutations of edge endpoints attached to vertices of same degree
-    edge_endpoint_perms_factor = prod(factorial(k)^n[k] for k in 1:length(n))
-
-    total_combinatoric_factor = vertex_perms_factor * edge_endpoint_perms_factor
-    return total_combinatoric_factor
+    return factor
 end
