@@ -93,6 +93,8 @@ function _distribute_vertex_edges!(
     return nothing
 end
 
+# Retained for the independent orbit-size validation in the test suite. Production symmetry
+# denominators are graph-local and no longer inferred from complete labelled-orbit counts.
 function _internal_vertex_permutation_factor(n::Vector{Int})
     factor = big(1)
     for count in @view n[2:end]
@@ -119,9 +121,10 @@ end
     _allgraphs_direct(n::Vector{Int}; connected=true)
 
 Direct degree-constrained graph generator used by the production `allgraphs` path. It enumerates
-labelled multigraphs directly, canonicalizes them, and obtains the internal automorphism factor
-from orbit--stabilizer. The brute-force `_allgraphs_wick_reference` implementation remains as an
-independent small-system oracle for correctness testing.
+labelled multigraphs directly and canonicalizes each candidate with the graph-only fast path. Once
+canonical topologies have been deduplicated, their automorphism orders are computed exactly once per
+topology and combined with edge multiplicities to obtain the symmetry denominator. The brute-force
+`_allgraphs_wick_reference` implementation remains as an independent small-system oracle.
 """
 function _allgraphs_direct(n::Vector{Int}; connected=true)
     isodd(total_degree(n)) && return Vector{Tuple{GraphRep,BigInt}}()
@@ -132,26 +135,27 @@ function _allgraphs_direct(n::Vector{Int}; connected=true)
     num_vertices = length(degrees)
     num_external = n[1]
     internal_indices = (num_external + 1):num_vertices
-    orbit_counts = Dict{GraphRep,Int}()
+    canonical_graphs = Dict{GraphRep,Nothing}()
 
     _foreach_labeled_multigraph(degrees) do graph
         if connected && !is_connected(build_internal_graph(graph, num_vertices))
             return nothing
         end
+
         canonical = canonical_form(graph, internal_indices)
-        orbit_counts[canonical] = get(orbit_counts, canonical, 0) + 1
+        canonical_graphs[canonical] = nothing
         return nothing
     end
 
-    vertex_permutations = _internal_vertex_permutation_factor(n)
     results = Vector{Tuple{GraphRep,BigInt}}()
-    sizehint!(results, length(orbit_counts))
-    for (graph, orbit_size) in orbit_counts
-        automorphisms, remainder = divrem(vertex_permutations, orbit_size)
-        iszero(remainder) || error(
-            "Internal error: labelled orbit size $(orbit_size) does not divide the internal vertex permutation factor $(vertex_permutations).",
-        )
-        push!(results, (graph, automorphisms * _edge_symmetry_factor(graph)))
+    sizehint!(results, length(canonical_graphs))
+    for graph in keys(canonical_graphs)
+        canonicalization = _canonicalize_with_automorphisms(graph, internal_indices)
+        canonicalization.canonical == graph ||
+            error("Internal error: stored topology is not canonical.")
+        symmetry_denominator =
+            big(canonicalization.automorphism_order) * _edge_symmetry_factor(graph)
+        push!(results, (graph, symmetry_denominator))
     end
 
     sort!(results; by=first)

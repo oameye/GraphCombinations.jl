@@ -3,6 +3,11 @@
 const Edge = Pair{Int,Int} # Represents Δ[a, b] with a ≤ b
 const GraphRep = Vector{Edge}
 
+struct CanonicalizationResult
+    canonical::GraphRep
+    automorphism_order::Int
+end
+
 """
     sort_graph_edges(graph::GraphRep)::GraphRep
 
@@ -129,9 +134,63 @@ function _next_permutation!(p::Vector{Int})::Bool
     return true
 end
 
-# Production exhaustive canonicalizer. It keeps the same lexicographic permutation search as the
-# reference and scratch implementations, but mutates one permutation vector in-place instead of
-# allocating a fresh vector for every candidate labeling.
+@inline function _compare_graph_reps(a::GraphRep, b::GraphRep)::Int
+    @inbounds for i in eachindex(a, b)
+        ai = a[i]
+        bi = b[i]
+        isless(ai, bi) && return -1
+        isless(bi, ai) && return 1
+    end
+    return 0
+end
+
+# Canonicalize a graph and count the internal automorphism group during the same exhaustive
+# permutation traversal. Every orbit representative has exactly |Aut(G)| preimages under the
+# group action, so the number of permutations yielding the final canonical minimum is the
+# automorphism order. External vertices remain fixed because only `internal_indices` are permuted.
+function _canonicalize_with_automorphisms(
+    graph::GraphRep, internal_indices::UnitRange{Int}
+)::CanonicalizationResult
+    if length(internal_indices) < 2
+        return CanonicalizationResult(sort_graph_edges(graph), 1)
+    end
+
+    perm = collect(internal_indices)
+    first_internal = first(internal_indices)
+    last_internal = last(internal_indices)
+    current_canonical = sort_graph_edges(graph)
+    candidate = similar(graph)
+    automorphism_order = 0
+
+    while true
+        @inbounds for i in eachindex(graph)
+            prop = graph[i]
+            u, v = prop.first, prop.second
+            u_new = first_internal <= u <= last_internal ? perm[u - first_internal + 1] : u
+            v_new = first_internal <= v <= last_internal ? perm[v - first_internal + 1] : v
+            candidate[i] = Edge(minmax(u_new, v_new)...)
+        end
+        sort!(candidate)
+
+        comparison = _compare_graph_reps(candidate, current_canonical)
+        if comparison < 0
+            copyto!(current_canonical, candidate)
+            automorphism_order = 1
+        elseif iszero(comparison)
+            automorphism_order += 1
+        end
+
+        _next_permutation!(perm) || break
+    end
+
+    automorphism_order > 0 ||
+        error("Internal error: canonical orbit has no representative.")
+    return CanonicalizationResult(current_canonical, automorphism_order)
+end
+
+# Production exhaustive canonicalizer. Keep the graph-only fast path separate from automorphism
+# counting: most callers need only the canonical label, and direct generation computes
+# automorphism orders once per unique topology after deduplication.
 function _canonical_form_inplace_permutations(
     graph::GraphRep, internal_indices::UnitRange{Int}
 )::GraphRep
