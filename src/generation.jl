@@ -61,10 +61,12 @@ function allgraphs(n::AbstractVector{<:Integer}; connected=true)
         return Vector{Tuple{GraphRep,BigInt}}()
     end
 
-    return _allgraphs(normalized_n; connected)
+    return _allgraphs_wick_reference(normalized_n; connected)
 end
 
-function _allgraphs(n::Vector{Int}; connected=true)
+# Brute-force Wick-pairing implementation. Keep this path stable as a small-system reference
+# oracle while alternative graph generators are developed and validated against it.
+function _allgraphs_wick_reference(n::Vector{Int}; connected=true)
     # 1. Generate points for correlation function
     points = create_points(n)
 
