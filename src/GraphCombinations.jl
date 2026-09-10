@@ -13,6 +13,7 @@ include("MultiGraphWrap.jl")
 include("utils.jl")
 include("WickContractions.jl")
 include("reduction.jl")
+include("direct_generation.jl")
 include("generation.jl")
 
 export allgraphs, combinatoric_factor, build_graph, total_degree, canonical_form
