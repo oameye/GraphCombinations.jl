@@ -37,6 +37,13 @@
     return all_terms
 end
 
+# Benchmark/test hook for measuring the true uncached Wick-pairing cost. This stays internal:
+# memoization is an implementation detail, not part of the public graph-generation API.
+function _clear_corr_cache!()
+    Memoization.empty_cache!(_corr_memo)
+    return nothing
+end
+
 """
     corr(points::Vector{Int})
 
