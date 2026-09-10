@@ -149,12 +149,8 @@ $(TYPEDSIGNATURES)
 
 Computes the exact combinatorial normalization used to obtain graph symmetry denominators.
 
-For `n[k]` vertices of degree `k`, this is
-
-```math
-\left(\prod_{k\geq 2} n_k!\right)
-\left(\prod_{k\geq 1} (k!)^{n_k}\right).
-```
+For `n[k]` vertices of degree `k`, the normalization is
+`(∏_{k≥2} n_k!) (∏_{k≥1} (k!)^{n_k})`.
 
 The first product counts permutations of identical internal vertices; degree-1 vertices are
 external and remain fixed. The second product counts permutations of edge endpoints at each
