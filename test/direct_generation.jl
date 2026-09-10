@@ -67,12 +67,12 @@ end
         @test reconstructed_labeled == GC._count_labeled_multigraphs(n)
         @test reconstructed_pairings == prod(big(k) for k in 1:2:(total_degree(n) - 1))
 
-        # The allocation-lean #20 candidate must reproduce the exact legacy canonical label for
-        # every labelled graph in the exhaustive domain, not merely the same isomorphism classes.
+        # Production canonicalization must reproduce the exact legacy canonical label for every
+        # labelled graph in the exhaustive domain, not merely the same isomorphism classes.
         canonical_checks = Ref(0)
         GC._foreach_labeled_multigraph(GC._vertex_degrees(n)) do graph
-            @test GC._canonical_form_scratch(graph, internal_indices) ==
-                canonical_form(graph, internal_indices)
+            @test canonical_form(graph, internal_indices) ==
+                GC._canonical_form_reference(graph, internal_indices)
             canonical_checks[] += 1
             return nothing
         end
