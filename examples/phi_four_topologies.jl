@@ -16,7 +16,7 @@ import GraphMakie.NetworkLayout as NL
 import GraphCombinations as GC
 
 function pltkwargs(g)
-    (;
+    return (;
         layout=NL.Align(NL.Spring()),
         curve_distance=GC.gen_distances(g),
         curve_distance_usage=true,
