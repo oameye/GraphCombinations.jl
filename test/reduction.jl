@@ -2,11 +2,11 @@ using Test, GraphCombinations
 using GraphCombinations: reduce_isomorphic_graphs, Edge, GraphRep
 
 # Helper function to sort reduce results for comparison
-sort_reduce_results(results) = sort(results, by=x -> x[1])
+sort_reduce_results(results) = sort(results; by=x -> x[1])
 # ^ Sort by canonical graph
 
 function sort_graph_props_test(graph::GraphRep)
-    sort([Edge(minmax(p.first, p.second)...) for p in graph])
+    return sort([Edge(minmax(p.first, p.second)...) for p in graph])
 end
 
 @testset "Graph Reduction (reduce_isomorphic_graphs)" begin
