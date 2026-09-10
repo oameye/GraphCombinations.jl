@@ -16,7 +16,7 @@ For input `n = [2, 0, 0, 2]` (2 vertices of degree 1, 2 vertex of degree 4):
 ```jldoctest
 julia> using GraphCombinations
 
-julia> allgraphs([2, 0, 0, 2])
+julia> sort(allgraphs([2, 0, 0, 2]); by=first)
 3-element Vector{Tuple{Vector{Pair{Int64, Int64}}, Float64}}:
  ([1 => 3, 2 => 3, 3 => 4, 3 => 4, 4 => 4], 4.0)
  ([1 => 3, 2 => 4, 3 => 3, 3 => 4, 4 => 4], 4.0)

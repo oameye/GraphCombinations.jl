@@ -1,8 +1,10 @@
 using Test, GraphCombinations
 
-if VERSION < v"1.12.0-beta"
-    @testset "Code linting" begin
-        using JET
+@testset "Code linting" begin
+    using JET
+    if VERSION >= v"1.12"
+        JET.test_package(GraphCombinations; target_modules=(GraphCombinations,))
+    else
         JET.test_package(GraphCombinations; target_defined_modules=true)
     end
 end

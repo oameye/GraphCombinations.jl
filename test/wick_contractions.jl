@@ -3,7 +3,7 @@ using GraphCombinations: corr
 
 # Helper function to sort terms for comparison
 sort_term(term) = sort(term)
-sort_terms(terms) = sort(terms, by=sort_term)
+sort_terms(terms) = sort(terms; by=sort_term)
 
 @testset "Wick Contractions (corr)" begin
     # Test case: corr([]) - Empty list
