@@ -100,12 +100,10 @@ function build_graph(graph_rep::GraphRep, num_vertices::Int)::MultigraphWrap
     adjacency = zeros(Int, num_vertices, num_vertices)
     for prop in graph_rep
         u, v = prop.first, prop.second
-        1 <= u <= num_vertices || throw(
-            ArgumentError("Vertex label $u is outside 1:$num_vertices.")
-        )
-        1 <= v <= num_vertices || throw(
-            ArgumentError("Vertex label $v is outside 1:$num_vertices.")
-        )
+        1 <= u <= num_vertices ||
+            throw(ArgumentError("Vertex label $u is outside 1:$num_vertices."))
+        1 <= v <= num_vertices ||
+            throw(ArgumentError("Vertex label $v is outside 1:$num_vertices."))
 
         adjacency[u, v] += 1
         u == v || (adjacency[v, u] += 1)
@@ -123,7 +121,8 @@ from `1` through the largest label appearing in `graph_rep`. This preserves non-
 labels such as `1 => 3`, for which vertex `2` is an isolated vertex.
 """
 function build_graph(graph_rep::GraphRep)::MultigraphWrap
-    num_vertices = isempty(graph_rep) ? 0 : maximum(max(p.first, p.second) for p in graph_rep)
+    num_vertices =
+        isempty(graph_rep) ? 0 : maximum(max(p.first, p.second) for p in graph_rep)
     return build_graph(graph_rep, num_vertices)
 end
 
