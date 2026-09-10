@@ -2,7 +2,11 @@ using Test, GraphCombinations
 
 @testset "Code linting" begin
     using JET
-    JET.test_package(GraphCombinations; target_defined_modules=true)
+    if VERSION >= v"1.12"
+        JET.test_package(GraphCombinations; target_modules=(GraphCombinations,))
+    else
+        JET.test_package(GraphCombinations; target_defined_modules=true)
+    end
 end
 
 @testset "ExplicitImports" begin
