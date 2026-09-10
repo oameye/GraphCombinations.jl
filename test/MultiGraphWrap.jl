@@ -57,6 +57,27 @@ using Graphs.SimpleGraphs
         @test is_connected(g2) == false
     end
 
+    @testset "build_graph" begin
+        sparse = build_graph([1 => 3])
+        @test nv(sparse) == 3
+        @test has_vertex(sparse, 2)
+        @test has_edge(sparse, 1, 3)
+        @test !is_connected(sparse)
+
+        parallel = build_graph([1 => 2, 1 => 2])
+        @test ne(parallel) == 2
+        @test length(collect(edges(parallel))) == 2
+
+        loop = build_graph([1 => 1])
+        @test nv(loop) == 1
+        @test ne(loop) == 1
+        @test collect(edges(loop)) == [SimpleEdge(1, 1)]
+
+        @test_throws ArgumentError build_graph([1 => 3], 2)
+        @test_throws ArgumentError build_graph([0 => 1], 1)
+        @test_throws ArgumentError build_graph(Pair{Int,Int}[], -1)
+    end
+
     @testset " GC.gen_distances" begin
         # Test case 1: Single edges
         mg_single = Multigraph(3)

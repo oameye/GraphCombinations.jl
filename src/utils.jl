@@ -1,16 +1,16 @@
 # --- Core Definitions and Helpers ---
 
-const Edge = Pair{Int,Int} # Represents Δ[a, b] with a < b
+const Edge = Pair{Int,Int} # Represents Δ[a, b] with a ≤ b
 const GraphRep = Vector{Edge}
 
 """
     sort_graph_edges(graph::GraphRep)::GraphRep
 
 Sorts edges within a graph representation canonically.
-Ensures `a < b` in each `a => b` and then sorts the vector of edges.
+Ensures `a ≤ b` in each `a => b` and then sorts the vector of edges.
 """
 function sort_graph_edges(graph::GraphRep)::GraphRep
-    # Ensure a < b in each propagator and sort the edges
+    # Ensure a ≤ b in each propagator and sort the edges
     sorted_props = [Edge(minmax(p.first, p.second)...) for p in graph]
     return sort(sorted_props) # Sorts based on pairs, first element then second
 end
@@ -76,7 +76,7 @@ end
 """
     build_internal_graph(graph_rep::GraphRep, num_vertices::Int)::SimpleGraph
 
-Builds a Graphs.SimpleGraph from a edges list.
+Builds a Graphs.SimpleGraph from an edges list.
 """
 function build_internal_graph(graph_rep::GraphRep, num_vertices::Int)::SimpleGraph
     g = SimpleGraph(num_vertices)
@@ -90,19 +90,39 @@ end
 """
     $(TYPEDSIGNATURES)
 
-Builds a [`MultigraphWrap`](@ref) from an edges list.
+Builds a [`MultigraphWrap`](@ref) from an edges list and an explicit number of vertices.
+
+Vertex labels must lie in `1:num_vertices`. Parallel edges and self-loops are preserved exactly.
 """
 function build_graph(graph_rep::GraphRep, num_vertices::Int)::MultigraphWrap
-    g = Multigraph(num_vertices)
+    num_vertices >= 0 || throw(ArgumentError("num_vertices must be non-negative."))
+
+    adjacency = zeros(Int, num_vertices, num_vertices)
     for prop in graph_rep
-        add_edge!(g, prop.first, prop.second, 1)
+        u, v = prop.first, prop.second
+        1 <= u <= num_vertices ||
+            throw(ArgumentError("Vertex label $u is outside 1:$num_vertices."))
+        1 <= v <= num_vertices ||
+            throw(ArgumentError("Vertex label $v is outside 1:$num_vertices."))
+
+        adjacency[u, v] += 1
+        u == v || (adjacency[v, u] += 1)
     end
-    return MultigraphWrap(g)
+    return MultigraphWrap(Multigraph(adjacency))
 end
 
+"""
+    $(TYPEDSIGNATURES)
+
+Builds a [`MultigraphWrap`](@ref) from an edges list.
+
+Vertex labels are interpreted as one-based vertex indices, so the graph contains all vertices
+from `1` through the largest label appearing in `graph_rep`. This preserves non-contiguous
+labels such as `1 => 3`, for which vertex `2` is an isolated vertex.
+"""
 function build_graph(graph_rep::GraphRep)::MultigraphWrap
-    vertices = unique(vcat(first.(graph_rep), last.(graph_rep)))
-    num_vertices = length(vertices)
+    num_vertices =
+        isempty(graph_rep) ? 0 : maximum(max(p.first, p.second) for p in graph_rep)
     return build_graph(graph_rep, num_vertices)
 end
 
@@ -111,4 +131,4 @@ end
 
 Calculates the total degree of a graph topology represented by a vector of the degrees of vertices.
 """
-total_degree(n::Vector{Int}) = sum(i * n[i] for i in 1:length(n))
+total_degree(n::AbstractVector{<:Integer}) = sum(k * nk for (k, nk) in enumerate(n))
