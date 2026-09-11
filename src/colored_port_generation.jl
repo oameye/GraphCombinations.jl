@@ -233,32 +233,39 @@ function _port_automorphisms(problem::_PortMatchingProblem)::Vector{Vector{Int}}
     return automorphisms
 end
 
-function _mapped_port_key(state::_PortMatchingState, mapping::Vector{Int})::_PortStateKey
-    edges = Vector{_PortEdge}(undef, length(state.edges))
+function _write_mapped_port_edges!(
+    destination::Vector{_PortEdge}, state::_PortMatchingState, mapping::Vector{Int}
+)::Nothing
     @inbounds for i in eachindex(state.edges)
         edge = state.edges[i]
-        edges[i] = _PortEdge(
+        destination[i] = _PortEdge(
             mapping[edge.source], mapping[edge.target], edge.source_color, edge.target_color
         )
     end
-    sort!(edges)
+    sort!(destination)
+    return nothing
+end
 
-    num_vertices = size(state.source_ports, 1)
-    source_ports = Vector{Int}(undef, length(state.source_ports))
-    target_ports = Vector{Int}(undef, length(state.target_ports))
-    @inbounds for old_vertex in axes(state.source_ports, 1)
+function _write_mapped_port_counts!(
+    destination::Vector{Int}, counts::Matrix{Int}, mapping::Vector{Int}
+)::Nothing
+    num_vertices = size(counts, 1)
+    @inbounds for old_vertex in axes(counts, 1)
         new_vertex = mapping[old_vertex]
-        for color in axes(state.source_ports, 2)
-            source_ports[new_vertex + (color - 1) * num_vertices] = state.source_ports[
-                old_vertex, color
-            ]
-        end
-        for color in axes(state.target_ports, 2)
-            target_ports[new_vertex + (color - 1) * num_vertices] = state.target_ports[
-                old_vertex, color
-            ]
+        for color in axes(counts, 2)
+            destination[new_vertex + (color - 1) * num_vertices] = counts[old_vertex, color]
         end
     end
+    return nothing
+end
+
+function _mapped_port_key(state::_PortMatchingState, mapping::Vector{Int})::_PortStateKey
+    edges = Vector{_PortEdge}(undef, length(state.edges))
+    source_ports = Vector{Int}(undef, length(state.source_ports))
+    target_ports = Vector{Int}(undef, length(state.target_ports))
+    _write_mapped_port_edges!(edges, state, mapping)
+    _write_mapped_port_counts!(source_ports, state.source_ports, mapping)
+    _write_mapped_port_counts!(target_ports, state.target_ports, mapping)
     return _PortStateKey(edges, source_ports, target_ports)
 end
 
@@ -279,18 +286,44 @@ function _mapped_port_state(
     return key, _state_from_port_key(state, key)
 end
 
+function _scratch_port_key_is_lexless(
+    edges::Vector{_PortEdge},
+    source_ports::Vector{Int},
+    target_ports::Vector{Int},
+    best::_PortStateKey,
+)::Bool
+    if edges != best.edges
+        return _lexless_port_edges(edges, best.edges)
+    elseif source_ports != best.source_ports
+        return _lexless_int_vectors(source_ports, best.source_ports)
+    end
+    return _lexless_int_vectors(target_ports, best.target_ports)
+end
+
 function _canonicalize_port_state(
     state::_PortMatchingState, automorphisms::Vector{Vector{Int}}
 )::Tuple{_PortStateKey,_PortMatchingState,Vector{Int}}
     first_mapping = first(automorphisms)
     best_key = _mapped_port_key(state, first_mapping)
-    best_mapping = copy(first_mapping)
+    best_mapping = first_mapping
+    length(automorphisms) == 1 &&
+        return best_key, _state_from_port_key(state, best_key), best_mapping
+
+    scratch_edges = similar(best_key.edges)
+    scratch_sources = similar(best_key.source_ports)
+    scratch_targets = similar(best_key.target_ports)
     @inbounds for i in 2:length(automorphisms)
         mapping = automorphisms[i]
-        key = _mapped_port_key(state, mapping)
-        if _lexless_port_key(key, best_key)
-            best_key = key
-            copyto!(best_mapping, mapping)
+        _write_mapped_port_edges!(scratch_edges, state, mapping)
+        _write_mapped_port_counts!(scratch_sources, state.source_ports, mapping)
+        _write_mapped_port_counts!(scratch_targets, state.target_ports, mapping)
+        if _scratch_port_key_is_lexless(
+            scratch_edges, scratch_sources, scratch_targets, best_key
+        )
+            copyto!(best_key.edges, scratch_edges)
+            copyto!(best_key.source_ports, scratch_sources)
+            copyto!(best_key.target_ports, scratch_targets)
+            best_mapping = mapping
         end
     end
     return best_key, _state_from_port_key(state, best_key), best_mapping
