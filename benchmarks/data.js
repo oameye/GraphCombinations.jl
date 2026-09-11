@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789114130496,
+  "lastUpdate": 1789117925226,
   "repoUrl": "https://github.com/oameye/GraphCombinations.jl",
   "entries": {
     "Benchmark Results": [
@@ -3544,6 +3544,258 @@ window.BENCHMARK_DATA = {
           {
             "name": "RowReduced/allgraphs - 5 loops",
             "value": 13350273.5,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=24594576\nallocs=298664\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "orjan.ameye@hotmail.com",
+            "name": "Orjan Ameye",
+            "username": "oameye"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ed50778aa2189ccf36161da531406291691f5431",
+          "message": "refactor: move reference machinery out of runtime path (#105)\n\nMove Wick enumeration, legacy Combinatorics-based canonicalizers, and reference reduction into a repository-level reference module loaded only by tests and benchmarks. Make Combinatorics and Memoization test/benchmark-only dependencies while preserving the independent exhaustive oracle and its historical benchmark behavior.\n\nCloses #87.",
+          "timestamp": "2026-09-11T10:47:52+02:00",
+          "tree_id": "9a3ebaa5a2e7593594f2a6887447babcaec81254",
+          "url": "https://github.com/oameye/GraphCombinations.jl/commit/ed50778aa2189ccf36161da531406291691f5431"
+        },
+        "date": 1789117923644,
+        "tool": "julia",
+        "benches": [
+          {
+            "name": "Canonical/in-place - 2 internal",
+            "value": 123.74973488865324,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=512\nallocs=4\nparams={\"evals\":943,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Canonical/in-place - 3 internal",
+            "value": 229.25636363636363,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=608\nallocs=4\nparams={\"evals\":550,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Canonical/in-place - 4 internal",
+            "value": 805.6306306306307,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=720\nallocs=4\nparams={\"evals\":111,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Canonical/in-place - 5 internal",
+            "value": 9582,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=29376\nallocs=123\nparams={\"evals\":4,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Canonical/in-place mixed - 4 internal",
+            "value": 636.2196531791908,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=624\nallocs=4\nparams={\"evals\":173,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Canonical/matrix - 3 internal",
+            "value": 197.3270013568521,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=672\nallocs=5\nparams={\"evals\":737,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Canonical/matrix - 4 internal",
+            "value": 433.91,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=864\nallocs=5\nparams={\"evals\":200,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Canonical/matrix - 5 internal",
+            "value": 1939.9,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=976\nallocs=5\nparams={\"evals\":10,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Canonical/partition key - 5 internal",
+            "value": 3273.8888888888887,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=11920\nallocs=142\nparams={\"evals\":9,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Canonical/partition key mixed - 4 internal",
+            "value": 2393.6666666666665,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=8960\nallocs=110\nparams={\"evals\":9,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Canonical/partition key symmetric - 5 internal",
+            "value": 2124.3333333333335,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=7680\nallocs=77\nparams={\"evals\":9,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Canonical/reference - 2 internal",
+            "value": 975.7843137254902,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=3744\nallocs=38\nparams={\"evals\":51,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Canonical/reference - 3 internal",
+            "value": 2383.6666666666665,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=9008\nallocs=83\nparams={\"evals\":9,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Canonical/reference - 4 internal",
+            "value": 9020.333333333334,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=34352\nallocs=282\nparams={\"evals\":3,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Canonical/reference - 5 internal",
+            "value": 52740,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=201296\nallocs=1458\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Canonical/scratch - 2 internal",
+            "value": 593.0925925925926,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=2224\nallocs=27\nparams={\"evals\":189,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Canonical/scratch - 3 internal",
+            "value": 1115.6,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=3808\nallocs=48\nparams={\"evals\":10,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Canonical/scratch - 4 internal",
+            "value": 3743.125,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=11520\nallocs=139\nparams={\"evals\":8,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Canonical/scratch - 5 internal",
+            "value": 29785,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=78656\nallocs=739\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Direct/allgraphs - 2 loops",
+            "value": 7889.25,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=22384\nallocs=344\nparams={\"evals\":4,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Direct/allgraphs - 3 loops",
+            "value": 69215,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=178544\nallocs=2402\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Direct/allgraphs - 4 loops",
+            "value": 2047339.5,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=2614368\nallocs=30055\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Direct/allgraphs - 5 loops",
+            "value": 103957006,
+            "unit": "ns",
+            "extra": "gctime=18204710.5\nmemory=255484080\nallocs=3016893\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Direct/labeled candidates - 2 loops",
+            "value": 838.0040322580645,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=2336\nallocs=21\nparams={\"evals\":124,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Direct/labeled candidates - 3 loops",
+            "value": 6476.5,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=17648\nallocs=106\nparams={\"evals\":6,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Direct/labeled candidates - 4 loops",
+            "value": 94658.5,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=277264\nallocs=1337\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Direct/labeled candidates - 5 loops",
+            "value": 2891783.5,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=6349696\nallocs=26462\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Phi^4 theory/2 loops",
+            "value": 8380.25,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=22904\nallocs=368\nparams={\"evals\":4,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Phi^4 theory/3 loops",
+            "value": 70156,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=179064\nallocs=2426\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Pipeline/Wick pairings cached",
+            "value": 110,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=192\nallocs=4\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Pipeline/Wick pairings cold",
+            "value": 70096,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=336528\nallocs=3021\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Pipeline/allgraphs production",
+            "value": 9074,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=22904\nallocs=368\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Pipeline/canonical form",
+            "value": 125.26943556975506,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=512\nallocs=4\nparams={\"evals\":939,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Pipeline/connected filter",
+            "value": 306759,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=1114752\nallocs=13755\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Pipeline/isomorphism reduction",
+            "value": 127463,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=393856\nallocs=3077\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "RowReduced/allgraphs - 3 loops",
+            "value": 136356,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=411952\nallocs=5355\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "RowReduced/allgraphs - 4 loops",
+            "value": 1009786,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=3021360\nallocs=37806\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "RowReduced/allgraphs - 5 loops",
+            "value": 8645198,
             "unit": "ns",
             "extra": "gctime=0\nmemory=24594576\nallocs=298664\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
           }
