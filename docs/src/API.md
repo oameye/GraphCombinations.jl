@@ -34,7 +34,5 @@ GraphCombinations.MultigraphWrap
 ### Functions
 
 ```@docs
-GraphCombinations.corr
 GraphCombinations.sort_graph_edges
-GraphCombinations.create_points
 ```

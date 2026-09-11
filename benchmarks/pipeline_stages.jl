@@ -6,28 +6,28 @@ function pipeline_stages!(SUITE)
     vertices4 = [2, 0, 0, 4]
     vertices5 = [2, 0, 0, 5]
     degrees5 = GC._vertex_degrees(vertices5)
-    points2 = GC.create_points(vertices2)
+    points2 = ReferenceGC.create_points(vertices2)
     num_vertices2 = sum(vertices2)
     internal_indices2 = (vertices2[1] + 1):num_vertices2
 
-    GC._clear_corr_cache!()
-    pairings2 = GC.corr(points2)
-    connected2 = GC.filter_graphs(pairings2, num_vertices2)
+    ReferenceGC.clear_corr_cache!()
+    pairings2 = ReferenceGC.corr(points2)
+    connected2 = ReferenceGC.filter_graphs(pairings2, num_vertices2)
     representative2 = first(connected2)
 
     # `corr` is globally memoized. Clear its cache in setup so this benchmark measures the
     # actual Wick-pairing generation cost rather than a lookup from a previous sample.
-    SUITE["Pipeline"]["Wick pairings cold"] = @benchmarkable GC.corr($points2) setup = (GC._clear_corr_cache!()) evals =
+    SUITE["Pipeline"]["Wick pairings cold"] = @benchmarkable ReferenceGC.corr($points2) setup = (ReferenceGC.clear_corr_cache!()) evals =
         1 seconds = 10
 
     # Populate the cache immediately before each sample to isolate memoized lookup overhead.
-    SUITE["Pipeline"]["Wick pairings cached"] = @benchmarkable GC.corr($points2) setup =
+    SUITE["Pipeline"]["Wick pairings cached"] = @benchmarkable ReferenceGC.corr($points2) setup =
         begin
-            GC._clear_corr_cache!()
-            GC.corr($points2)
+            ReferenceGC.clear_corr_cache!()
+            ReferenceGC.corr($points2)
         end evals = 1 seconds = 10
 
-    SUITE["Pipeline"]["connected filter"] = @benchmarkable GC.filter_graphs(
+    SUITE["Pipeline"]["connected filter"] = @benchmarkable ReferenceGC.filter_graphs(
         $pairings2, $num_vertices2
     ) seconds = 10
 
@@ -35,7 +35,7 @@ function pipeline_stages!(SUITE)
         $representative2, $internal_indices2
     ) seconds = 10
 
-    SUITE["Pipeline"]["isomorphism reduction"] = @benchmarkable GC.reduce_isomorphic_graphs(
+    SUITE["Pipeline"]["isomorphism reduction"] = @benchmarkable ReferenceGC.reduce_isomorphic_graphs(
         $connected2, $internal_indices2
     ) seconds = 10
 
@@ -145,19 +145,19 @@ function pipeline_stages!(SUITE)
     canonical_indices5 = 3:7
     mixed_indices = 3:6
 
-    SUITE["Canonical"]["reference - 2 internal"] = @benchmarkable GC._canonical_form_reference(
+    SUITE["Canonical"]["reference - 2 internal"] = @benchmarkable ReferenceGC.canonical_form_reference(
         $canonical2, $canonical_indices2
     ) seconds = 10
-    SUITE["Canonical"]["scratch - 2 internal"] = @benchmarkable GC._canonical_form_scratch(
+    SUITE["Canonical"]["scratch - 2 internal"] = @benchmarkable ReferenceGC.canonical_form_scratch(
         $canonical2, $canonical_indices2
     ) seconds = 10
     SUITE["Canonical"]["in-place - 2 internal"] = @benchmarkable GC._canonical_form_inplace_permutations(
         $canonical2, $canonical_indices2
     ) seconds = 10
-    SUITE["Canonical"]["reference - 3 internal"] = @benchmarkable GC._canonical_form_reference(
+    SUITE["Canonical"]["reference - 3 internal"] = @benchmarkable ReferenceGC.canonical_form_reference(
         $canonical3, $canonical_indices3
     ) seconds = 10
-    SUITE["Canonical"]["scratch - 3 internal"] = @benchmarkable GC._canonical_form_scratch(
+    SUITE["Canonical"]["scratch - 3 internal"] = @benchmarkable ReferenceGC.canonical_form_scratch(
         $canonical3, $canonical_indices3
     ) seconds = 10
     SUITE["Canonical"]["in-place - 3 internal"] = @benchmarkable GC._canonical_form_inplace_permutations(
@@ -166,10 +166,10 @@ function pipeline_stages!(SUITE)
     SUITE["Canonical"]["matrix - 3 internal"] = @benchmarkable GC._canonical_form_multiplicity_permutations(
         $canonical3, $canonical_indices3
     ) seconds = 10
-    SUITE["Canonical"]["reference - 4 internal"] = @benchmarkable GC._canonical_form_reference(
+    SUITE["Canonical"]["reference - 4 internal"] = @benchmarkable ReferenceGC.canonical_form_reference(
         $canonical4, $canonical_indices4
     ) seconds = 10
-    SUITE["Canonical"]["scratch - 4 internal"] = @benchmarkable GC._canonical_form_scratch(
+    SUITE["Canonical"]["scratch - 4 internal"] = @benchmarkable ReferenceGC.canonical_form_scratch(
         $canonical4, $canonical_indices4
     ) seconds = 10
     SUITE["Canonical"]["in-place - 4 internal"] = @benchmarkable GC._canonical_form_inplace_permutations(
@@ -178,10 +178,10 @@ function pipeline_stages!(SUITE)
     SUITE["Canonical"]["matrix - 4 internal"] = @benchmarkable GC._canonical_form_multiplicity_permutations(
         $canonical4, $canonical_indices4
     ) seconds = 10
-    SUITE["Canonical"]["reference - 5 internal"] = @benchmarkable GC._canonical_form_reference(
+    SUITE["Canonical"]["reference - 5 internal"] = @benchmarkable ReferenceGC.canonical_form_reference(
         $canonical5, $canonical_indices5
     ) seconds = 10
-    SUITE["Canonical"]["scratch - 5 internal"] = @benchmarkable GC._canonical_form_scratch(
+    SUITE["Canonical"]["scratch - 5 internal"] = @benchmarkable ReferenceGC.canonical_form_scratch(
         $canonical5, $canonical_indices5
     ) seconds = 10
     SUITE["Canonical"]["in-place - 5 internal"] = @benchmarkable GC._canonical_form_inplace_permutations(
