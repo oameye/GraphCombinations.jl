@@ -13,17 +13,19 @@ struct _PortEdge
     target_color::Int
 end
 
-Base.isequal(a::_PortEdge, b::_PortEdge) =
-    a.source == b.source &&
-    a.target == b.target &&
-    a.source_color == b.source_color &&
-    a.target_color == b.target_color
+function Base.isequal(a::_PortEdge, b::_PortEdge)
+    return a.source == b.source &&
+           a.target == b.target &&
+           a.source_color == b.source_color &&
+           a.target_color == b.target_color
+end
 Base.:(==)(a::_PortEdge, b::_PortEdge) = isequal(a, b)
-Base.hash(edge::_PortEdge, h::UInt) =
-    hash(
+function Base.hash(edge::_PortEdge, h::UInt)
+    return hash(
         edge.target_color,
         hash(edge.source_color, hash(edge.target, hash(edge.source, hash(_PortEdge, h)))),
     )
+end
 function Base.isless(a::_PortEdge, b::_PortEdge)
     a.source == b.source || return a.source < b.source
     a.target == b.target || return a.target < b.target
@@ -63,8 +65,9 @@ struct _PortMatchingProblem
             throw(ArgumentError("source-port rows must match the number of vertices."))
         size(targets, 1) == num_vertices ||
             throw(ArgumentError("target-port rows must match the number of vertices."))
-        size(compatible) == (size(sources, 2), size(targets, 2)) ||
-            throw(ArgumentError("compatibility dimensions must match source/target colors."))
+        size(compatible) == (size(sources, 2), size(targets, 2)) || throw(
+            ArgumentError("compatibility dimensions must match source/target colors.")
+        )
         any(x -> x < 0, sources) &&
             throw(ArgumentError("source-port counts must be non-negative."))
         any(x -> x < 0, targets) &&
@@ -90,13 +93,17 @@ struct _PortStateKey
     target_ports::Vector{Int}
 end
 
-Base.isequal(a::_PortStateKey, b::_PortStateKey) =
-    isequal(a.edges, b.edges) &&
-    isequal(a.source_ports, b.source_ports) &&
-    isequal(a.target_ports, b.target_ports)
+function Base.isequal(a::_PortStateKey, b::_PortStateKey)
+    return isequal(a.edges, b.edges) &&
+           isequal(a.source_ports, b.source_ports) &&
+           isequal(a.target_ports, b.target_ports)
+end
 Base.:(==)(a::_PortStateKey, b::_PortStateKey) = isequal(a, b)
-Base.hash(key::_PortStateKey, h::UInt) =
-    hash(key.target_ports, hash(key.source_ports, hash(key.edges, hash(_PortStateKey, h))))
+function Base.hash(key::_PortStateKey, h::UInt)
+    return hash(
+        key.target_ports, hash(key.source_ports, hash(key.edges, hash(_PortStateKey, h)))
+    )
+end
 
 function _lexless_port_edges(a::Vector{_PortEdge}, b::Vector{_PortEdge})::Bool
     @inbounds for i in eachindex(a, b)
@@ -267,7 +274,8 @@ function _weighted_port_matchings(
         for weighted in values(states)
             state = weighted.state
             source = _first_remaining_source(state)
-            isnothing(source) && error("Internal error: port-matching layers are inconsistent.")
+            isnothing(source) &&
+                error("Internal error: port-matching layers are inconsistent.")
             source_vertex, source_color = source
 
             @inbounds for target_vertex in axes(state.target_ports, 1)
@@ -283,9 +291,7 @@ function _weighted_port_matchings(
                     child_targets[target_vertex, target_color] -= 1
                     push!(
                         child_edges,
-                        _PortEdge(
-                            source_vertex, target_vertex, source_color, target_color
-                        ),
+                        _PortEdge(source_vertex, target_vertex, source_color, target_color),
                     )
                     child = _PortMatchingState(child_edges, child_sources, child_targets)
                     key, canonical, _ = _canonicalize_port_state(problem, child)
