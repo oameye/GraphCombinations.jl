@@ -60,6 +60,8 @@ end
     @test GC._use_row_state_reduction([2, 0, 0, 4])
     @test !GC._use_row_state_reduction([2, 0, 2, 2])
     @test GC._use_row_state_reduction([2, 1, 0, 4])
+    @test GC._use_row_state_reduction([2, 0, 0, 6])
+    @test GC._use_row_state_reduction([2, 0, 0, 7])
 
     order3 = [2, 0, 0, 3]
     order4 = [2, 0, 0, 4]
