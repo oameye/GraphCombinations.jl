@@ -9,6 +9,7 @@ on:
       - 'src/colored_port_generation.jl'
       - 'research/colored_port_profile.jl'
       - 'research/colored_port_hybrid_profile.jl'
+      - 'research/colored_port_symmetry_scaling.jl'
   workflow_dispatch:
 
 concurrency:
@@ -38,8 +39,13 @@ jobs:
       - name: Profile colored port quotienting
         run: |
           julia --project=benchmarks research/colored_port_hybrid_profile.jl | tee colored-port-profile.txt
+      - name: Profile symmetry scaling
+        run: |
+          julia --project=benchmarks research/colored_port_symmetry_scaling.jl | tee colored-port-symmetry-scaling.txt
       - uses: actions/upload-artifact@v4
         if: ${{ always() }}
         with:
           name: colored-port-profile
-          path: colored-port-profile.txt
+          path: |
+            colored-port-profile.txt
+            colored-port-symmetry-scaling.txt
