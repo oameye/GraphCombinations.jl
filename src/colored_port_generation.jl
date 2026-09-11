@@ -233,6 +233,19 @@ function _port_automorphisms(problem::_PortMatchingProblem)::Vector{Vector{Int}}
     return automorphisms
 end
 
+@inline function _insertion_sort_port_edges!(edges::Vector{_PortEdge})::Nothing
+    @inbounds for i in 2:length(edges)
+        value = edges[i]
+        j = i - 1
+        while j >= 1 && isless(value, edges[j])
+            edges[j + 1] = edges[j]
+            j -= 1
+        end
+        edges[j + 1] = value
+    end
+    return nothing
+end
+
 function _write_mapped_port_edges!(
     destination::Vector{_PortEdge}, state::_PortMatchingState, mapping::Vector{Int}
 )::Nothing
@@ -242,7 +255,7 @@ function _write_mapped_port_edges!(
             mapping[edge.source], mapping[edge.target], edge.source_color, edge.target_color
         )
     end
-    sort!(destination)
+    _insertion_sort_port_edges!(destination)
     return nothing
 end
 
