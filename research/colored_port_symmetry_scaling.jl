@@ -2,6 +2,8 @@ using GraphCombinations
 
 import GraphCombinations as GC
 
+# Re-run this probe after canonicalization-kernel changes; order 6 is the
+# first case where scanning the full valid automorphism group is substantial.
 function symmetry_scaling_problem(order::Int; asymmetric=false)
     num_vertices = order + 2
     vertex_colors = vcat([1, 2], fill(3, order))
