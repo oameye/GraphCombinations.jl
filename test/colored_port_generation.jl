@@ -37,7 +37,9 @@ function _brute_port_matchings(problem)
         for i in eachindex(sources)
             source_vertex, source_color, _ = sources[i]
             target_vertex, target_color, _ = targets[permutation[i]]
-            if !problem.compatibility[source_color, target_color]
+            if !problem.compatibility[
+                source_vertex, source_color, target_vertex, target_color
+            ]
                 valid = false
                 break
             end
@@ -79,6 +81,9 @@ end
     )
     @test_throws ArgumentError GC._PortMatchingProblem(
         [1], zeros(Int, 1, 1), zeros(Int, 1, 1), trues(1, 1), 2
+    )
+    @test_throws ArgumentError GC._PortMatchingProblem(
+        [1], zeros(Int, 1, 1), zeros(Int, 1, 1), falses(1, 1, 1, 2)
     )
 end
 
@@ -128,6 +133,24 @@ end
     @test residual_key_a != residual_key_b
 end
 
+@testset "pair-local compatibility constrains vertex automorphisms" begin
+    symmetric = GC._PortMatchingProblem(
+        [1, 1], ones(Int, 2, 1), ones(Int, 2, 1), trues(1, 1)
+    )
+    @test length(GC._port_automorphisms(symmetric)) == 2
+
+    compatibility = trues(2, 1, 2, 1)
+    compatibility[1, 1, 2, 1] = false
+    asymmetric = GC._PortMatchingProblem(
+        [1, 1], ones(Int, 2, 1), ones(Int, 2, 1), compatibility
+    )
+    @test length(GC._port_automorphisms(asymmetric)) == 1
+    generated = _generated_port_matchings(asymmetric)
+    brute = _brute_port_matchings(asymmetric)
+    @test generated == brute
+    @test sum(values(generated)) == 1
+end
+
 @testset "weighted generation matches labelled brute force" begin
     symmetric = GC._PortMatchingProblem(
         [1, 1], ones(Int, 2, 1), ones(Int, 2, 1), trues(1, 1)
@@ -167,4 +190,18 @@ end
     )
     @test isempty(GC._weighted_port_matchings(impossible))
     @test isempty(_brute_port_matchings(impossible))
+end
+
+@testset "state quotient statistics" begin
+    problem = GC._PortMatchingProblem(
+        fill(1, 3), ones(Int, 3, 1), ones(Int, 3, 1), trues(1, 1)
+    )
+    results, stats = GC._weighted_port_matchings_with_stats(problem)
+    @test _generated_port_matchings(problem) == _brute_port_matchings(problem)
+    @test sum(last, results) == factorial(big(3))
+    @test stats.automorphisms == factorial(3)
+    @test stats.canonicalization_calls == stats.transitions + 1
+    @test stats.merged_transitions > 0
+    @test first(stats.layer_states) == 1
+    @test last(stats.layer_states) == length(results)
 end
