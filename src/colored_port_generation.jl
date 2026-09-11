@@ -65,8 +65,10 @@ struct _PortMatchingProblem
             throw(ArgumentError("target-port rows must match the number of vertices."))
         size(compatible) == (size(sources, 2), size(targets, 2)) ||
             throw(ArgumentError("compatibility dimensions must match source/target colors."))
-        any(<(0), sources) && throw(ArgumentError("source-port counts must be non-negative."))
-        any(<(0), targets) && throw(ArgumentError("target-port counts must be non-negative."))
+        any(x -> x < 0, sources) &&
+            throw(ArgumentError("source-port counts must be non-negative."))
+        any(x -> x < 0, targets) &&
+            throw(ArgumentError("target-port counts must be non-negative."))
         sum(sources) == sum(targets) ||
             throw(ArgumentError("source and target port totals must agree."))
         0 <= num_fixed <= num_vertices ||
@@ -159,8 +161,8 @@ function _mapped_port_state(
 end
 
 mutable struct _PortCanonicalSearch
-    key::Union{Nothing,_PortStateKey}
-    state::Union{Nothing,_PortMatchingState}
+    key::_PortStateKey
+    state::_PortMatchingState
     mapping::Vector{Int}
 end
 
@@ -173,7 +175,7 @@ function _canonical_port_search!(
 )::Nothing
     if cell_index > length(cells)
         key, candidate = _mapped_port_state(state, mapping)
-        if isnothing(search.key) || _lexless_port_key(key, search.key)
+        if _lexless_port_key(key, search.key)
             search.key = key
             search.state = candidate
             copyto!(search.mapping, mapping)
@@ -203,15 +205,12 @@ function _canonicalize_port_state(
 )::Tuple{_PortStateKey,_PortMatchingState,Vector{Int}}
     num_vertices = length(problem.vertex_colors)
     mapping = collect(1:num_vertices)
+    initial_key, initial_state = _mapped_port_state(state, mapping)
     cells = _port_vertex_cells(problem)
-    if isempty(cells)
-        key, canonical = _mapped_port_state(state, mapping)
-        return key, canonical, mapping
-    end
+    isempty(cells) && return initial_key, initial_state, mapping
 
-    search = _PortCanonicalSearch(nothing, nothing, similar(mapping))
+    search = _PortCanonicalSearch(initial_key, initial_state, copy(mapping))
     _canonical_port_search!(search, state, cells, mapping, 1)
-    isnothing(search.key) && error("Internal error: colored-port orbit has no representative.")
     return search.key, search.state, search.mapping
 end
 
@@ -224,7 +223,7 @@ function _first_remaining_source(state::_PortMatchingState)::Union{Nothing,Tuple
     return nothing
 end
 
-struct _WeightedPortState
+mutable struct _WeightedPortState
     state::_PortMatchingState
     weight::BigInt
 end
@@ -307,6 +306,6 @@ function _weighted_port_matchings(
             error("Internal error: unmatched target ports remain at completion.")
         push!(results, (weighted.state.edges, weighted.weight))
     end
-    sort!(results; by=first)
+    sort!(results; lt=(a, b) -> _lexless_port_edges(first(a), first(b)))
     return results
 end
