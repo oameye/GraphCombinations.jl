@@ -233,9 +233,9 @@ function _port_automorphisms(problem::_PortMatchingProblem)::Vector{Vector{Int}}
     return automorphisms
 end
 
-function _mapped_port_state(
+function _mapped_port_key(
     state::_PortMatchingState, mapping::Vector{Int}
-)::Tuple{_PortStateKey,_PortMatchingState}
+)::_PortStateKey
     edges = Vector{_PortEdge}(undef, length(state.edges))
     @inbounds for i in eachindex(state.edges)
         edge = state.edges[i]
@@ -245,38 +245,55 @@ function _mapped_port_state(
     end
     sort!(edges)
 
-    source_ports = similar(state.source_ports)
-    target_ports = similar(state.target_ports)
+    num_vertices = size(state.source_ports, 1)
+    source_ports = Vector{Int}(undef, length(state.source_ports))
+    target_ports = Vector{Int}(undef, length(state.target_ports))
     @inbounds for old_vertex in axes(state.source_ports, 1)
         new_vertex = mapping[old_vertex]
         for color in axes(state.source_ports, 2)
-            source_ports[new_vertex, color] = state.source_ports[old_vertex, color]
+            source_ports[new_vertex + (color - 1) * num_vertices] =
+                state.source_ports[old_vertex, color]
         end
         for color in axes(state.target_ports, 2)
-            target_ports[new_vertex, color] = state.target_ports[old_vertex, color]
+            target_ports[new_vertex + (color - 1) * num_vertices] =
+                state.target_ports[old_vertex, color]
         end
     end
+    return _PortStateKey(edges, source_ports, target_ports)
+end
 
-    key = _PortStateKey(edges, vec(copy(source_ports)), vec(copy(target_ports)))
-    return key, _PortMatchingState(edges, source_ports, target_ports)
+function _state_from_port_key(
+    state::_PortMatchingState, key::_PortStateKey
+)::_PortMatchingState
+    source_ports = similar(state.source_ports)
+    target_ports = similar(state.target_ports)
+    copyto!(source_ports, key.source_ports)
+    copyto!(target_ports, key.target_ports)
+    return _PortMatchingState(key.edges, source_ports, target_ports)
+end
+
+function _mapped_port_state(
+    state::_PortMatchingState, mapping::Vector{Int}
+)::Tuple{_PortStateKey,_PortMatchingState}
+    key = _mapped_port_key(state, mapping)
+    return key, _state_from_port_key(state, key)
 end
 
 function _canonicalize_port_state(
     state::_PortMatchingState, automorphisms::Vector{Vector{Int}}
 )::Tuple{_PortStateKey,_PortMatchingState,Vector{Int}}
     first_mapping = first(automorphisms)
-    best_key, best_state = _mapped_port_state(state, first_mapping)
+    best_key = _mapped_port_key(state, first_mapping)
     best_mapping = copy(first_mapping)
     @inbounds for i in 2:length(automorphisms)
         mapping = automorphisms[i]
-        key, candidate = _mapped_port_state(state, mapping)
+        key = _mapped_port_key(state, mapping)
         if _lexless_port_key(key, best_key)
             best_key = key
-            best_state = candidate
             copyto!(best_mapping, mapping)
         end
     end
-    return best_key, best_state, best_mapping
+    return best_key, _state_from_port_key(state, best_key), best_mapping
 end
 
 """
