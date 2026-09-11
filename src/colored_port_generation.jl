@@ -233,9 +233,7 @@ function _port_automorphisms(problem::_PortMatchingProblem)::Vector{Vector{Int}}
     return automorphisms
 end
 
-function _mapped_port_key(
-    state::_PortMatchingState, mapping::Vector{Int}
-)::_PortStateKey
+function _mapped_port_key(state::_PortMatchingState, mapping::Vector{Int})::_PortStateKey
     edges = Vector{_PortEdge}(undef, length(state.edges))
     @inbounds for i in eachindex(state.edges)
         edge = state.edges[i]
@@ -251,12 +249,14 @@ function _mapped_port_key(
     @inbounds for old_vertex in axes(state.source_ports, 1)
         new_vertex = mapping[old_vertex]
         for color in axes(state.source_ports, 2)
-            source_ports[new_vertex + (color - 1) * num_vertices] =
-                state.source_ports[old_vertex, color]
+            source_ports[new_vertex + (color - 1) * num_vertices] = state.source_ports[
+                old_vertex, color
+            ]
         end
         for color in axes(state.target_ports, 2)
-            target_ports[new_vertex + (color - 1) * num_vertices] =
-                state.target_ports[old_vertex, color]
+            target_ports[new_vertex + (color - 1) * num_vertices] = state.target_ports[
+                old_vertex, color
+            ]
         end
     end
     return _PortStateKey(edges, source_ports, target_ports)
