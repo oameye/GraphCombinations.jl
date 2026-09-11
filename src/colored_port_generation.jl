@@ -37,36 +37,39 @@ end
 Internal specification for a directed colored-port matching problem.
 
 Rows of `source_ports` and `target_ports` are vertices; columns are opaque source/target port
-colors. `compatibility[i, j]` says whether source color `i` may contract with target color `j`.
-The first `num_fixed` vertices are fixed individually. Remaining vertices may be relabeled only
-within equal `vertex_colors`.
+colors. `compatibility[vₛ, cₛ, vₜ, cₜ]` is the complete pair-local admissibility relation. The
+first `num_fixed` vertices are fixed individually. Remaining vertices may be relabeled only within
+equal `vertex_colors`, and only by permutations preserving the admissibility relation.
 """
 struct _PortMatchingProblem
     vertex_colors::Vector{Int}
     source_ports::Matrix{Int}
     target_ports::Matrix{Int}
-    compatibility::BitMatrix
+    compatibility::BitArray{4}
     num_fixed::Int
 
     function _PortMatchingProblem(
         vertex_colors::AbstractVector{<:Integer},
         source_ports::AbstractMatrix{<:Integer},
         target_ports::AbstractMatrix{<:Integer},
-        compatibility::AbstractMatrix{Bool},
+        compatibility::AbstractArray{Bool,4},
         num_fixed::Integer=0,
     )
         colors = collect(Int, vertex_colors)
         sources = Matrix{Int}(source_ports)
         targets = Matrix{Int}(target_ports)
-        compatible = BitMatrix(compatibility)
+        compatible = BitArray(compatibility)
 
         num_vertices = length(colors)
         size(sources, 1) == num_vertices ||
             throw(ArgumentError("source-port rows must match the number of vertices."))
         size(targets, 1) == num_vertices ||
             throw(ArgumentError("target-port rows must match the number of vertices."))
-        size(compatible) == (size(sources, 2), size(targets, 2)) || throw(
-            ArgumentError("compatibility dimensions must match source/target colors.")
+        size(compatible) ==
+        (num_vertices, size(sources, 2), num_vertices, size(targets, 2)) || throw(
+            ArgumentError(
+                "compatibility dimensions must be vertex/source-color/vertex/target-color."
+            ),
         )
         any(x -> x < 0, sources) &&
             throw(ArgumentError("source-port counts must be non-negative."))
@@ -79,6 +82,38 @@ struct _PortMatchingProblem
 
         return new(colors, sources, targets, compatible, Int(num_fixed))
     end
+end
+
+function _PortMatchingProblem(
+    vertex_colors::AbstractVector{<:Integer},
+    source_ports::AbstractMatrix{<:Integer},
+    target_ports::AbstractMatrix{<:Integer},
+    compatibility::AbstractMatrix{Bool},
+    num_fixed::Integer=0,
+)
+    num_vertices = length(vertex_colors)
+    num_source_colors = size(source_ports, 2)
+    num_target_colors = size(target_ports, 2)
+    size(compatibility) == (num_source_colors, num_target_colors) || throw(
+        ArgumentError("compatibility dimensions must match source/target colors."),
+    )
+
+    compatible = BitArray(
+        undef, num_vertices, num_source_colors, num_vertices, num_target_colors
+    )
+    @inbounds for source_vertex in 1:num_vertices
+        for source_color in 1:num_source_colors
+            for target_vertex in 1:num_vertices
+                for target_color in 1:num_target_colors
+                    compatible[source_vertex, source_color, target_vertex, target_color] =
+                        compatibility[source_color, target_color]
+                end
+            end
+        end
+    end
+    return _PortMatchingProblem(
+        vertex_colors, source_ports, target_ports, compatible, num_fixed
+    )
 end
 
 struct _PortMatchingState
@@ -139,6 +174,64 @@ function _port_vertex_cells(problem::_PortMatchingProblem)::Vector{Vector{Int}}
     return cells
 end
 
+function _preserves_port_compatibility(
+    problem::_PortMatchingProblem, mapping::Vector{Int}
+)::Bool
+    compatibility = problem.compatibility
+    @inbounds for source_vertex in axes(compatibility, 1)
+        for source_color in axes(compatibility, 2)
+            for target_vertex in axes(compatibility, 3)
+                for target_color in axes(compatibility, 4)
+                    compatibility[source_vertex, source_color, target_vertex, target_color] ==
+                        compatibility[
+                            mapping[source_vertex],
+                            source_color,
+                            mapping[target_vertex],
+                            target_color,
+                        ] || return false
+                end
+            end
+        end
+    end
+    return true
+end
+
+function _collect_port_automorphisms!(
+    automorphisms::Vector{Vector{Int}},
+    problem::_PortMatchingProblem,
+    cells::Vector{Vector{Int}},
+    mapping::Vector{Int},
+    cell_index::Int,
+)::Nothing
+    if cell_index > length(cells)
+        _preserves_port_compatibility(problem, mapping) && push!(automorphisms, copy(mapping))
+        return nothing
+    end
+
+    cell = cells[cell_index]
+    permutation = copy(cell)
+    while true
+        @inbounds for i in eachindex(cell)
+            mapping[cell[i]] = permutation[i]
+        end
+        _collect_port_automorphisms!(
+            automorphisms, problem, cells, mapping, cell_index + 1
+        )
+        _next_permutation!(permutation) || break
+    end
+    return nothing
+end
+
+function _port_automorphisms(problem::_PortMatchingProblem)::Vector{Vector{Int}}
+    mapping = collect(eachindex(problem.vertex_colors))
+    automorphisms = Vector{Vector{Int}}()
+    _collect_port_automorphisms!(
+        automorphisms, problem, _port_vertex_cells(problem), mapping, 1
+    )
+    isempty(automorphisms) && error("Internal error: port problem has no identity automorphism.")
+    return automorphisms
+end
+
 function _mapped_port_state(
     state::_PortMatchingState, mapping::Vector{Int}
 )::Tuple{_PortStateKey,_PortMatchingState}
@@ -167,58 +260,33 @@ function _mapped_port_state(
     return key, _PortMatchingState(edges, source_ports, target_ports)
 end
 
-mutable struct _PortCanonicalSearch
-    key::_PortStateKey
-    state::_PortMatchingState
-    mapping::Vector{Int}
-end
-
-function _canonical_port_search!(
-    search::_PortCanonicalSearch,
-    state::_PortMatchingState,
-    cells::Vector{Vector{Int}},
-    mapping::Vector{Int},
-    cell_index::Int,
-)::Nothing
-    if cell_index > length(cells)
+function _canonicalize_port_state(
+    state::_PortMatchingState, automorphisms::Vector{Vector{Int}}
+)::Tuple{_PortStateKey,_PortMatchingState,Vector{Int}}
+    first_mapping = first(automorphisms)
+    best_key, best_state = _mapped_port_state(state, first_mapping)
+    best_mapping = copy(first_mapping)
+    @inbounds for i in 2:length(automorphisms)
+        mapping = automorphisms[i]
         key, candidate = _mapped_port_state(state, mapping)
-        if _lexless_port_key(key, search.key)
-            search.key = key
-            search.state = candidate
-            copyto!(search.mapping, mapping)
+        if _lexless_port_key(key, best_key)
+            best_key = key
+            best_state = candidate
+            copyto!(best_mapping, mapping)
         end
-        return nothing
     end
-
-    cell = cells[cell_index]
-    permutation = copy(cell)
-    while true
-        @inbounds for i in eachindex(cell)
-            mapping[cell[i]] = permutation[i]
-        end
-        _canonical_port_search!(search, state, cells, mapping, cell_index + 1)
-        _next_permutation!(permutation) || break
-    end
-    return nothing
+    return best_key, best_state, best_mapping
 end
 
 """
-Canonicalize a partial colored-port matching state under permutations of equal-colored internal
-vertices. Residual source/target counts are part of the key, so equal keys have identical remaining
-matching spaces as well as isomorphic completed edges.
+Canonicalize a partial colored-port matching state under color-preserving automorphisms of the
+pair-local admissibility relation. Residual source/target counts are part of the key, so equal keys
+have identical remaining matching spaces as well as isomorphic completed edges.
 """
 function _canonicalize_port_state(
     problem::_PortMatchingProblem, state::_PortMatchingState
 )::Tuple{_PortStateKey,_PortMatchingState,Vector{Int}}
-    num_vertices = length(problem.vertex_colors)
-    mapping = collect(1:num_vertices)
-    initial_key, initial_state = _mapped_port_state(state, mapping)
-    cells = _port_vertex_cells(problem)
-    isempty(cells) && return initial_key, initial_state, mapping
-
-    search = _PortCanonicalSearch(initial_key, initial_state, copy(mapping))
-    _canonical_port_search!(search, state, cells, mapping, 1)
-    return search.key, search.state, search.mapping
+    return _canonicalize_port_state(state, _port_automorphisms(problem))
 end
 
 function _first_remaining_source(state::_PortMatchingState)::Union{Nothing,Tuple{Int,Int}}
@@ -240,31 +308,44 @@ function _accumulate_port_state!(
     key::_PortStateKey,
     state::_PortMatchingState,
     weight::BigInt,
-)::Nothing
+)::Bool
     if haskey(states, key)
         states[key].weight += weight
-    else
-        states[key] = _WeightedPortState(state, weight)
+        return true
     end
-    return nothing
+    states[key] = _WeightedPortState(state, weight)
+    return false
+end
+
+struct _PortGenerationStats
+    automorphisms::Int
+    layer_states::Vector{Int}
+    transitions::Int
+    canonicalization_calls::Int
+    merged_transitions::Int
 end
 
 """
 Generate canonical directed colored-port matchings and their exact labelled matching
-multiplicities.
+multiplicities, together with search-state statistics.
 
-This is an internal research backend for #91. It deliberately uses exhaustive canonicalization of
-same-colored internal vertices; production partition refinement and a measured hybrid crossover are
+This is an internal research backend for #91. It deliberately uses exhaustive enumeration of the
+problem automorphism group; production partition refinement and a measured hybrid crossover are
 follow-up work once the semantics are certified.
 """
-function _weighted_port_matchings(
+function _weighted_port_matchings_with_stats(
     problem::_PortMatchingProblem
-)::Vector{Tuple{Vector{_PortEdge},BigInt}}
+)::Tuple{Vector{Tuple{Vector{_PortEdge},BigInt}},_PortGenerationStats}
+    automorphisms = _port_automorphisms(problem)
     initial = _PortMatchingState(
         _PortEdge[], copy(problem.source_ports), copy(problem.target_ports)
     )
-    initial_key, initial_state, _ = _canonicalize_port_state(problem, initial)
+    initial_key, initial_state, _ = _canonicalize_port_state(initial, automorphisms)
     states = Dict(initial_key => _WeightedPortState(initial_state, big(1)))
+    layer_states = Int[1]
+    transitions = 0
+    canonicalization_calls = 1
+    merged_transitions = 0
 
     while true
         first_state = first(values(states)).state
@@ -282,8 +363,11 @@ function _weighted_port_matchings(
                 for target_color in axes(state.target_ports, 2)
                     multiplicity = state.target_ports[target_vertex, target_color]
                     iszero(multiplicity) && continue
-                    problem.compatibility[source_color, target_color] || continue
+                    problem.compatibility[
+                        source_vertex, source_color, target_vertex, target_color
+                    ] || continue
 
+                    transitions += 1
                     child_sources = copy(state.source_ports)
                     child_targets = copy(state.target_ports)
                     child_edges = copy(state.edges)
@@ -294,14 +378,29 @@ function _weighted_port_matchings(
                         _PortEdge(source_vertex, target_vertex, source_color, target_color),
                     )
                     child = _PortMatchingState(child_edges, child_sources, child_targets)
-                    key, canonical, _ = _canonicalize_port_state(problem, child)
+                    key, canonical, _ = _canonicalize_port_state(child, automorphisms)
+                    canonicalization_calls += 1
                     child_weight = weighted.weight * multiplicity
-                    _accumulate_port_state!(next_states, key, canonical, child_weight)
+                    merged_transitions += Int(
+                        _accumulate_port_state!(
+                            next_states, key, canonical, child_weight
+                        ),
+                    )
                 end
             end
         end
 
-        isempty(next_states) && return Tuple{Vector{_PortEdge},BigInt}[]
+        push!(layer_states, length(next_states))
+        if isempty(next_states)
+            stats = _PortGenerationStats(
+                length(automorphisms),
+                layer_states,
+                transitions,
+                canonicalization_calls,
+                merged_transitions,
+            )
+            return Tuple{Vector{_PortEdge},BigInt}[], stats
+        end
         states = next_states
     end
 
@@ -313,5 +412,19 @@ function _weighted_port_matchings(
         push!(results, (weighted.state.edges, weighted.weight))
     end
     sort!(results; lt=(a, b) -> _lexless_port_edges(first(a), first(b)))
+    stats = _PortGenerationStats(
+        length(automorphisms),
+        layer_states,
+        transitions,
+        canonicalization_calls,
+        merged_transitions,
+    )
+    return results, stats
+end
+
+function _weighted_port_matchings(
+    problem::_PortMatchingProblem
+)::Vector{Tuple{Vector{_PortEdge},BigInt}}
+    results, _ = _weighted_port_matchings_with_stats(problem)
     return results
 end
