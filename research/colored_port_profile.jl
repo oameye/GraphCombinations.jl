@@ -32,8 +32,9 @@ function direct_recursive_states(order::Int)::BigInt
     num_edges = 2 * order + 1
     states = big(1)
     for depth in 1:num_edges
-        states += (num_edges - 1) * factorial(big(num_edges - 1)) ÷
-                  factorial(big(num_edges - depth))
+        states +=
+            (num_edges - 1) * factorial(big(num_edges - 1)) ÷
+            factorial(big(num_edges - depth))
     end
     return states
 end
