@@ -1,5 +1,10 @@
 # --- Direct Multigraph Generation ---
 
+# Exact partition refinement has a fixed setup cost but wins decisively once the exhaustive
+# canonical-label search reaches five internal vertices. Keep the small-graph path allocation-lean
+# and switch at the measured crossover. The threshold is internal and can be retuned by benchmarks.
+const _PARTITION_CANONICALIZATION_MIN_INTERNAL = 5
+
 # Expand `n[k] = number of degree-k vertices` into one degree per labelled vertex. Degree-1
 # vertices come first and are therefore the fixed external vertices used by `canonical_form`.
 function _vertex_degrees(n::Vector{Int})
@@ -117,23 +122,10 @@ function _edge_symmetry_factor(graph::GraphRep)
     return factor
 end
 
-"""
-    _allgraphs_direct(n::Vector{Int}; connected=true)
-
-Direct degree-constrained graph generator used by the production `allgraphs` path. It enumerates
-labelled multigraphs directly and canonicalizes each candidate with the graph-only fast path. Once
-canonical topologies have been deduplicated, their automorphism orders are computed exactly once per
-topology and combined with edge multiplicities to obtain the symmetry denominator. The brute-force
-`_allgraphs_wick_reference` implementation remains as an independent small-system oracle.
-"""
-function _allgraphs_direct(n::Vector{Int}; connected=true)
-    isodd(total_degree(n)) && return Vector{Tuple{GraphRep,BigInt}}()
-
-    degrees = _vertex_degrees(n)
-    isempty(degrees) && return Vector{Tuple{GraphRep,BigInt}}()
-
+function _collect_topologies_exhaustive(
+    degrees::Vector{Int}, num_external::Int, connected::Bool
+)::Dict{GraphRep,Int}
     num_vertices = length(degrees)
-    num_external = n[1]
     internal_indices = (num_external + 1):num_vertices
     canonical_graphs = Dict{GraphRep,Nothing}()
 
@@ -141,20 +133,89 @@ function _allgraphs_direct(n::Vector{Int}; connected=true)
         if connected && !is_connected(build_internal_graph(graph, num_vertices))
             return nothing
         end
-
-        canonical = canonical_form(graph, internal_indices)
-        canonical_graphs[canonical] = nothing
+        canonical_graphs[canonical_form(graph, internal_indices)] = nothing
         return nothing
     end
 
-    results = Vector{Tuple{GraphRep,BigInt}}()
-    sizehint!(results, length(canonical_graphs))
+    topologies = Dict{GraphRep,Int}()
+    sizehint!(topologies, length(canonical_graphs))
     for graph in keys(canonical_graphs)
         canonicalization = _canonicalize_with_automorphisms(graph, internal_indices)
         canonicalization.canonical == graph ||
             error("Internal error: stored topology is not canonical.")
-        symmetry_denominator =
-            big(canonicalization.automorphism_order) * _edge_symmetry_factor(graph)
+        topologies[graph] = canonicalization.automorphism_order
+    end
+    return topologies
+end
+
+function _collect_topologies_partitioned(
+    degrees::Vector{Int}, num_external::Int, connected::Bool
+)::Dict{GraphRep,Int}
+    num_vertices = length(degrees)
+    internal_indices = (num_external + 1):num_vertices
+    partitioned_graphs = Dict{GraphRep,Int}()
+
+    _foreach_labeled_multigraph(degrees) do graph
+        if connected && !is_connected(build_internal_graph(graph, num_vertices))
+            return nothing
+        end
+
+        partition = _partition_canonicalize(graph, degrees, num_external)
+        if haskey(partitioned_graphs, partition.key)
+            partitioned_graphs[partition.key] == partition.automorphism_order || error(
+                "Internal error: automorphism order disagrees across one partition-canonical topology.",
+            )
+        else
+            partitioned_graphs[partition.key] = partition.automorphism_order
+        end
+        return nothing
+    end
+
+    topologies = Dict{GraphRep,Int}()
+    sizehint!(topologies, length(partitioned_graphs))
+    for (key, automorphism_order) in partitioned_graphs
+        canonical = canonical_form(key, internal_indices)
+        haskey(topologies, canonical) && error(
+            "Internal error: distinct partition keys collapsed to one canonical topology.",
+        )
+        topologies[canonical] = automorphism_order
+    end
+    return topologies
+end
+
+"""
+    _allgraphs_direct(n::Vector{Int}; connected=true)
+
+Direct degree-constrained graph generator used by the production `allgraphs` path. Small graphs use
+the allocation-lean exhaustive canonicalizer. At five or more internal vertices, where factorial
+canonical-label search dominates, labelled candidates are instead reduced with an exact
+partition-canonical internal isomorphism key.
+
+The partition key is used only for topology deduplication. The legacy-compatible `canonical_form` is
+evaluated once per surviving topology, preserving the public canonical `GraphRep`. Partition search
+also supplies the exact automorphism order, which is combined with edge multiplicities to obtain the
+symmetry denominator. The brute-force `_allgraphs_wick_reference` implementation remains as an
+independent small-system oracle.
+"""
+function _allgraphs_direct(n::Vector{Int}; connected=true)
+    isodd(total_degree(n)) && return Vector{Tuple{GraphRep,BigInt}}()
+
+    degrees = _vertex_degrees(n)
+    isempty(degrees) && return Vector{Tuple{GraphRep,BigInt}}()
+
+    num_external = n[1]
+    num_internal = length(degrees) - num_external
+    use_partition = num_internal >= _PARTITION_CANONICALIZATION_MIN_INTERNAL
+    topologies = if use_partition
+        _collect_topologies_partitioned(degrees, num_external, connected)
+    else
+        _collect_topologies_exhaustive(degrees, num_external, connected)
+    end
+
+    results = Vector{Tuple{GraphRep,BigInt}}()
+    sizehint!(results, length(topologies))
+    for (graph, automorphism_order) in topologies
+        symmetry_denominator = big(automorphism_order) * _edge_symmetry_factor(graph)
         push!(results, (graph, symmetry_denominator))
     end
 
