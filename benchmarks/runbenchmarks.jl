@@ -8,9 +8,11 @@ const SUITE = BenchmarkGroup()
 
 include("phi4_graphs.jl")
 include("pipeline_stages.jl")
+include("colored_port_generation.jl")
 
 phi_4_theory!(SUITE)
 pipeline_stages!(SUITE)
+colored_port_generation!(SUITE)
 
 BenchmarkTools.tune!(SUITE)
 results = BenchmarkTools.run(SUITE; verbose=true)
