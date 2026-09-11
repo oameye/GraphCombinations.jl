@@ -61,7 +61,7 @@ function allgraphs(n::AbstractVector{<:Integer}; connected=true)
         return Vector{Tuple{GraphRep,BigInt}}()
     end
 
-    return _allgraphs_direct(normalized_n; connected)
+    return _allgraphs_hybrid(normalized_n; connected)
 end
 
 # Brute-force Wick-pairing implementation. Keep this path stable as a small-system reference

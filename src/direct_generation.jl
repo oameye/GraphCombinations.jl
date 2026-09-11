@@ -98,8 +98,9 @@ function _distribute_vertex_edges!(
     return nothing
 end
 
-# Retained for the independent orbit-size validation in the test suite. Production symmetry
-# denominators are graph-local and no longer inferred from complete labelled-orbit counts.
+# Exact degree-preserving internal relabeling factor. The validation suite uses it for orbit-size
+# identities, and the hybrid production selector uses it as the measured redundancy proxy for
+# deciding whether early row-state isomorphism reduction can amortize its canonicalization cost.
 function _internal_vertex_permutation_factor(n::Vector{Int})
     factor = big(1)
     for count in @view n[2:end]
@@ -186,10 +187,11 @@ end
 """
     _allgraphs_direct(n::Vector{Int}; connected=true)
 
-Direct degree-constrained graph generator used by the production `allgraphs` path. Small graphs use
-the allocation-lean exhaustive canonicalizer. At five or more internal vertices, where factorial
-canonical-label search dominates, labelled candidates are instead reduced with an exact
-partition-canonical internal isomorphism key.
+Completed-graph degree-constrained generator retained as the low-redundancy production path and as an
+independent benchmark/reference for early row-state reduction. Small graphs use the allocation-lean
+exhaustive canonicalizer. At five or more internal vertices, where factorial canonical-label search
+dominates, labelled candidates are instead reduced with an exact partition-canonical internal
+isomorphism key.
 
 The partition key is used only for topology deduplication. The legacy-compatible `canonical_form` is
 evaluated once per surviving topology, preserving the public canonical `GraphRep`. Partition search

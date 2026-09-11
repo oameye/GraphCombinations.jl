@@ -66,6 +66,19 @@ function pipeline_stages!(SUITE)
     SUITE["Direct"]["allgraphs - 5 loops"] = @benchmarkable GC._allgraphs_direct($vertices5) seconds =
         10
 
+    # Quotient partial states only after a complete multiplicity row has been fixed. This keeps the
+    # efficient residual-degree recursion while measuring whether early exact isomorphism reduction
+    # pays for its partition-canonicalization overhead.
+    SUITE["RowReduced"]["allgraphs - 3 loops"] = @benchmarkable GC._allgraphs_row_reduced(
+        $vertices3
+    ) seconds = 10
+    SUITE["RowReduced"]["allgraphs - 4 loops"] = @benchmarkable GC._allgraphs_row_reduced(
+        $vertices4
+    ) seconds = 10
+    SUITE["RowReduced"]["allgraphs - 5 loops"] = @benchmarkable GC._allgraphs_row_reduced(
+        $vertices5
+    ) seconds = 10
+
     # Use fixed connected phi^4 representatives so canonical-label benchmarking itself does not
     # require running the complete order-four/five topology reduction during suite construction.
     canonical2 = [GC.Edge(1, 3), GC.Edge(2, 4), GC.Edge(3, 4), GC.Edge(3, 4), GC.Edge(3, 4)]

@@ -15,6 +15,7 @@ include("WickContractions.jl")
 include("reduction.jl")
 include("partition_canonicalization.jl")
 include("direct_generation.jl")
+include("row_state_reduction.jl")
 include("generation.jl")
 
 export allgraphs, combinatoric_factor, build_graph, total_degree, canonical_form
