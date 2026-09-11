@@ -46,6 +46,10 @@ end
     include("direct_generation.jl")
 end
 
+@testset "row-state reduction" begin
+    include("row_state_reduction.jl")
+end
+
 @testset "phi-four" begin
     include("phi-four.jl")
 end
