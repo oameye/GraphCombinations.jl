@@ -38,12 +38,18 @@ function profile_group_discovery(order::Int; asymmetric=false)
     GC._port_automorphisms(problem)
     sample = @timed GC._port_automorphisms(problem)
     println(
-        "GROUP\torder=", order,
-        "\tasymmetric=", asymmetric,
-        "\tcandidates=", factorial(big(order)),
-        "\tautomorphisms=", length(sample.value),
-        "\tseconds=", sample.time,
-        "\tbytes=", sample.bytes,
+        "GROUP\torder=",
+        order,
+        "\tasymmetric=",
+        asymmetric,
+        "\tcandidates=",
+        factorial(big(order)),
+        "\tautomorphisms=",
+        length(sample.value),
+        "\tseconds=",
+        sample.time,
+        "\tbytes=",
+        sample.bytes,
     )
     return nothing
 end
@@ -54,15 +60,24 @@ function profile_orbit(order::Int)
     sample = @timed GC._weighted_port_matchings_with_stats(problem)
     results, stats = sample.value
     println(
-        "ORBIT\torder=", order,
-        "\tedges=", 2 * order + 1,
-        "\tautomorphisms=", stats.automorphisms,
-        "\tstates=", sum(stats.layer_states),
-        "\ttransitions=", stats.transitions,
-        "\tfinal=", length(results),
-        "\tseconds=", sample.time,
-        "\tbytes=", sample.bytes,
-        "\tlayers=", join(stats.layer_states, ','),
+        "ORBIT\torder=",
+        order,
+        "\tedges=",
+        2 * order + 1,
+        "\tautomorphisms=",
+        stats.automorphisms,
+        "\tstates=",
+        sum(stats.layer_states),
+        "\ttransitions=",
+        stats.transitions,
+        "\tfinal=",
+        length(results),
+        "\tseconds=",
+        sample.time,
+        "\tbytes=",
+        sample.bytes,
+        "\tlayers=",
+        join(stats.layer_states, ','),
     )
     return nothing
 end
