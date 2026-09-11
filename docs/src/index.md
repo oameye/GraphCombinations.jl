@@ -9,9 +9,18 @@
 [![jet](https://img.shields.io/badge/%F0%9F%9B%A9%EF%B8%8F_tested_with-JET.jl-233f9a)](https://github.com/aviatesk/JET.jl)
 [![DispatchDoctor](https://img.shields.io/badge/%F0%9F%A9%BA_tested_with-DispatchDoctor.jl-blue?labelColor=white)](https://github.com/MilesCranmer/DispatchDoctor.jl)
 
+GraphCombinations.jl generates non-isomorphic multigraph topologies for a prescribed set of vertex degrees, with Feynman-diagram generation as the primary use case.
 
-GraphCombinations.jl is a package for the generation of graphs for a given set of different vertices. Given a set of [valent vertices](https://en.wikipedia.org/wiki/Degree_%28graph_theory%29) (vertices of degree k), the package generates all possible graphs that can be constructed with these vertices.
+A vertex specification `n` uses `n[k]` for the number of degree-`k` vertices. Degree-1 vertices are fixed external vertices; internal vertices are quotient-labeled under degree-preserving relabelings. Parallel edges and self-loops/tadpoles are supported.
 
-The implementation is rather naive and I am sure it can be significiantly improved. Any contributions or suggestions are welcome :)
+```julia
+using GraphCombinations
 
-This package is heavily inspired by this [StackExachange post](https://mathematica.stackexchange.com/questions/170268/how-to-generate-all-feynman-diagrams-with-mathematica) by AccidentalFourierTransform. A mathematica notebook using his code can be found in the [examples folder](https://github.com/oameye/GraphCombinations.jl/tree/main/examples). 
+graphs = allgraphs([2, 0, 0, 2])
+```
+
+`allgraphs` returns `(edges, S)` pairs, where `edges` is a canonical `Vector{Pair{Int,Int}}` representation and `S::BigInt` is the exact symmetry denominator of the topology.
+
+The production generator enumerates degree-constrained multigraphs directly instead of first constructing all Wick pairings. It uses a hybrid exact reduction strategy: low-redundancy inputs canonicalize completed graphs directly, while larger internal relabeling sectors quotient isomorphic partial states at completed multiplicity-row boundaries. Public representatives, result ordering, and symmetry denominators remain deterministic and exact. A brute-force Wick implementation is retained internally as a small-system correctness oracle.
+
+The package is heavily inspired by [this Mathematica StackExchange post](https://mathematica.stackexchange.com/questions/170268/how-to-generate-all-feynman-diagrams-with-mathematica) by AccidentalFourierTransform. A Mathematica notebook based on that approach is available in the [examples folder](https://github.com/oameye/GraphCombinations.jl/tree/main/examples).
