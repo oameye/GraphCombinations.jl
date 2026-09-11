@@ -72,23 +72,44 @@ end
         @test reconstructed_pairings == prod(big(k) for k in 1:2:(total_degree(n) - 1))
 
         # Production and both previous baselines must reproduce the exact legacy canonical label
-        # for every labelled graph. The measured automorphism order is checked independently on
-        # the multiplicity matrix rather than through canonicalization machinery.
+        # for every labelled graph. The partition key is allowed to differ from that public label,
+        # but it must induce exactly the same equivalence classes. Automorphism orders are checked
+        # independently on the multiplicity matrix rather than through canonicalization machinery.
         canonical_checks = Ref(0)
-        GC._foreach_labeled_multigraph(GC._vertex_degrees(n)) do graph
+        partition_to_reference = Dict{GC.GraphRep,GC.GraphRep}()
+        reference_to_partition = Dict{GC.GraphRep,GC.GraphRep}()
+        degrees = GC._vertex_degrees(n)
+        GC._foreach_labeled_multigraph(degrees) do graph
             reference = GC._canonical_form_reference(graph, internal_indices)
             canonicalization = GC._canonicalize_with_automorphisms(graph, internal_indices)
+            partition = GC._partition_canonicalize(graph, degrees, n[1])
+            expected_automorphisms = brute_force_automorphism_order(
+                graph, n[1], num_vertices
+            )
 
             @test GC._canonical_form_scratch(graph, internal_indices) == reference
             @test canonical_form(graph, internal_indices) == reference
             @test canonicalization.canonical == reference
-            @test canonicalization.automorphism_order ==
-                brute_force_automorphism_order(graph, n[1], num_vertices)
+            @test canonicalization.automorphism_order == expected_automorphisms
+            @test partition.automorphism_order == expected_automorphisms
+            @test 1 <= partition.permutation_count <= factorial(length(internal_indices))
+
+            if haskey(partition_to_reference, partition.key)
+                @test partition_to_reference[partition.key] == reference
+            else
+                partition_to_reference[partition.key] = reference
+            end
+            if haskey(reference_to_partition, reference)
+                @test reference_to_partition[reference] == partition.key
+            else
+                reference_to_partition[reference] = partition.key
+            end
 
             canonical_checks[] += 1
             return nothing
         end
         @test canonical_checks[] == GC._count_labeled_multigraphs(n)
+        @test length(partition_to_reference) == length(reference_to_partition)
     end
 
     # The in-place lexicographic successor must visit every permutation exactly once, in strictly
@@ -107,6 +128,46 @@ end
         @test count == factorial(n)
         @test permutation == collect(n:-1:1)
     end
+
+    # Exact refinement can completely individualize mixed-valence graphs without changing the
+    # public canonical-form contract. The full legacy search has 4! internal permutations here.
+    mixed_n = [2, 2, 0, 2]
+    mixed_graph = [
+        GC.Edge(1, 6),
+        GC.Edge(2, 6),
+        GC.Edge(3, 5),
+        GC.Edge(3, 6),
+        GC.Edge(4, 5),
+        GC.Edge(4, 5),
+        GC.Edge(5, 6),
+    ]
+    mixed_partition = GC._partition_canonicalize(
+        mixed_graph, GC._vertex_degrees(mixed_n), 2
+    )
+    @test mixed_partition.permutation_count == 1
+    @test mixed_partition.automorphism_order == 1
+
+    # A deliberately symmetric phi^4 order-five graph leaves only one three-vertex cell after
+    # refinement: 3! residual permutations instead of the full 5! search, with all six giving the
+    # same key because that cell is an exact automorphism orbit.
+    symmetric_order5 = [
+        GC.Edge(1, 7),
+        GC.Edge(2, 6),
+        GC.Edge(3, 4),
+        GC.Edge(3, 5),
+        GC.Edge(3, 6),
+        GC.Edge(3, 7),
+        GC.Edge(4, 5),
+        GC.Edge(4, 6),
+        GC.Edge(4, 7),
+        GC.Edge(5, 6),
+        GC.Edge(5, 7),
+    ]
+    symmetric_partition = GC._partition_canonicalize(
+        symmetric_order5, GC._vertex_degrees([2, 0, 0, 5]), 2
+    )
+    @test symmetric_partition.permutation_count == 6
+    @test symmetric_partition.automorphism_order == 6
 
     # Candidate-space regression checks for the phi^4 two-point function. The corresponding
     # Wick spaces contain 5!!, 9!!, 13!!, 17!! and 21!! pairings, respectively.

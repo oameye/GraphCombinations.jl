@@ -13,6 +13,7 @@ include("MultiGraphWrap.jl")
 include("utils.jl")
 include("WickContractions.jl")
 include("reduction.jl")
+include("partition_canonicalization.jl")
 include("direct_generation.jl")
 include("generation.jl")
 
