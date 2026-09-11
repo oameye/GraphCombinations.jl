@@ -68,7 +68,7 @@ struct _PortMatchingProblem
         size(compatible) ==
         (num_vertices, size(sources, 2), num_vertices, size(targets, 2)) || throw(
             ArgumentError(
-                "compatibility dimensions must be vertex/source-color/vertex/target-color."
+                "compatibility dimensions must be vertex/source-color/vertex/target-color.",
             ),
         )
         any(x -> x < 0, sources) &&
@@ -94,9 +94,8 @@ function _PortMatchingProblem(
     num_vertices = length(vertex_colors)
     num_source_colors = size(source_ports, 2)
     num_target_colors = size(target_ports, 2)
-    size(compatibility) == (num_source_colors, num_target_colors) || throw(
-        ArgumentError("compatibility dimensions must match source/target colors."),
-    )
+    size(compatibility) == (num_source_colors, num_target_colors) ||
+        throw(ArgumentError("compatibility dimensions must match source/target colors."))
 
     compatible = BitArray(
         undef, num_vertices, num_source_colors, num_vertices, num_target_colors
@@ -105,8 +104,9 @@ function _PortMatchingProblem(
         for source_color in 1:num_source_colors
             for target_vertex in 1:num_vertices
                 for target_color in 1:num_target_colors
-                    compatible[source_vertex, source_color, target_vertex, target_color] =
-                        compatibility[source_color, target_color]
+                    compatible[source_vertex, source_color, target_vertex, target_color] = compatibility[
+                        source_color, target_color
+                    ]
                 end
             end
         end
@@ -182,13 +182,14 @@ function _preserves_port_compatibility(
         for source_color in axes(compatibility, 2)
             for target_vertex in axes(compatibility, 3)
                 for target_color in axes(compatibility, 4)
-                    compatibility[source_vertex, source_color, target_vertex, target_color] ==
-                        compatibility[
-                            mapping[source_vertex],
-                            source_color,
-                            mapping[target_vertex],
-                            target_color,
-                        ] || return false
+                    compatibility[
+                        source_vertex, source_color, target_vertex, target_color
+                    ] == compatibility[
+                        mapping[source_vertex],
+                        source_color,
+                        mapping[target_vertex],
+                        target_color,
+                    ] || return false
                 end
             end
         end
@@ -204,7 +205,8 @@ function _collect_port_automorphisms!(
     cell_index::Int,
 )::Nothing
     if cell_index > length(cells)
-        _preserves_port_compatibility(problem, mapping) && push!(automorphisms, copy(mapping))
+        _preserves_port_compatibility(problem, mapping) &&
+            push!(automorphisms, copy(mapping))
         return nothing
     end
 
@@ -214,9 +216,7 @@ function _collect_port_automorphisms!(
         @inbounds for i in eachindex(cell)
             mapping[cell[i]] = permutation[i]
         end
-        _collect_port_automorphisms!(
-            automorphisms, problem, cells, mapping, cell_index + 1
-        )
+        _collect_port_automorphisms!(automorphisms, problem, cells, mapping, cell_index + 1)
         _next_permutation!(permutation) || break
     end
     return nothing
@@ -228,7 +228,8 @@ function _port_automorphisms(problem::_PortMatchingProblem)::Vector{Vector{Int}}
     _collect_port_automorphisms!(
         automorphisms, problem, _port_vertex_cells(problem), mapping, 1
     )
-    isempty(automorphisms) && error("Internal error: port problem has no identity automorphism.")
+    isempty(automorphisms) &&
+        error("Internal error: port problem has no identity automorphism.")
     return automorphisms
 end
 
@@ -382,9 +383,7 @@ function _weighted_port_matchings_with_stats(
                     canonicalization_calls += 1
                     child_weight = weighted.weight * multiplicity
                     merged_transitions += Int(
-                        _accumulate_port_state!(
-                            next_states, key, canonical, child_weight
-                        ),
+                        _accumulate_port_state!(next_states, key, canonical, child_weight)
                     )
                 end
             end
