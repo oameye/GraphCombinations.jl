@@ -419,7 +419,9 @@ function _weighted_port_matchings_with_stats(
         _PortEdge[], copy(problem.source_ports), copy(problem.target_ports)
     )
     workspace = _PortCanonicalizationWorkspace(initial)
-    initial_key, initial_state, _ = _canonicalize_port_state(initial, automorphisms, workspace)
+    initial_key, initial_state, _ = _canonicalize_port_state(
+        initial, automorphisms, workspace
+    )
     states = Dict(initial_key => _WeightedPortState(initial_state, big(1)))
     layer_states = Int[1]
     transitions = 0
