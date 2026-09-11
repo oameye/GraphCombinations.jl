@@ -71,7 +71,7 @@ end
         @test reconstructed_labeled == GC._count_labeled_multigraphs(n)
         @test reconstructed_pairings == prod(big(k) for k in 1:2:(total_degree(n) - 1))
 
-        # Production and both previous baselines must reproduce the exact legacy canonical label
+        # Production and all optimized candidates must reproduce the exact legacy canonical label
         # for every labelled graph. The partition key is allowed to differ from that public label,
         # but it must induce exactly the same equivalence classes. Automorphism orders are checked
         # independently on the multiplicity matrix rather than through canonicalization machinery.
@@ -89,6 +89,8 @@ end
 
             @test GC._canonical_form_scratch(graph, internal_indices) == reference
             @test canonical_form(graph, internal_indices) == reference
+            @test GC._canonical_form_multiplicity_permutations(graph, internal_indices) ==
+                reference
             @test canonicalization.canonical == reference
             @test canonicalization.automorphism_order == expected_automorphisms
             @test partition.automorphism_order == expected_automorphisms
@@ -128,6 +130,13 @@ end
         @test count == factorial(n)
         @test permutation == collect(n:-1:1)
     end
+
+    # Fixed vertices outside the permuted range, including labels after it, must remain fixed.
+    fixed_suffix_graph = [GC.Edge(1, 3), GC.Edge(2, 5), GC.Edge(3, 4), GC.Edge(4, 5)]
+    fixed_suffix_internal = 2:4
+    @test GC._canonical_form_multiplicity_permutations(
+        fixed_suffix_graph, fixed_suffix_internal
+    ) == GC._canonical_form_reference(fixed_suffix_graph, fixed_suffix_internal)
 
     # Exact refinement can completely individualize mixed-valence graphs without changing the
     # public canonical-form contract. The full legacy search has 4! internal permutations here.
