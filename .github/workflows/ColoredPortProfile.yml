@@ -8,6 +8,7 @@ on:
       - '.github/workflows/ColoredPortProfile.yml'
       - 'src/colored_port_generation.jl'
       - 'research/colored_port_profile.jl'
+      - 'research/colored_port_hybrid_profile.jl'
   workflow_dispatch:
 
 concurrency:
@@ -36,7 +37,7 @@ jobs:
           julia --project=benchmarks -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
       - name: Profile colored port quotienting
         run: |
-          julia --project=benchmarks research/colored_port_profile.jl | tee colored-port-profile.txt
+          julia --project=benchmarks research/colored_port_hybrid_profile.jl | tee colored-port-profile.txt
       - uses: actions/upload-artifact@v4
         if: ${{ always() }}
         with:
