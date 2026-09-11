@@ -35,9 +35,7 @@ end
 end
 
 function write_mapped_port_edges_noalloc!(
-    destination::Vector{GC._PortEdge},
-    state::GC._PortMatchingState,
-    mapping::Vector{Int},
+    destination::Vector{GC._PortEdge}, state::GC._PortMatchingState, mapping::Vector{Int}
 )
     @inbounds for i in eachindex(state.edges)
         edge = state.edges[i]
@@ -97,12 +95,17 @@ function sample_kernel(label, f; samples=7)
     measurements = [@timed f() for _ in 1:samples]
     times = getproperty.(measurements, :time)
     bytes = getproperty.(measurements, :bytes)
-    println(
-        "CANON\t", label,
-        "\tbest_seconds=", minimum(times),
-        "\tmedian_seconds=", median(times),
-        "\tbest_bytes=", minimum(bytes),
-        "\tmedian_bytes=", median(bytes),
+    return println(
+        "CANON\t",
+        label,
+        "\tbest_seconds=",
+        minimum(times),
+        "\tmedian_seconds=",
+        median(times),
+        "\tbest_bytes=",
+        minimum(bytes),
+        "\tmedian_bytes=",
+        median(bytes),
     )
 end
 
@@ -116,4 +119,6 @@ actual = canonicalize_noalloc_sort(state, automorphisms, workspace)
 first(expected) == first(actual) || error("no-allocation sort changed the canonical key")
 
 sample_kernel("current", () -> GC._canonicalize_port_state(state, automorphisms, workspace))
-sample_kernel("insertion_sort", () -> canonicalize_noalloc_sort(state, automorphisms, workspace))
+sample_kernel(
+    "insertion_sort", () -> canonicalize_noalloc_sort(state, automorphisms, workspace)
+)
