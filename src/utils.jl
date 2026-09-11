@@ -8,6 +8,8 @@ struct CanonicalizationResult
     automorphism_order::Int
 end
 
+@inline _checked_increment(counter::Int)::Int = Base.Checked.checked_add(counter, 1)
+
 """
     sort_graph_edges(graph::GraphRep)::GraphRep
 
@@ -177,7 +179,7 @@ function _canonicalize_with_automorphisms(
             copyto!(current_canonical, candidate)
             automorphism_order = 1
         elseif iszero(comparison)
-            automorphism_order += 1
+            automorphism_order = _checked_increment(automorphism_order)
         end
 
         _next_permutation!(perm) || break
