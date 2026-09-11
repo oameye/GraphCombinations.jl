@@ -208,7 +208,10 @@ function _collect_topologies_row_reduced(
             return nothing
         end
 
-        canonical = canonical_form(graph, internal_indices)
+        # The complete row state is already an exact isomorphism key. Convert it to the package's
+        # legacy public canonical label without rebuilding and sorting an edge vector for every
+        # internal-label permutation; the winning sorted GraphRep is materialized only once.
+        canonical = _canonical_form_multiplicity_permutations(graph, internal_indices)
         haskey(topologies, canonical) &&
             error("Internal error: row-state reduction generated a topology twice.")
         topologies[canonical] = state.automorphism_order

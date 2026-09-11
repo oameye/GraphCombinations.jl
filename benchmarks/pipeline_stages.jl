@@ -163,6 +163,9 @@ function pipeline_stages!(SUITE)
     SUITE["Canonical"]["in-place - 3 internal"] = @benchmarkable GC._canonical_form_inplace_permutations(
         $canonical3, $canonical_indices3
     ) seconds = 10
+    SUITE["Canonical"]["matrix - 3 internal"] = @benchmarkable GC._canonical_form_multiplicity_permutations(
+        $canonical3, $canonical_indices3
+    ) seconds = 10
     SUITE["Canonical"]["reference - 4 internal"] = @benchmarkable GC._canonical_form_reference(
         $canonical4, $canonical_indices4
     ) seconds = 10
@@ -172,6 +175,9 @@ function pipeline_stages!(SUITE)
     SUITE["Canonical"]["in-place - 4 internal"] = @benchmarkable GC._canonical_form_inplace_permutations(
         $canonical4, $canonical_indices4
     ) seconds = 10
+    SUITE["Canonical"]["matrix - 4 internal"] = @benchmarkable GC._canonical_form_multiplicity_permutations(
+        $canonical4, $canonical_indices4
+    ) seconds = 10
     SUITE["Canonical"]["reference - 5 internal"] = @benchmarkable GC._canonical_form_reference(
         $canonical5, $canonical_indices5
     ) seconds = 10
@@ -179,6 +185,9 @@ function pipeline_stages!(SUITE)
         $canonical5, $canonical_indices5
     ) seconds = 10
     SUITE["Canonical"]["in-place - 5 internal"] = @benchmarkable GC._canonical_form_inplace_permutations(
+        $canonical5, $canonical_indices5
+    ) seconds = 10
+    SUITE["Canonical"]["matrix - 5 internal"] = @benchmarkable GC._canonical_form_multiplicity_permutations(
         $canonical5, $canonical_indices5
     ) seconds = 10
 
