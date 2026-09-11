@@ -131,6 +131,11 @@ end
         @test permutation == collect(n:-1:1)
     end
 
+    # Internal exact-counting counters stay machine-sized on the hot path but must never wrap.
+    @test GC._checked_increment(0) == 1
+    @test GC._checked_increment(typemax(Int) - 1) == typemax(Int)
+    @test_throws OverflowError GC._checked_increment(typemax(Int))
+
     # Fixed vertices outside the permuted range, including labels after it, must remain fixed.
     fixed_suffix_graph = [GC.Edge(1, 3), GC.Edge(2, 5), GC.Edge(3, 4), GC.Edge(4, 5)]
     fixed_suffix_internal = 2:4

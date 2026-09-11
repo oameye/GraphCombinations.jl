@@ -160,7 +160,7 @@ function _partition_search!(
 )::Nothing
     if cell_index > length(cells)
         _write_mapped_graph!(state.candidate, graph, mapping)
-        state.permutation_count += 1
+        state.permutation_count = _checked_increment(state.permutation_count)
 
         if state.permutation_count == 1
             copyto!(state.best, state.candidate)
@@ -173,7 +173,7 @@ function _partition_search!(
             copyto!(state.best, state.candidate)
             state.automorphism_order = 1
         elseif iszero(comparison)
-            state.automorphism_order += 1
+            state.automorphism_order = _checked_increment(state.automorphism_order)
         end
         return nothing
     end
