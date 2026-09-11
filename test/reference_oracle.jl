@@ -28,19 +28,24 @@ function multiplicity_matrix(graph, num_vertices)
     return matrix
 end
 
-function brute_force_symmetry_denominator(graph, num_external, num_vertices)
+function brute_force_automorphism_order(graph, num_external, num_vertices)
     matrix = multiplicity_matrix(graph, num_vertices)
     internal_vertices = collect((num_external + 1):num_vertices)
 
     # Count automorphisms directly on the multiplicity matrix. This deliberately does not use
-    # `canonical_form` or `apply_permutation`, so it remains an independent check of the
-    # production canonicalization machinery.
+    # canonicalization or `apply_permutation`, so it remains an independent oracle.
     num_automorphisms = 0
     for permutation in GC.permutations(internal_vertices)
         labels = collect(1:num_vertices)
         labels[(num_external + 1):num_vertices] = permutation
         matrix[labels, labels] == matrix && (num_automorphisms += 1)
     end
+    return num_automorphisms
+end
+
+function brute_force_symmetry_denominator(graph, num_external, num_vertices)
+    matrix = multiplicity_matrix(graph, num_vertices)
+    num_automorphisms = brute_force_automorphism_order(graph, num_external, num_vertices)
 
     edge_factor = big(1)
     for u in 1:num_vertices

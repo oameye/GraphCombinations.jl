@@ -60,6 +60,10 @@ end
             @test iszero(rem(vertex_permutations, automorphisms))
             reconstructed_labeled += vertex_permutations ÷ automorphisms
 
+            canonicalization = GC._canonicalize_with_automorphisms(graph, internal_indices)
+            @test canonicalization.canonical == graph
+            @test canonicalization.automorphism_order == automorphisms
+
             @test iszero(rem(normalization, symmetry_denominator))
             reconstructed_pairings += normalization ÷ symmetry_denominator
         end
@@ -67,13 +71,20 @@ end
         @test reconstructed_labeled == GC._count_labeled_multigraphs(n)
         @test reconstructed_pairings == prod(big(k) for k in 1:2:(total_degree(n) - 1))
 
-        # Production and the previous scratch baseline must both reproduce the exact legacy
-        # canonical label for every labelled graph in the exhaustive domain.
+        # Production and both previous baselines must reproduce the exact legacy canonical label
+        # for every labelled graph. The measured automorphism order is checked independently on
+        # the multiplicity matrix rather than through canonicalization machinery.
         canonical_checks = Ref(0)
         GC._foreach_labeled_multigraph(GC._vertex_degrees(n)) do graph
             reference = GC._canonical_form_reference(graph, internal_indices)
+            canonicalization = GC._canonicalize_with_automorphisms(graph, internal_indices)
+
             @test GC._canonical_form_scratch(graph, internal_indices) == reference
             @test canonical_form(graph, internal_indices) == reference
+            @test canonicalization.canonical == reference
+            @test canonicalization.automorphism_order ==
+                brute_force_automorphism_order(graph, n[1], num_vertices)
+
             canonical_checks[] += 1
             return nothing
         end
