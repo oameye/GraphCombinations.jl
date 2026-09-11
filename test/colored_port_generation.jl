@@ -14,7 +14,9 @@ end
 
 function _completed_port_key(problem, edges)
     state = GC._PortMatchingState(
-        copy(edges), zeros(Int, size(problem.source_ports)), zeros(Int, size(problem.target_ports))
+        copy(edges),
+        zeros(Int, size(problem.source_ports)),
+        zeros(Int, size(problem.target_ports)),
     )
     key, _, _ = GC._canonicalize_port_state(problem, state)
     return key
@@ -39,7 +41,10 @@ function _brute_port_matchings(problem)
                 valid = false
                 break
             end
-            push!(edges, GC._PortEdge(source_vertex, target_vertex, source_color, target_color))
+            push!(
+                edges,
+                GC._PortEdge(source_vertex, target_vertex, source_color, target_color),
+            )
         end
         if valid
             key = _completed_port_key(problem, edges)
@@ -153,9 +158,7 @@ end
     @test sum(values(generated)) == sum(values(brute))
     @test sum(values(generated)) > length(generated)
 
-    diagonal = GC._PortMatchingProblem(
-        [1, 2], [1 0; 0 1], [1 0; 0 1], Bool[1 0; 0 1], 2
-    )
+    diagonal = GC._PortMatchingProblem([1, 2], [1 0; 0 1], [1 0; 0 1], Bool[1 0; 0 1], 2)
     @test _generated_port_matchings(diagonal) == _brute_port_matchings(diagonal)
     @test length(GC._weighted_port_matchings(diagonal)) == 1
 
