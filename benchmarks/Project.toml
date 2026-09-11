@@ -1,3 +1,5 @@
 [deps]
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
+Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
 GraphCombinations = "d653b97f-30d3-4d96-b482-58626fc91258"
+Memoization = "6fafb56a-5788-4b4e-91ca-c0cea6611c73"

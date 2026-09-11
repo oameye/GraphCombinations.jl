@@ -6,13 +6,9 @@ module GraphCombinations
 using DocStringExtensions
 
 using Graphs, Multigraphs
-using Combinatorics
-using Memoization # Seems to be newer then Memoize.jl
 
 include("MultiGraphWrap.jl")
 include("utils.jl")
-include("WickContractions.jl")
-include("reduction.jl")
 include("partition_canonicalization.jl")
 include("matrix_canonicalization.jl")
 include("direct_generation.jl")

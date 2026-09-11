@@ -1,4 +1,5 @@
 using Test, GraphCombinations
+using Combinatorics: permutations
 import GraphCombinations as GC
 
 function halfedge_degrees(graph, num_vertices)
@@ -35,7 +36,7 @@ function brute_force_automorphism_order(graph, num_external, num_vertices)
     # Count automorphisms directly on the multiplicity matrix. This deliberately does not use
     # canonicalization or `apply_permutation`, so it remains an independent oracle.
     num_automorphisms = 0
-    for permutation in GC.permutations(internal_vertices)
+    for permutation in permutations(internal_vertices)
         labels = collect(1:num_vertices)
         labels[(num_external + 1):num_vertices] = permutation
         matrix[labels, labels] == matrix && (num_automorphisms += 1)
@@ -73,7 +74,7 @@ pairing_count(total_degree) = prod(big(k) for k in 1:2:(total_degree - 1))
     end
 
     for n in specifications
-        results = GC._allgraphs_wick_reference(n; connected=false)
+        results = ReferenceGC.allgraphs_wick_reference(n; connected=false)
         normalization = combinatoric_factor(n)
         num_vertices = sum(n)
         internal_indices = (n[1] + 1):num_vertices
@@ -103,7 +104,7 @@ pairing_count(total_degree) = prod(big(k) for k in 1:2:(total_degree - 1))
         # complete number of perfect matchings of the half-edges.
         @test reconstructed_pairings == pairing_count(total_degree(n))
 
-        connected_results = GC._allgraphs_wick_reference(n; connected=true)
+        connected_results = ReferenceGC.allgraphs_wick_reference(n; connected=true)
         @test all(graph -> GC.is_connected(build_graph(graph)), first.(connected_results))
     end
 end

@@ -22,6 +22,9 @@ end
     Aqua.test_all(GraphCombinations; ambiguities=false)
 end
 
+include(joinpath(@__DIR__, "..", "reference", "ReferenceGraphCombinations.jl"))
+const ReferenceGC = ReferenceGraphCombinations
+
 @testset "Multigraph wrapper" begin
     include("MultiGraphWrap.jl")
 end

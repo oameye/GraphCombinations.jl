@@ -8,6 +8,7 @@ on:
       - '.github/workflows/Tests.yml'
       - 'src/**'
       - 'ext/**'
+      - 'reference/**'
       - 'test/**'
       - 'Project.toml'
   pull_request:
@@ -17,6 +18,7 @@ on:
       - '.github/workflows/Tests.yml'
       - 'src/**'
       - 'ext/**'
+      - 'reference/**'
       - 'test/**'
       - 'Project.toml'
     types:

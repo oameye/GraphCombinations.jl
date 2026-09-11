@@ -31,12 +31,12 @@ end
 
     for n in specifications
         direct_all = GC._allgraphs_direct(n; connected=false)
-        reference_all = GC._allgraphs_wick_reference(n; connected=false)
+        reference_all = ReferenceGC.allgraphs_wick_reference(n; connected=false)
         @test direct_all == sort_graph_results(reference_all)
         @test issorted(direct_all; by=first)
 
         direct_connected = GC._allgraphs_direct(n; connected=true)
-        reference_connected = GC._allgraphs_wick_reference(n; connected=true)
+        reference_connected = ReferenceGC.allgraphs_wick_reference(n; connected=true)
         @test direct_connected == sort_graph_results(reference_connected)
         @test issorted(direct_connected; by=first)
 
@@ -80,14 +80,14 @@ end
         reference_to_partition = Dict{GC.GraphRep,GC.GraphRep}()
         degrees = GC._vertex_degrees(n)
         GC._foreach_labeled_multigraph(degrees) do graph
-            reference = GC._canonical_form_reference(graph, internal_indices)
+            reference = ReferenceGC.canonical_form_reference(graph, internal_indices)
             canonicalization = GC._canonicalize_with_automorphisms(graph, internal_indices)
             partition = GC._partition_canonicalize(graph, degrees, n[1])
             expected_automorphisms = brute_force_automorphism_order(
                 graph, n[1], num_vertices
             )
 
-            @test GC._canonical_form_scratch(graph, internal_indices) == reference
+            @test ReferenceGC.canonical_form_scratch(graph, internal_indices) == reference
             @test canonical_form(graph, internal_indices) == reference
             @test GC._canonical_form_multiplicity_permutations(graph, internal_indices) ==
                 reference
@@ -141,7 +141,7 @@ end
     fixed_suffix_internal = 2:4
     @test GC._canonical_form_multiplicity_permutations(
         fixed_suffix_graph, fixed_suffix_internal
-    ) == GC._canonical_form_reference(fixed_suffix_graph, fixed_suffix_internal)
+    ) == ReferenceGC.canonical_form_reference(fixed_suffix_graph, fixed_suffix_internal)
 
     # Exact refinement can completely individualize mixed-valence graphs without changing the
     # public canonical-form contract. The full legacy search has 4! internal permutations here.

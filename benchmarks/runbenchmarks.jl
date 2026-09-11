@@ -1,6 +1,9 @@
 using BenchmarkTools
 using GraphCombinations
 
+include(joinpath(@__DIR__, "..", "reference", "ReferenceGraphCombinations.jl"))
+const ReferenceGC = ReferenceGraphCombinations
+
 const SUITE = BenchmarkGroup()
 
 include("phi4_graphs.jl")
