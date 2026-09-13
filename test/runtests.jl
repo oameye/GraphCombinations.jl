@@ -50,6 +50,10 @@ else
         include("degree_sequence_problem.jl")
     end
 
+    @testset "problem relabeling group" begin
+        include("relabeling_group.jl")
+    end
+
     @testset "Wick reference oracle" begin
         include("reference_oracle.jl")
     end
