@@ -87,6 +87,24 @@ end
     )
 end
 
+@testset "port-source cursor is concrete and inference-stable" begin
+    @test isbitstype(GC._PortSourceCursor)
+
+    state = GC._PortMatchingState(
+        GC._PortEdge[], reshape([0, 1, 0, 0], 2, 2), zeros(Int, 2, 2)
+    )
+    source = @inferred GC._first_remaining_source(state)
+    @test source.found
+    @test source.vertex == 2
+    @test source.color == 1
+
+    empty_state = GC._PortMatchingState(GC._PortEdge[], zeros(Int, 2, 2), zeros(Int, 2, 2))
+    empty_source = @inferred GC._first_remaining_source(empty_state)
+    @test !empty_source.found
+    @test empty_source.vertex == 0
+    @test empty_source.color == 0
+end
+
 @testset "partial-state canonicalization" begin
     problem = GC._PortMatchingProblem(
         [9, 1, 1], zeros(Int, 3, 1), zeros(Int, 3, 1), trues(1, 1), 1

@@ -122,6 +122,12 @@ struct _PortMatchingState
     target_ports::Matrix{Int}
 end
 
+struct _PortSourceCursor
+    found::Bool
+    vertex::Int
+    color::Int
+end
+
 struct _PortStateKey
     edges::Vector{_PortEdge}
     source_ports::Vector{Int}
@@ -380,13 +386,14 @@ function _canonicalize_port_state(
     return _canonicalize_port_state(state, _port_automorphisms(problem))
 end
 
-function _first_remaining_source(state::_PortMatchingState)::Tuple{Bool,Int,Int}
+function _first_remaining_source(state::_PortMatchingState)::_PortSourceCursor
     @inbounds for vertex in axes(state.source_ports, 1)
         for color in axes(state.source_ports, 2)
-            state.source_ports[vertex, color] > 0 && return true, vertex, color
+            state.source_ports[vertex, color] > 0 &&
+                return _PortSourceCursor(true, vertex, color)
         end
     end
-    return false, 0, 0
+    return _PortSourceCursor(false, 0, 0)
 end
 
 mutable struct _WeightedPortState
@@ -472,14 +479,16 @@ function _weighted_port_matchings_with_stats(
 
     while true
         first_state = first(values(states)).state
-        source_found, _, _ = _first_remaining_source(first_state)
-        source_found || break
+        first_source = _first_remaining_source(first_state)
+        first_source.found || break
 
         next_states = Dict{_PortStateKey,_WeightedPortState}()
         for weighted in values(states)
             state = weighted.state
-            source_found, source_vertex, source_color = _first_remaining_source(state)
-            source_found || error("Internal error: port-matching layers are inconsistent.")
+            source = _first_remaining_source(state)
+            source.found || error("Internal error: port-matching layers are inconsistent.")
+            source_vertex = source.vertex
+            source_color = source.color
 
             @inbounds for target_vertex in axes(state.target_ports, 1)
                 for target_color in axes(state.target_ports, 2)
