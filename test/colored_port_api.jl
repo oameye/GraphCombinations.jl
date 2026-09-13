@@ -42,7 +42,7 @@ function (::NoSelfPortPolicy)(state::GC.ColoredPortState)
 end
 
 @testset "public weighted generation matches internal core" begin
-    problem = GC.ColoredPortProblem(
+    problem = @inferred GC.ColoredPortProblem(
         fill(1, 3), ones(Int, 3, 1), ones(Int, 3, 1), trues(1, 1)
     )
     completions = @inferred GC.generate_weighted(problem)
@@ -66,10 +66,10 @@ end
 end
 
 @testset "canonical relabeling witness" begin
-    problem = GC.ColoredPortProblem(
+    problem = @inferred GC.ColoredPortProblem(
         [9, 1, 1], zeros(Int, 3, 1), zeros(Int, 3, 1), trues(1, 1), 1
     )
-    state = GC.ColoredPortState(
+    state = @inferred GC.ColoredPortState(
         [GC.ColoredPortEdge(1, 3, 1, 1)], reshape([0, 1, 0], 3, 1), reshape([0, 0, 1], 3, 1)
     )
     canonical, witness = @inferred GC.canonical_relabeling(problem, state)
@@ -82,10 +82,10 @@ end
 
     compatibility = trues(3, 1, 3, 1)
     compatibility[2, 1, 3, 1] = false
-    asymmetric = GC.ColoredPortProblem(
+    asymmetric = @inferred GC.ColoredPortProblem(
         [9, 1, 1], zeros(Int, 3, 1), zeros(Int, 3, 1), compatibility, 1
     )
-    _, asymmetric_witness = GC.canonical_relabeling(asymmetric, state)
+    _, asymmetric_witness = @inferred GC.canonical_relabeling(asymmetric, state)
     mapping = asymmetric_witness.vertex_map
     allowed = asymmetric._problem.compatibility
     for source_vertex in axes(allowed, 1)
@@ -96,9 +96,34 @@ end
     end
 end
 
+@testset "callback state is read-only and inference-stable" begin
+    edge = GC.ColoredPortEdge(1, 2, 1, 1)
+    state = @inferred GC.ColoredPortState(
+        [edge], reshape([1, 0], 2, 1), reshape([0, 1], 2, 1)
+    )
+    edges = @inferred GC.port_edges(state)
+    sources = @inferred GC.source_port_counts(state)
+    targets = @inferred GC.target_port_counts(state)
+
+    @test collect(edges) == [edge]
+    @test collect(sources) == reshape([1, 0], 2, 1)
+    @test collect(targets) == reshape([0, 1], 2, 1)
+    @test_throws Base.CanonicalIndexError setindex!(edges, edge, 1)
+    @test_throws Base.CanonicalIndexError setindex!(sources, 0, 1, 1)
+    @test_throws Base.CanonicalIndexError setindex!(targets, 0, 2, 1)
+
+    original_mapping = [1, 2]
+    witness = @inferred GC.PortRelabeling(original_mapping)
+    original_mapping[1] = 2
+    @test collect(witness.vertex_map) == [1, 2]
+    @test_throws Base.CanonicalIndexError setindex!(witness.vertex_map, 2, 1)
+end
+
 @testset "public policy and transport hooks" begin
-    state = GC.ColoredPortState(GC.ColoredPortEdge[], zeros(Int, 1, 1), zeros(Int, 1, 1))
-    witness = GC.PortRelabeling([1])
+    state = @inferred GC.ColoredPortState(
+        GC.ColoredPortEdge[], zeros(Int, 1, 1), zeros(Int, 1, 1)
+    )
+    witness = @inferred GC.PortRelabeling([1])
     edge = GC.ColoredPortEdge(1, 1, 1, 1)
     transport = GC.MultiplicityPortTransport()
 

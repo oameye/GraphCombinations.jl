@@ -6,6 +6,16 @@ integer labels whose meaning is owned by the caller.
 """
 const ColoredPortEdge = _PortEdge
 
+struct _ReadOnlyArray{T,N,A<:AbstractArray{T,N}} <: AbstractArray{T,N}
+    _parent::A
+end
+
+Base.size(array::_ReadOnlyArray) = size(array._parent)
+Base.axes(array::_ReadOnlyArray) = axes(array._parent)
+Base.IndexStyle(::Type{<:_ReadOnlyArray{T,N,A}}) where {T,N,A} = Base.IndexStyle(A)
+@inline Base.getindex(array::_ReadOnlyArray, indices...) =
+    getindex(array._parent, indices...)
+
 """
     ColoredPortProblem(vertex_colors, source_ports, target_ports, allowed[, num_fixed])
 
@@ -26,7 +36,7 @@ function ColoredPortProblem(
     target_ports::AbstractMatrix{<:Integer},
     allowed::AbstractArray{Bool,4},
     num_fixed::Integer=0,
-)
+)::ColoredPortProblem
     return ColoredPortProblem(
         _PortMatchingProblem(vertex_colors, source_ports, target_ports, allowed, num_fixed)
     )
@@ -38,7 +48,7 @@ function ColoredPortProblem(
     target_ports::AbstractMatrix{<:Integer},
     allowed::AbstractMatrix{Bool},
     num_fixed::Integer=0,
-)
+)::ColoredPortProblem
     return ColoredPortProblem(
         _PortMatchingProblem(vertex_colors, source_ports, target_ports, allowed, num_fixed)
     )
@@ -47,9 +57,9 @@ end
 """
     ColoredPortState(edges, source_ports, target_ports)
 
-Read-only-by-convention view of a partial colored-port matching state. Consumers may inspect this
-object in pruning and weight-transport policies; mutating its arrays violates the traversal
-contract.
+Read-only view of a partial colored-port matching state. Consumers may inspect this object in
+pruning and weight-transport policies, while its traversal-owned arrays are exposed only through
+non-mutating array views.
 """
 struct ColoredPortState
     _state::_PortMatchingState
@@ -59,7 +69,7 @@ function ColoredPortState(
     edges::AbstractVector{ColoredPortEdge},
     source_ports::AbstractMatrix{<:Integer},
     target_ports::AbstractMatrix{<:Integer},
-)
+)::ColoredPortState
     return ColoredPortState(
         _PortMatchingState(
             collect(ColoredPortEdge, edges),
@@ -69,24 +79,32 @@ function ColoredPortState(
     )
 end
 
-"""Return the completed colored edges of a partial colored-port state."""
-port_edges(state::ColoredPortState) = state._state.edges
+"""Return a read-only view of the completed colored edges of a partial colored-port state."""
+port_edges(state::ColoredPortState) = _ReadOnlyArray(state._state.edges)
 
-"""Return the residual source-port counts of a partial colored-port state."""
-source_port_counts(state::ColoredPortState) = state._state.source_ports
+"""Return a read-only view of the residual source-port counts of a partial colored-port state."""
+source_port_counts(state::ColoredPortState) = _ReadOnlyArray(state._state.source_ports)
 
-"""Return the residual target-port counts of a partial colored-port state."""
-target_port_counts(state::ColoredPortState) = state._state.target_ports
+"""Return a read-only view of the residual target-port counts of a partial colored-port state."""
+target_port_counts(state::ColoredPortState) = _ReadOnlyArray(state._state.target_ports)
 
 """
     PortRelabeling
 
 Domain-neutral vertex relabeling witness. `vertex_map[v]` is the canonical vertex label assigned
-to original vertex `v`. Fixed external vertices map to themselves.
+to original vertex `v`. Fixed external vertices map to themselves. The mapping is exposed as a
+read-only vector.
 """
 struct PortRelabeling
-    vertex_map::Vector{Int}
+    vertex_map::_ReadOnlyArray{Int,1,Vector{Int}}
 end
+
+function PortRelabeling(vertex_map::AbstractVector{<:Integer})
+    return PortRelabeling(_ReadOnlyArray(collect(Int, vertex_map)))
+end
+
+@inline _port_relabeling_view(vertex_map::Vector{Int}) =
+    PortRelabeling(_ReadOnlyArray(vertex_map))
 
 """
     WeightedPortCompletion
@@ -214,7 +232,7 @@ end
         transport,
         ColoredPortState(raw_state),
         ColoredPortState(canonical_state),
-        PortRelabeling(mapping),
+        _port_relabeling_view(mapping),
     )
 end
 
@@ -235,7 +253,7 @@ end
         last(raw_child.edges),
         ColoredPortState(raw_child),
         ColoredPortState(canonical_child),
-        PortRelabeling(mapping),
+        _port_relabeling_view(mapping),
     )
 end
 
@@ -327,13 +345,13 @@ function canonical_relabeling(
     problem::ColoredPortProblem, state::ColoredPortState
 )::Tuple{ColoredPortState,PortRelabeling}
     _, canonical, mapping = _canonicalize_port_state(problem._problem, state._state)
-    return ColoredPortState(canonical), PortRelabeling(copy(mapping))
+    return ColoredPortState(canonical), _port_relabeling_view(copy(mapping))
 end
 
 """Apply a `PortRelabeling` to a partial colored-port state."""
 function relabel_port_state(
     state::ColoredPortState, witness::PortRelabeling
 )::ColoredPortState
-    _, mapped = _mapped_port_state(state._state, witness.vertex_map)
+    _, mapped = _mapped_port_state(state._state, witness.vertex_map._parent)
     return ColoredPortState(mapped)
 end
