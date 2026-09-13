@@ -1,11 +1,38 @@
 import GraphCombinations as GC
 
-function loopless_typed_problem(num_vertices::Int)
+function loopless_allowed(num_vertices::Int)
     allowed = trues(num_vertices, num_vertices)
     @inbounds for vertex in 1:num_vertices
         allowed[vertex, vertex] = false
     end
-    return GC.TypedMultigraphProblem(fill(2, num_vertices), fill(1, num_vertices); allowed)
+    return allowed
+end
+
+function loopless_typed_problem(num_vertices::Int)
+    return GC.TypedMultigraphProblem(
+        fill(2, num_vertices), fill(1, num_vertices); allowed=loopless_allowed(num_vertices)
+    )
+end
+
+function degree_split_typed_problem()
+    return GC.TypedMultigraphProblem(
+        [1, 1, 2, 2, 3, 3], fill(1, 6); allowed=loopless_allowed(6)
+    )
+end
+
+function admissibility_refined_typed_problem()
+    allowed = falses(6, 6)
+    @inbounds for vertex in 1:5
+        allowed[vertex, vertex + 1] = true
+        allowed[vertex + 1, vertex] = true
+    end
+    return GC.TypedMultigraphProblem(fill(2, 6), fill(1, 6); allowed)
+end
+
+function mixed_color_typed_problem()
+    return GC.TypedMultigraphProblem(
+        fill(2, 6), [1, 2, 1, 3, 2, 3]; allowed=loopless_allowed(6)
+    )
 end
 
 function cycle_graph(num_vertices::Int)
@@ -51,6 +78,12 @@ function typed_multigraph_generation!(SUITE)
     SUITE["Typed multigraph generation"]["construct loopless n6"] = @benchmarkable loopless_typed_problem(
         6
     ) seconds = 5
+    SUITE["Typed multigraph generation"]["construct degree-split n6"] = @benchmarkable degree_split_typed_problem() seconds =
+        5
+    SUITE["Typed multigraph generation"]["construct admissibility-refined n6"] = @benchmarkable admissibility_refined_typed_problem() seconds =
+        5
+    SUITE["Typed multigraph generation"]["construct mixed-color n6"] = @benchmarkable mixed_color_typed_problem() seconds =
+        5
     SUITE["Typed multigraph generation"]["canonicalize cycle n6 edge-list"] = @benchmarkable edge_list_canonicalize(
         $graph6, $mappings6
     ) seconds = 5

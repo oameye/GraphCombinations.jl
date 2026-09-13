@@ -21,47 +21,160 @@ struct TypedMultigraphProblem
     num_fixed::Int
 end
 
-struct _TypedAcceptAllRelabeling end
-@inline (::_TypedAcceptAllRelabeling)(::Vector{Int})::Bool = true
+function _typed_normalization_cells(
+    degrees::Vector{Int}, colors::Vector{Int}, num_fixed::Int
+)::Vector{Vector{Int}}
+    first_nonfixed = num_fixed + 1
+    first_nonfixed > length(degrees) && return Vector{Vector{Int}}()
 
-function _mapped_int_vector(values::Vector{Int}, mapping::Vector{Int})::Vector{Int}
-    mapped = similar(values)
-    @inbounds for old_vertex in eachindex(values)
-        mapped[mapping[old_vertex]] = values[old_vertex]
-    end
-    return mapped
-end
+    sorted_colors = sort!(unique(colors[first_nonfixed:end]))
+    cells = Vector{Vector{Int}}()
+    for color in sorted_colors
+        color_vertices = Int[]
+        for vertex in first_nonfixed:length(colors)
+            colors[vertex] == color && push!(color_vertices, vertex)
+        end
 
-function _mapped_square_matrix(matrix::BitMatrix, mapping::Vector{Int})::BitMatrix
-    n = size(matrix, 1)
-    mapped = falses(n, n)
-    @inbounds for old_u in 1:n
-        new_u = mapping[old_u]
-        for old_v in 1:n
-            mapped[new_u, mapping[old_v]] = matrix[old_u, old_v]
+        sorted_degrees = sort!(unique(degrees[color_vertices]))
+        for degree in sorted_degrees
+            cell = Int[]
+            for vertex in color_vertices
+                degrees[vertex] == degree && push!(cell, vertex)
+            end
+            push!(cells, cell)
         end
     end
-    return mapped
+    return cells
 end
 
-function _lexless_bitmat(a::BitMatrix, b::BitMatrix)::Bool
-    @inbounds for index in eachindex(a, b)
-        ai = a[index]
-        bi = b[index]
-        ai == bi && continue
-        return !ai && bi
+function _refine_typed_normalization_cells(
+    cells::Vector{Vector{Int}}, allowed::BitMatrix, pivot::Int
+)::Vector{Vector{Int}}
+    refined = Vector{Vector{Int}}()
+    sizehint!(refined, 2 * length(cells))
+    for cell in cells
+        forbidden = Int[]
+        admissible = Int[]
+        sizehint!(forbidden, length(cell))
+        sizehint!(admissible, length(cell))
+        @inbounds for vertex in cell
+            vertex == pivot && continue
+            if allowed[vertex, pivot]
+                push!(admissible, vertex)
+            else
+                push!(forbidden, vertex)
+            end
+        end
+        isempty(forbidden) || push!(refined, forbidden)
+        isempty(admissible) || push!(refined, admissible)
     end
-    return false
+    return refined
 end
 
-function _typed_metadata_less(
-    degrees::Vector{Int},
+function _typed_normalization_twins(allowed::BitMatrix, a::Int, b::Int)::Bool
+    allowed[a, a] == allowed[b, b] || return false
+    @inbounds for vertex in axes(allowed, 1)
+        (vertex == a || vertex == b) && continue
+        allowed[a, vertex] == allowed[b, vertex] || return false
+    end
+    return true
+end
+
+function _compare_mapped_bitmatrix(
+    matrix::BitMatrix, candidate_inverse::Vector{Int}, best_inverse::Vector{Int}
+)::Int
+    n = size(matrix, 1)
+    @inbounds for column in 1:n
+        candidate_column = candidate_inverse[column]
+        best_column = best_inverse[column]
+        for row in 1:n
+            candidate_value = matrix[candidate_inverse[row], candidate_column]
+            best_value = matrix[best_inverse[row], best_column]
+            candidate_value == best_value && continue
+            return candidate_value ? 1 : -1
+        end
+    end
+    return 0
+end
+
+mutable struct _TypedNormalizationSearchState
+    inverse_mapping::Vector{Int}
+    best_inverse_mapping::Vector{Int}
+    has_best::Bool
+end
+
+function _typed_normalization_search!(
+    state::_TypedNormalizationSearchState,
     allowed::BitMatrix,
-    best_degrees::Vector{Int},
-    best_allowed::BitMatrix,
-)::Bool
-    degrees == best_degrees || return _lexless_int_vectors(degrees, best_degrees)
-    return _lexless_bitmat(allowed, best_allowed)
+    cells::Vector{Vector{Int}},
+    target_vertex::Int,
+)::Nothing
+    n = size(allowed, 1)
+    if target_vertex > n
+        if !state.has_best ||
+            _compare_mapped_bitmatrix(
+            allowed, state.inverse_mapping, state.best_inverse_mapping
+        ) < 0
+            copyto!(state.best_inverse_mapping, state.inverse_mapping)
+            state.has_best = true
+        end
+        return nothing
+    end
+
+    isempty(cells) && error("Internal error: typed normalization partition is empty.")
+    cell = first(cells)
+    minimum_loop = true
+    @inbounds for vertex in cell
+        if !allowed[vertex, vertex]
+            minimum_loop = false
+            break
+        end
+    end
+
+    for (candidate_index, vertex) in pairs(cell)
+        allowed[vertex, vertex] == minimum_loop || continue
+
+        equivalent_candidate = false
+        @inbounds for previous_index in 1:(candidate_index - 1)
+            previous = cell[previous_index]
+            allowed[previous, previous] == minimum_loop || continue
+            if _typed_normalization_twins(allowed, vertex, previous)
+                equivalent_candidate = true
+                break
+            end
+        end
+        equivalent_candidate && continue
+
+        state.inverse_mapping[target_vertex] = vertex
+        refined = _refine_typed_normalization_cells(cells, allowed, vertex)
+        _typed_normalization_search!(state, allowed, refined, target_vertex + 1)
+    end
+    return nothing
+end
+
+function _materialize_typed_metadata(
+    degrees::Vector{Int},
+    colors::Vector{Int},
+    allowed::BitMatrix,
+    inverse_mapping::Vector{Int},
+)::Tuple{Vector{Int},Vector{Int},BitMatrix}
+    n = length(degrees)
+    normalized_degrees = similar(degrees)
+    normalized_colors = similar(colors)
+    normalized_allowed = falses(n, n)
+
+    @inbounds for new_vertex in 1:n
+        old_vertex = inverse_mapping[new_vertex]
+        normalized_degrees[new_vertex] = degrees[old_vertex]
+        normalized_colors[new_vertex] = colors[old_vertex]
+    end
+    @inbounds for new_u in 1:n
+        old_u = inverse_mapping[new_u]
+        for new_v in 1:n
+            normalized_allowed[new_u, new_v] = allowed[old_u, inverse_mapping[new_v]]
+        end
+    end
+    return normalized_degrees, normalized_colors, normalized_allowed
 end
 
 function _normalize_typed_problem(
@@ -70,41 +183,22 @@ function _normalize_typed_problem(
     n = length(degrees)
     n <= num_fixed + 1 && return degrees, colors, allowed
 
-    # Put nonfixed color classes in a deterministic order independent of caller labels.
-    nonfixed = collect((num_fixed + 1):n)
-    sort!(nonfixed; by=v -> colors[v])
-    color_mapping = collect(1:n)
-    @inbounds for (offset, old_vertex) in enumerate(nonfixed)
-        color_mapping[old_vertex] = num_fixed + offset
+    # The legacy representation first sorts nonfixed colors, then minimizes the complete degree
+    # vector, and only then minimizes the admissibility matrix. Color/degree cells therefore have
+    # a fixed target order. Within those cells we refine by matrix bits in the exact order in which
+    # they enter the lexicographic comparison, so refinement never changes the canonical bytes.
+    cells = _typed_normalization_cells(degrees, colors, num_fixed)
+    for fixed_vertex in 1:num_fixed
+        cells = _refine_typed_normalization_cells(cells, allowed, fixed_vertex)
     end
 
-    reordered_degrees = _mapped_int_vector(degrees, color_mapping)
-    reordered_colors = _mapped_int_vector(colors, color_mapping)
-    reordered_allowed = _mapped_square_matrix(allowed, color_mapping)
+    inverse_mapping = collect(1:n)
+    best_inverse_mapping = similar(inverse_mapping)
+    state = _TypedNormalizationSearchState(inverse_mapping, best_inverse_mapping, false)
+    _typed_normalization_search!(state, allowed, cells, num_fixed + 1)
+    state.has_best || error("Internal error: typed normalization orbit is empty.")
 
-    # Canonicalize the complete nonfixed metadata within equal-color cells. Degrees are part of
-    # the problem semantics just as much as pair-local admissibility; caller ordering must not
-    # become hidden vertex identity.
-    mappings = _problem_relabelings(
-        reordered_colors, num_fixed, _TypedAcceptAllRelabeling()
-    )
-    best_degrees = reordered_degrees
-    best_allowed = reordered_allowed
-    best_mapping = first(mappings)
-    @inbounds for mapping in @view mappings[2:end]
-        candidate_degrees = _mapped_int_vector(reordered_degrees, mapping)
-        candidate_allowed = _mapped_square_matrix(reordered_allowed, mapping)
-        if _typed_metadata_less(
-            candidate_degrees, candidate_allowed, best_degrees, best_allowed
-        )
-            best_degrees = candidate_degrees
-            best_allowed = candidate_allowed
-            best_mapping = mapping
-        end
-    end
-
-    normalized_colors = _mapped_int_vector(reordered_colors, best_mapping)
-    return best_degrees, normalized_colors, best_allowed
+    return _materialize_typed_metadata(degrees, colors, allowed, state.best_inverse_mapping)
 end
 
 function TypedMultigraphProblem(
