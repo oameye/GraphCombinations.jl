@@ -1,7 +1,7 @@
 name = "GraphCombinations"
 uuid = "d653b97f-30d3-4d96-b482-58626fc91258"
 authors = ["Orjan Ameye <orjan.ameye@hotmail.com>"]
-version = "0.3.0"
+version = "0.3.1"
 
 [deps]
 DispatchDoctor = "8d63f2c5-f18a-4cf2-ba9d-b3f60fc568c8"
