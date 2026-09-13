@@ -118,12 +118,14 @@ function admissible_labeled_count(problem::GC.TypedMultigraphProblem)::Int
     allowed = GC.edge_admissibility(problem)
     count = Ref(0)
     GC._foreach_admissible_labeled_multigraph(degrees, allowed) do _
-        count[] += 1
+        return count[] += 1
     end
     return count[]
 end
 
-function log_typed_workload_profile(name::String, problem::GC.TypedMultigraphProblem)::Nothing
+function log_typed_workload_profile(
+    name::String, problem::GC.TypedMultigraphProblem
+)::Nothing
     @info "typed workload profile" workload = name relabelings = length(
         GC._typed_problem_relabelings(problem)
     ) labeled_candidates = admissible_labeled_count(problem) connected_results = length(
