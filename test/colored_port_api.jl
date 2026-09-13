@@ -121,7 +121,9 @@ end
         fill(1, 3), ones(Int, 3, 1), ones(Int, 3, 1), trues(1, 1)
     )
     transport = RecordingPortTransport(0, false, true)
-    transported, stats = GC.generate_weighted_with_stats(problem; transport=transport)
+    transported, stats = @inferred GC.generate_weighted_with_stats(
+        problem; transport=transport
+    )
     baseline = GC.generate_weighted(problem)
 
     @test transported == baseline

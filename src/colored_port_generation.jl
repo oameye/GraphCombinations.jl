@@ -54,7 +54,7 @@ struct _PortMatchingProblem
         target_ports::AbstractMatrix{<:Integer},
         compatibility::AbstractArray{Bool,4},
         num_fixed::Integer=0,
-    )
+    )::_PortMatchingProblem
         colors = collect(Int, vertex_colors)
         sources = Matrix{Int}(source_ports)
         targets = Matrix{Int}(target_ports)
@@ -90,7 +90,7 @@ function _PortMatchingProblem(
     target_ports::AbstractMatrix{<:Integer},
     compatibility::AbstractMatrix{Bool},
     num_fixed::Integer=0,
-)
+)::_PortMatchingProblem
     num_vertices = length(vertex_colors)
     num_source_colors = size(source_ports, 2)
     num_target_colors = size(target_ports, 2)
@@ -380,13 +380,13 @@ function _canonicalize_port_state(
     return _canonicalize_port_state(state, _port_automorphisms(problem))
 end
 
-function _first_remaining_source(state::_PortMatchingState)::Union{Nothing,Tuple{Int,Int}}
+function _first_remaining_source(state::_PortMatchingState)::Tuple{Bool,Int,Int}
     @inbounds for vertex in axes(state.source_ports, 1)
         for color in axes(state.source_ports, 2)
-            state.source_ports[vertex, color] > 0 && return (vertex, color)
+            state.source_ports[vertex, color] > 0 && return true, vertex, color
         end
     end
-    return nothing
+    return false, 0, 0
 end
 
 mutable struct _WeightedPortState
@@ -472,15 +472,14 @@ function _weighted_port_matchings_with_stats(
 
     while true
         first_state = first(values(states)).state
-        isnothing(_first_remaining_source(first_state)) && break
+        source_found, _, _ = _first_remaining_source(first_state)
+        source_found || break
 
         next_states = Dict{_PortStateKey,_WeightedPortState}()
         for weighted in values(states)
             state = weighted.state
-            source = _first_remaining_source(state)
-            isnothing(source) &&
-                error("Internal error: port-matching layers are inconsistent.")
-            source_vertex, source_color = source
+            source_found, source_vertex, source_color = _first_remaining_source(state)
+            source_found || error("Internal error: port-matching layers are inconsistent.")
 
             @inbounds for target_vertex in axes(state.target_ports, 1)
                 for target_color in axes(state.target_ports, 2)

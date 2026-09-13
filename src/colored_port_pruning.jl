@@ -52,15 +52,14 @@ function _weighted_port_matchings_pruned_with_stats(
 
     while true
         first_state = first(values(states)).state
-        isnothing(_first_remaining_source(first_state)) && break
+        source_found, _, _ = _first_remaining_source(first_state)
+        source_found || break
 
         next_states = Dict{_PortStateKey,_WeightedPortState}()
         for weighted in values(states)
             state = weighted.state
-            source = _first_remaining_source(state)
-            isnothing(source) &&
-                error("Internal error: port-matching layers are inconsistent.")
-            source_vertex, source_color = source
+            source_found, source_vertex, source_color = _first_remaining_source(state)
+            source_found || error("Internal error: port-matching layers are inconsistent.")
 
             @inbounds for target_vertex in axes(state.target_ports, 1)
                 for target_color in axes(state.target_ports, 2)

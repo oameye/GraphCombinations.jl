@@ -60,7 +60,7 @@ sort_allgraphs_results(results) = sort(results; by=x -> x[1]) # Sort by canonica
         ([Edge(1, 3), Edge(2, 4), Edge(3, 3), Edge(3, 4), Edge(4, 4)], big(4)),
         ([Edge(1, 3), Edge(2, 4), Edge(3, 4), Edge(3, 4), Edge(3, 4)], big(6)),
     ]
-    result_2_0_0_2 = allgraphs([2, 0, 0, 2])
+    result_2_0_0_2 = @inferred allgraphs([2, 0, 0, 2])
     @test length(result_2_0_0_2) == 3
     @test all(result -> last(result) isa BigInt, result_2_0_0_2)
     # Sort both expected and actual results before comparison

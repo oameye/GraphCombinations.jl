@@ -63,16 +63,16 @@ function _accept_row_state!(
     state_colors::Vector{Vector{Int}},
     seen::Vector{Set{GraphRep}},
     stats::RowReductionStats,
-)::Union{Nothing,PartitionCanonicalizationResult}
+)::Tuple{Bool,PartitionCanonicalizationResult}
     stats.states += 1
     stats.canonicalization_calls += 1
     state = _partition_canonicalize(graph, state_colors[row], num_external)
     if state.key in seen[row]
         stats.duplicate_states += 1
-        return nothing
+        return false, state
     end
     push!(seen[row], state.key)
-    return state
+    return true, state
 end
 
 function _enumerate_reduced_vertex!(
@@ -86,8 +86,10 @@ function _enumerate_reduced_vertex!(
     stats::RowReductionStats,
 ) where {F}
     num_vertices = length(residual)
-    state = _accept_row_state!(graph, row, num_external, state_colors, seen, stats)
-    isnothing(state) && return nothing
+    accepted, state = _accept_row_state!(
+        graph, row, num_external, state_colors, seen, stats
+    )
+    accepted || return nothing
 
     if row > num_vertices
         stats.complete_topologies += 1
