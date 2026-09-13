@@ -46,6 +46,10 @@ else
         include("generation.jl")
     end
 
+    @testset "degree-sequence problem" begin
+        include("degree_sequence_problem.jl")
+    end
+
     @testset "Wick reference oracle" begin
         include("reference_oracle.jl")
     end
