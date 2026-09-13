@@ -54,6 +54,10 @@ else
         include("typed_multigraph_problem.jl")
     end
 
+    @testset "typed metadata normalization" begin
+        include("typed_metadata_normalization.jl")
+    end
+
     @testset "typed matrix canonicalization" begin
         include("typed_matrix_canonicalization.jl")
     end
