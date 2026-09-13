@@ -54,11 +54,7 @@ function _problem_relabelings(
     mapping = collect(eachindex(vertex_colors))
     relabelings = Vector{Vector{Int}}()
     _collect_problem_relabelings!(
-        relabelings,
-        preserves,
-        _vertex_color_cells(vertex_colors, num_fixed),
-        mapping,
-        1,
+        relabelings, preserves, _vertex_color_cells(vertex_colors, num_fixed), mapping, 1
     )
     isempty(relabelings) &&
         error("Internal error: problem-preserving relabeling group is empty.")
