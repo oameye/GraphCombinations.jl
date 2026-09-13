@@ -1,11 +1,13 @@
 import GraphCombinations as GC
 
 @testset "accept-all pruning matches baseline" begin
-    problem = GC._PortMatchingProblem(
+    problem = @inferred GC._PortMatchingProblem(
         fill(1, 3), ones(Int, 3, 1), ones(Int, 3, 1), trues(1, 1)
     )
-    baseline, baseline_stats = GC._weighted_port_matchings_with_stats(problem)
-    pruned, stats = GC._weighted_port_matchings_pruned_with_stats(problem, _ -> true)
+    baseline, baseline_stats = @inferred GC._weighted_port_matchings_with_stats(problem)
+    pruned, stats = @inferred GC._weighted_port_matchings_pruned_with_stats(
+        problem, _ -> true
+    )
 
     @test pruned == baseline
     @test stats.pruned_transitions == 0
@@ -17,16 +19,18 @@ import GraphCombinations as GC
 end
 
 @testset "monotone invariant pruning matches completion filtering" begin
-    problem = GC._PortMatchingProblem(
+    problem = @inferred GC._PortMatchingProblem(
         fill(1, 3), ones(Int, 3, 1), ones(Int, 3, 1), trues(1, 1)
     )
     no_self_edges(state) = all(edge -> edge.source != edge.target, state.edges)
 
     baseline = filter(
         result -> all(edge -> edge.source != edge.target, first(result)),
-        GC._weighted_port_matchings(problem),
+        @inferred(GC._weighted_port_matchings(problem)),
     )
-    pruned, stats = GC._weighted_port_matchings_pruned_with_stats(problem, no_self_edges)
+    pruned, stats = @inferred GC._weighted_port_matchings_pruned_with_stats(
+        problem, no_self_edges
+    )
 
     @test pruned == baseline
     @test stats.pruned_transitions > 0
