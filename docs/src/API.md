@@ -18,8 +18,11 @@ GraphCombinations
 ```@docs
 allgraphs
 DegreeSequenceProblem
+TypedMultigraphProblem
 generate_multigraphs
 vertex_degrees
+vertex_colors
+edge_admissibility
 fixed_vertex_count
 build_graph
 combinatoric_factor
