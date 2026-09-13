@@ -11,6 +11,7 @@ using Graphs, Multigraphs
 @stable default_mode = "disable" default_codegen_level = "min" begin
     include("MultiGraphWrap.jl")
     include("utils.jl")
+    include("relabeling_group.jl")
     include("partition_canonicalization.jl")
     include("matrix_canonicalization.jl")
     include("direct_generation.jl")

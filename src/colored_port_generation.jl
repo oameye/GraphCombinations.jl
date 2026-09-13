@@ -163,23 +163,6 @@ function _lexless_port_key(a::_PortStateKey, b::_PortStateKey)::Bool
     return _lexless_int_vectors(a.target_ports, b.target_ports)
 end
 
-function _port_vertex_cells(problem::_PortMatchingProblem)::Vector{Vector{Int}}
-    first_internal = problem.num_fixed + 1
-    first_internal > length(problem.vertex_colors) && return Vector{Vector{Int}}()
-
-    colors = sort!(unique(problem.vertex_colors[first_internal:end]))
-    cells = Vector{Vector{Int}}()
-    sizehint!(cells, length(colors))
-    for color in colors
-        cell = Int[]
-        for vertex in first_internal:length(problem.vertex_colors)
-            problem.vertex_colors[vertex] == color && push!(cell, vertex)
-        end
-        length(cell) > 1 && push!(cells, cell)
-    end
-    return cells
-end
-
 function _preserves_port_compatibility(
     problem::_PortMatchingProblem, mapping::Vector{Int}
 )::Bool
@@ -203,40 +186,18 @@ function _preserves_port_compatibility(
     return true
 end
 
-function _collect_port_automorphisms!(
-    automorphisms::Vector{Vector{Int}},
-    problem::_PortMatchingProblem,
-    cells::Vector{Vector{Int}},
-    mapping::Vector{Int},
-    cell_index::Int,
-)::Nothing
-    if cell_index > length(cells)
-        _preserves_port_compatibility(problem, mapping) &&
-            push!(automorphisms, copy(mapping))
-        return nothing
-    end
+struct _PortCompatibilityPreserver
+    problem::_PortMatchingProblem
+end
 
-    cell = cells[cell_index]
-    permutation = copy(cell)
-    while true
-        @inbounds for i in eachindex(cell)
-            mapping[cell[i]] = permutation[i]
-        end
-        _collect_port_automorphisms!(automorphisms, problem, cells, mapping, cell_index + 1)
-        _next_permutation!(permutation) || break
-    end
-    return nothing
+@inline function (preserver::_PortCompatibilityPreserver)(mapping::Vector{Int})::Bool
+    return _preserves_port_compatibility(preserver.problem, mapping)
 end
 
 function _port_automorphisms(problem::_PortMatchingProblem)::Vector{Vector{Int}}
-    mapping = collect(eachindex(problem.vertex_colors))
-    automorphisms = Vector{Vector{Int}}()
-    _collect_port_automorphisms!(
-        automorphisms, problem, _port_vertex_cells(problem), mapping, 1
+    return _problem_relabelings(
+        problem.vertex_colors, problem.num_fixed, _PortCompatibilityPreserver(problem)
     )
-    isempty(automorphisms) &&
-        error("Internal error: port problem has no identity automorphism.")
-    return automorphisms
 end
 
 @inline function _insertion_sort_port_edges!(edges::Vector{_PortEdge})::Nothing
