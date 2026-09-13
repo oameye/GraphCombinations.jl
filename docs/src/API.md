@@ -17,6 +17,10 @@ GraphCombinations
 
 ```@docs
 allgraphs
+DegreeSequenceProblem
+generate_multigraphs
+vertex_degrees
+fixed_vertex_count
 build_graph
 combinatoric_factor
 total_degree

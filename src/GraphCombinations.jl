@@ -18,10 +18,12 @@ using Graphs, Multigraphs
     include("colored_port_generation.jl")
     include("colored_port_pruning.jl")
     include("colored_port_api.jl")
+    include("degree_sequence_problem.jl")
     include("generation.jl")
 end
 
 export allgraphs, combinatoric_factor, build_graph, total_degree, canonical_form
+export DegreeSequenceProblem, generate_multigraphs, vertex_degrees, fixed_vertex_count
 export ColoredPortEdge,
     ColoredPortProblem,
     ColoredPortState,

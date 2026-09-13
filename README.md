@@ -6,7 +6,7 @@
 
 [![Code Style: Blue](https://img.shields.io/badge/blue%20style%20-%20blue-4495d1.svg)](https://github.com/JuliaDiff/BlueStyle)
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
-[![jet](https://img.shields.io/badge/%F0%9F%9B%A9%EF%B8%8F_tested_with-JET.jl-233f9a)](https://github.com/aviatesk/JET.jl)
+[![jet](https://img.shields.io/badge/%F0%9F%9B%A9%EF%B8%8F_tested_with_JET.jl-233f9a)](https://github.com/aviatesk/JET.jl)
 [![DispatchDoctor](https://img.shields.io/badge/%F0%9F%A9%BA_tested_with-DispatchDoctor.jl-blue?labelColor=white)](https://github.com/MilesCranmer/DispatchDoctor.jl)
 
 GraphCombinations.jl generates non-isomorphic multigraph topologies for a prescribed set of vertex degrees, with Feynman-diagram generation as the primary use case.
@@ -22,6 +22,17 @@ graphs = allgraphs([2, 0, 0, 2])
 `allgraphs` returns `(edges, S)` pairs, where `edges` is a canonical `Vector{Pair{Int,Int}}` representation and `S::BigInt` is the exact symmetry denominator of the topology.
 
 The production generator enumerates degree-constrained multigraphs directly instead of first constructing all Wick pairings. It uses a hybrid exact reduction strategy: low-redundancy inputs canonicalize completed graphs directly, while larger internal relabeling sectors quotient isomorphic partial states at completed multiplicity-row boundaries. Public representatives, result ordering, and symmetry denominators remain deterministic and exact. A brute-force Wick implementation is retained internally as a small-system correctness oracle.
+
+## Explicit degree-sequence problems
+
+`DegreeSequenceProblem` is the lower-level scalar interface when the vertices already exist explicitly rather than being specified through a degree histogram. It also permits fixed distinguished vertices of arbitrary degree.
+
+```julia
+problem = DegreeSequenceProblem([1, 1, 4, 4]; num_fixed=2)
+graphs = generate_multigraphs(problem)
+```
+
+Here `degrees[v]` is the prescribed degree of vertex `v`, and the first `num_fixed` vertices retain their labels under canonicalization. The remaining vertices are quotient-labeled. `generate_multigraphs` returns the same canonical graph representation and exact `BigInt` symmetry denominators as `allgraphs`.
 
 ## Weighted colored-port generation
 
