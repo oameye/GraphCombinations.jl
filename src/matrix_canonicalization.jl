@@ -20,13 +20,13 @@ function _write_inverse_permutation!(
     return nothing
 end
 
-function _mapped_multiplicity_is_lexless(
+function _compare_mapped_multiplicity(
     matrix::Matrix{Int},
     candidate_inverse::Vector{Int},
     best_inverse::Vector{Int},
     first_internal::Int,
     last_internal::Int,
-)::Bool
+)::Int
     num_vertices = size(matrix, 1)
 
     # A sorted GraphRep is the edge-pair sequence
@@ -49,10 +49,22 @@ function _mapped_multiplicity_is_lexless(
             candidate_multiplicity = matrix[candidate_u, candidate_v]
             best_multiplicity = matrix[best_u, best_v]
             candidate_multiplicity == best_multiplicity && continue
-            return candidate_multiplicity > best_multiplicity
+            return candidate_multiplicity > best_multiplicity ? -1 : 1
         end
     end
-    return false
+    return 0
+end
+
+@inline function _mapped_multiplicity_is_lexless(
+    matrix::Matrix{Int},
+    candidate_inverse::Vector{Int},
+    best_inverse::Vector{Int},
+    first_internal::Int,
+    last_internal::Int,
+)::Bool
+    return _compare_mapped_multiplicity(
+        matrix, candidate_inverse, best_inverse, first_internal, last_internal
+    ) < 0
 end
 
 function _materialize_mapped_graph(

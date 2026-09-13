@@ -183,26 +183,39 @@ function _canonicalize_under_mappings(
     graph::GraphRep, mappings::Vector{Vector{Int}}
 )::_MappedGraphCanonicalizationResult
     isempty(mappings) && error("Internal error: canonicalization mapping group is empty.")
-    best = similar(graph)
-    candidate = similar(graph)
+
+    num_vertices = length(first(mappings))
+    matrix = _graph_multiplicity_matrix(graph, num_vertices)
+    inverse_mapping = Vector{Int}(undef, num_vertices)
+    best_inverse_mapping = similar(inverse_mapping)
     automorphism_order = 0
 
     for (mapping_index, mapping) in pairs(mappings)
-        _write_mapped_graph!(candidate, graph, mapping)
+        length(mapping) == num_vertices ||
+            error("Internal error: canonicalization mappings have inconsistent sizes.")
+        _write_inverse_permutation!(inverse_mapping, mapping, 1)
+
         if mapping_index == 1
-            copyto!(best, candidate)
+            copyto!(best_inverse_mapping, inverse_mapping)
             automorphism_order = 1
             continue
         end
-        comparison = _compare_graph_reps(candidate, best)
+
+        comparison = _compare_mapped_multiplicity(
+            matrix, inverse_mapping, best_inverse_mapping, 1, num_vertices
+        )
         if comparison < 0
-            copyto!(best, candidate)
+            copyto!(best_inverse_mapping, inverse_mapping)
             automorphism_order = 1
         elseif iszero(comparison)
             automorphism_order = _checked_increment(automorphism_order)
         end
     end
-    return _MappedGraphCanonicalizationResult(best, automorphism_order)
+
+    canonical = _materialize_mapped_graph(
+        matrix, best_inverse_mapping, 1, num_vertices, length(graph)
+    )
+    return _MappedGraphCanonicalizationResult(canonical, automorphism_order)
 end
 
 function _foreach_admissible_labeled_multigraph(

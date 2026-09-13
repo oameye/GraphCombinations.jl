@@ -54,6 +54,10 @@ else
         include("typed_multigraph_problem.jl")
     end
 
+    @testset "typed matrix canonicalization" begin
+        include("typed_matrix_canonicalization.jl")
+    end
+
     @testset "problem relabeling group" begin
         include("relabeling_group.jl")
     end
