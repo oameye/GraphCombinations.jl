@@ -108,27 +108,52 @@ end
 struct _TypedBenchmarkSink end
 @inline (::_TypedBenchmarkSink)(_)::Nothing = nothing
 
+struct _TypedConnectedBenchmarkSink
+    num_vertices::Int
+end
+
+@inline function (sink::_TypedConnectedBenchmarkSink)(graph)::Nothing
+    GC.is_connected(GC.build_internal_graph(graph, sink.num_vertices))
+    return nothing
+end
+
 function enumerate_admissible_typed(degrees::Vector{Int}, allowed::BitMatrix)::Nothing
     GC._foreach_admissible_labeled_multigraph(_TypedBenchmarkSink(), degrees, allowed)
     return nothing
 end
 
-function admissible_labeled_count(problem::GC.TypedMultigraphProblem)::Int
+function enumerate_connected_admissible_typed(
+    degrees::Vector{Int}, allowed::BitMatrix
+)::Nothing
+    GC._foreach_admissible_labeled_multigraph(
+        _TypedConnectedBenchmarkSink(length(degrees)), degrees, allowed
+    )
+    return nothing
+end
+
+function admissible_labeled_counts(
+    problem::GC.TypedMultigraphProblem
+)::Tuple{Int,Int}
     degrees = GC.vertex_degrees(problem)
     allowed = GC.edge_admissibility(problem)
-    count = Ref(0)
-    GC._foreach_admissible_labeled_multigraph(degrees, allowed) do _
-        return count[] += 1
+    num_vertices = length(degrees)
+    total = Ref(0)
+    connected = Ref(0)
+    GC._foreach_admissible_labeled_multigraph(degrees, allowed) do graph
+        total[] += 1
+        GC.is_connected(GC.build_internal_graph(graph, num_vertices)) && (connected[] += 1)
+        return nothing
     end
-    return count[]
+    return total[], connected[]
 end
 
 function log_typed_workload_profile(
     name::String, problem::GC.TypedMultigraphProblem
 )::Nothing
+    labeled_candidates, connected_labeled_candidates = admissible_labeled_counts(problem)
     @info "typed workload profile" workload = name relabelings = length(
         GC._typed_problem_relabelings(problem)
-    ) labeled_candidates = admissible_labeled_count(problem) connected_results = length(
+    ) labeled_candidates connected_labeled_candidates connected_results = length(
         GC.generate_multigraphs(problem)
     )
     return nothing
@@ -168,6 +193,9 @@ function typed_multigraph_generation!(SUITE)
         $bipartite8
     ) seconds = 5
     SUITE["Typed multigraph generation"]["enumerate bipartite n8"] = @benchmarkable enumerate_admissible_typed(
+        $bipartite_degrees, $bipartite_allowed
+    ) seconds = 5
+    SUITE["Typed multigraph generation"]["enumerate + connected bipartite n8"] = @benchmarkable enumerate_connected_admissible_typed(
         $bipartite_degrees, $bipartite_allowed
     ) seconds = 5
     SUITE["Typed multigraph generation"]["generate loopless n5"] = @benchmarkable GC.generate_multigraphs(
