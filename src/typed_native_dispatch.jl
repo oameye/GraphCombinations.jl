@@ -1,9 +1,7 @@
 # --- Production dispatch support for native typed multiplicity recursion ---
 
 function _collect_typed_native_multiplicity(
-    problem::TypedMultigraphProblem,
-    connected::Bool,
-    mappings::Vector{Vector{Int}},
+    problem::TypedMultigraphProblem, connected::Bool, mappings::Vector{Vector{Int}}
 )::Tuple{Dict{GraphRep,Int},TypedRowReductionStats}
     num_vertices = length(problem._degrees)
     maximum_multiplicity = maximum(problem._degrees; init=0)
@@ -48,9 +46,7 @@ function _collect_typed_native_multiplicity(
 end
 
 function _generate_typed_native_multiplicity(
-    problem::TypedMultigraphProblem,
-    mappings::Vector{Vector{Int}};
-    connected::Bool=true,
+    problem::TypedMultigraphProblem, mappings::Vector{Vector{Int}}; connected::Bool=true
 )::Vector{Tuple{GraphRep,BigInt}}
     isempty(problem._degrees) && return Vector{Tuple{GraphRep,BigInt}}()
     isodd(sum(problem._degrees)) && return Vector{Tuple{GraphRep,BigInt}}()
