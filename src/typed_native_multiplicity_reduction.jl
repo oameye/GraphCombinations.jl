@@ -98,7 +98,7 @@ function _enumerate_typed_native_vertex!(
             multiplicities,
             row_actions[row][best_action_index],
             num_vertices,
-            sum(problem_degree -> problem_degree, residual; init=0),
+            sum(multiplicities),
         )
         f(_MappedGraphCanonicalizationResult(graph, automorphism_order))
         return nothing
