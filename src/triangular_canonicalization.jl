@@ -7,9 +7,7 @@
     return before_row + second_vertex - first_vertex + 1
 end
 
-function _graph_triangular_multiplicities(
-    graph::GraphRep, num_vertices::Int
-)::Vector{Int}
+function _graph_triangular_multiplicities(graph::GraphRep, num_vertices::Int)::Vector{Int}
     multiplicities = zeros(Int, (num_vertices * (num_vertices + 1)) ÷ 2)
     @inbounds for edge in graph
         multiplicities[_triangular_multiplicity_index(
@@ -59,10 +57,7 @@ end
 end
 
 function _materialize_triangular_action(
-    multiplicities::Vector{Int},
-    action::Vector{Int},
-    num_vertices::Int,
-    num_edges::Int,
+    multiplicities::Vector{Int}, action::Vector{Int}, num_vertices::Int, num_edges::Int
 )::GraphRep
     graph = Vector{Edge}(undef, num_edges)
     graph_index = 1
