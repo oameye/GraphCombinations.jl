@@ -11,7 +11,8 @@ end
     @test canonical_graph(result) == graph
     @test vertex_mapping(canonical_relabeling(result)) == [1, 2]
     @test canonical_automorphism_order(result) == 1
-    @test _apply_directed_witness(graph, canonical_relabeling(result)) == canonical_graph(result)
+    @test _apply_directed_witness(graph, canonical_relabeling(result)) ==
+        canonical_graph(result)
 
     @test_throws ArgumentError DirectedGCGraph([1 => 3], 2)
     @test_throws ArgumentError DirectedGCGraph([0 => 1], 2)
@@ -28,7 +29,8 @@ end
     @test vertex_mapping(canonical_relabeling(result)) == [2, 1, 3]
     @test canonical_graph(result) == DirectedGCGraph([2 => 3], 3)
     @test canonical_automorphism_order(result) == 1
-    @test _apply_directed_witness(graph, canonical_relabeling(result)) == canonical_graph(result)
+    @test _apply_directed_witness(graph, canonical_relabeling(result)) ==
+        canonical_graph(result)
 end
 
 @testset "color-preserving automorphism order" begin
@@ -36,7 +38,7 @@ end
     cycle_result = @inferred canonicalize_directed(cycle, Int[1, 1, 1])
     @test canonical_automorphism_order(cycle_result) == 3
     @test _apply_directed_witness(cycle, canonical_relabeling(cycle_result)) ==
-          canonical_graph(cycle_result)
+        canonical_graph(cycle_result)
 
     symmetric = DirectedGCGraph([1 => 3, 2 => 3, 3 => 1, 3 => 2], 3)
     symmetric_result = canonicalize_directed(symmetric, Int[1, 1, 2])
@@ -53,14 +55,16 @@ end
     in_star = DirectedGCGraph([2 => 1, 3 => 1], 3)
 
     @test canonical_graph(canonicalize_directed(out_star)) !=
-          canonical_graph(canonicalize_directed(in_star))
+        canonical_graph(canonicalize_directed(in_star))
 end
 
 @testset "loops, parallel edges, and relabeled-copy invariance" begin
     edges = [1 => 1, 1 => 2, 1 => 2, 2 => 3, 3 => 1]
     graph = DirectedGCGraph(edges, 3)
     permutation = Int[2, 3, 1]
-    relabeled_edges = [permutation[first(edge)] => permutation[last(edge)] for edge in edges]
+    relabeled_edges = [
+        permutation[first(edge)] => permutation[last(edge)] for edge in edges
+    ]
     relabeled = DirectedGCGraph(relabeled_edges, 3)
 
     original_result = canonicalize_directed(graph)
@@ -68,11 +72,11 @@ end
 
     @test canonical_graph(original_result) == canonical_graph(relabeled_result)
     @test canonical_automorphism_order(original_result) ==
-          canonical_automorphism_order(relabeled_result)
+        canonical_automorphism_order(relabeled_result)
     @test _apply_directed_witness(graph, canonical_relabeling(original_result)) ==
-          canonical_graph(original_result)
+        canonical_graph(original_result)
     @test _apply_directed_witness(relabeled, canonical_relabeling(relabeled_result)) ==
-          canonical_graph(relabeled_result)
+        canonical_graph(relabeled_result)
 end
 
 @testset "colored relabeled-copy invariance" begin
@@ -81,7 +85,9 @@ end
     graph = DirectedGCGraph(edges, 4)
 
     permutation = Int[2, 1, 3, 4]
-    relabeled_edges = [permutation[first(edge)] => permutation[last(edge)] for edge in edges]
+    relabeled_edges = [
+        permutation[first(edge)] => permutation[last(edge)] for edge in edges
+    ]
     relabeled_colors = similar(colors)
     for old_vertex in eachindex(colors)
         relabeled_colors[permutation[old_vertex]] = colors[old_vertex]
@@ -91,7 +97,8 @@ end
     result = canonicalize_directed(graph, colors)
     relabeled_result = canonicalize_directed(relabeled, relabeled_colors)
     @test canonical_graph(result) == canonical_graph(relabeled_result)
-    @test canonical_automorphism_order(result) == canonical_automorphism_order(relabeled_result)
+    @test canonical_automorphism_order(result) ==
+        canonical_automorphism_order(relabeled_result)
 end
 
 @testset "empty directed graph" begin
