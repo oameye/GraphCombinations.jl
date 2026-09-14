@@ -10,8 +10,9 @@ const GCCanonicalActions = GraphCombinations
 
     source = [10, 20, 30, 40, 50, 60]
     destination = similar(source)
-    @test @inferred(GCCanonicalActions._write_coordinate_action!(destination, source, action)) ===
-          nothing
+    @test @inferred(
+        GCCanonicalActions._write_coordinate_action!(destination, source, action)
+    ) === nothing
     @test destination == [30, 10, 20, 60, 40, 50]
 
     values = [1, 3, 2]
@@ -34,5 +35,7 @@ const GCCanonicalActions = GraphCombinations
     ) == 0
 
     @test isempty(@inferred GCCanonicalActions._vertex_block_coordinate_action([1, 2], 0))
-    @test_throws ArgumentError GCCanonicalActions._vertex_block_coordinate_action([1, 2], -1)
+    @test_throws ArgumentError GCCanonicalActions._vertex_block_coordinate_action(
+        [1, 2], -1
+    )
 end
