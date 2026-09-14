@@ -277,9 +277,7 @@ function _public_port_results(
 end
 
 function _generate_weighted_with_stats(
-    problem::ColoredPortProblem,
-    ::AcceptAllPortPolicy,
-    ::MultiplicityPortTransport,
+    problem::ColoredPortProblem, ::AcceptAllPortPolicy, ::MultiplicityPortTransport
 )::Tuple{Vector{WeightedPortCompletion},PortGenerationStats}
     results, stats = _weighted_port_matchings_compact_with_stats(problem._problem)
     return _public_port_results(results), PortGenerationStats(stats)
