@@ -21,6 +21,11 @@ using Graphs, Multigraphs
     include("colored_port_api.jl")
     include("degree_sequence_problem.jl")
     include("typed_multigraph_problem.jl")
+    include("triangular_canonicalization.jl")
+    include("typed_row_state_reduction.jl")
+    include("typed_packed_row_state_reduction.jl")
+    include("typed_native_multiplicity_reduction.jl")
+    include("typed_native_dispatch.jl")
     include("generation.jl")
 end
 

@@ -421,6 +421,17 @@ function _typed_is_unrestricted(problem::TypedMultigraphProblem)::Bool
     return all(==(first_color), problem._vertex_colors)
 end
 
+const _TYPED_NATIVE_MIN_RELABELINGS = 4
+
+@inline function _use_typed_native_multiplicity(
+    problem::TypedMultigraphProblem, mappings::Vector{Vector{Int}}
+)::Bool
+    length(mappings) >= _TYPED_NATIVE_MIN_RELABELINGS || return false
+    num_vertices = length(problem._degrees)
+    maximum_multiplicity = maximum(problem._degrees; init=0)
+    return _can_pack_triangular_key(num_vertices, maximum_multiplicity)
+end
+
 """
     generate_multigraphs(problem::TypedMultigraphProblem; connected=true)
 
@@ -442,6 +453,10 @@ function generate_multigraphs(
     end
 
     mappings = _typed_problem_relabelings(problem)
+    if _use_typed_native_multiplicity(problem, mappings)
+        return _generate_typed_native_multiplicity(problem, mappings; connected)
+    end
+
     topologies = Dict{GraphRep,Int}()
     n = length(problem._degrees)
     _foreach_admissible_labeled_multigraph(problem._degrees, problem._allowed) do graph

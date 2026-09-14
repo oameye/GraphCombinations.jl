@@ -62,6 +62,14 @@ else
         include("typed_matrix_canonicalization.jl")
     end
 
+    @testset "typed row-state reduction" begin
+        include("typed_row_state_reduction.jl")
+    end
+
+    @testset "typed native multiplicity reduction" begin
+        include("typed_native_multiplicity_reduction.jl")
+    end
+
     @testset "problem relabeling group" begin
         include("relabeling_group.jl")
     end
