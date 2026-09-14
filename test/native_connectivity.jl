@@ -11,7 +11,7 @@ import GraphCombinations as GC
             end
         end
 
-        for mask in 0:(UInt(1) << length(possible_edges)) - 1
+        for mask in 0:((UInt(1) << length(possible_edges)) - 1)
             graph = Pair{Int,Int}[]
             for (index, edge) in pairs(possible_edges)
                 !iszero(mask & (UInt(1) << (index - 1))) && push!(graph, edge)
