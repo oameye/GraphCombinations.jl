@@ -33,8 +33,7 @@ function _foreach_typed_packed_row_reduced_multigraph(
 
     bits = _triangular_multiplicity_bits(maximum_multiplicity)
     mappings = _typed_problem_relabelings(problem)
-    row_mappings = _typed_row_state_mappings(mappings, num_vertices)
-    row_actions = _typed_row_state_actions(row_mappings, num_vertices)
+    row_actions = _typed_row_state_actions(mappings, num_vertices)
     seen = [Set{UInt128}() for _ in 1:(num_vertices + 1)]
     stats = TypedRowReductionStats()
     residual = copy(problem._degrees)
