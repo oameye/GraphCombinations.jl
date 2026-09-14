@@ -13,9 +13,7 @@ function _typed_bipartite_problem(num_per_color::Int)
         end
     end
     return TypedMultigraphProblem(
-        fill(2, num_vertices),
-        vcat(fill(1, num_per_color), fill(2, num_per_color));
-        allowed,
+        fill(2, num_vertices), vcat(fill(1, num_per_color), fill(2, num_per_color)); allowed
     )
 end
 
@@ -53,7 +51,8 @@ end
     )
 
     for problem in workloads
-        @test GCTypedRows._generate_typed_row_reduced(problem) == generate_multigraphs(problem)
+        @test GCTypedRows._generate_typed_row_reduced(problem) ==
+            generate_multigraphs(problem)
         @test GCTypedRows._generate_typed_row_reduced(problem; connected=false) ==
             generate_multigraphs(problem; connected=false)
     end
@@ -74,6 +73,8 @@ end
     @test length(first(row_mappings)) == length(mappings)
     @test length(last(row_mappings)) == length(mappings)
     for row in 1:7, mapping in row_mappings[row]
-        @test all((vertex < row) == (mapping[vertex] < row) for vertex in eachindex(mapping))
+        @test all(
+            (vertex < row) == (mapping[vertex] < row) for vertex in eachindex(mapping)
+        )
     end
 end
