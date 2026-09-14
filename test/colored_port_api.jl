@@ -47,7 +47,9 @@ end
     )
     completions = @inferred GC.generate_weighted(problem)
     with_stats, stats = @inferred GC.generate_weighted_with_stats(problem)
-    internal, internal_stats = @inferred GC._weighted_port_matchings_with_stats(problem._problem)
+    internal, internal_stats = @inferred GC._weighted_port_matchings_with_stats(
+        problem._problem
+    )
 
     @test completions == with_stats
     @test [(result.edges, result.weight) for result in completions] == internal
