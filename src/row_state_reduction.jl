@@ -206,7 +206,7 @@ function _collect_topologies_row_reduced(
 
     stats = _foreach_row_reduced_multigraph(degrees, num_external) do state
         graph = state.key
-        if connected && !is_connected(build_internal_graph(graph, num_vertices))
+        if connected && !_is_connected_graph_rep(graph, num_vertices)
             return nothing
         end
 
