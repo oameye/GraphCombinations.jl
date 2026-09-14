@@ -131,9 +131,7 @@ function enumerate_connected_admissible_typed(
     return nothing
 end
 
-function admissible_labeled_counts(
-    problem::GC.TypedMultigraphProblem
-)::Tuple{Int,Int}
+function admissible_labeled_counts(problem::GC.TypedMultigraphProblem)::Tuple{Int,Int}
     degrees = GC.vertex_degrees(problem)
     allowed = GC.edge_admissibility(problem)
     num_vertices = length(degrees)
