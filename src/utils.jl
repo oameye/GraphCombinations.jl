@@ -146,6 +146,71 @@ function canonical_form(graph::GraphRep, internal_indices::UnitRange{Int})::Grap
     return _canonical_form_inplace_permutations(graph, internal_indices)
 end
 
+@inline function _is_connected_graph_rep_u64(graph::GraphRep, num_vertices::Int)::Bool
+    visited = UInt64(1)
+    frontier = visited
+
+    while !iszero(frontier)
+        next_frontier = UInt64(0)
+        @inbounds for edge in graph
+            u = edge.first
+            v = edge.second
+            u == v && continue
+
+            u_bit = UInt64(1) << (u - 1)
+            v_bit = UInt64(1) << (v - 1)
+            !iszero(frontier & u_bit) && iszero(visited & v_bit) &&
+                (next_frontier |= v_bit)
+            !iszero(frontier & v_bit) && iszero(visited & u_bit) &&
+                (next_frontier |= u_bit)
+        end
+        next_frontier &= ~visited
+        iszero(next_frontier) && break
+        visited |= next_frontier
+        frontier = next_frontier
+    end
+
+    target = num_vertices == 64 ? typemax(UInt64) : (UInt64(1) << num_vertices) - UInt64(1)
+    return visited == target
+end
+
+function _is_connected_graph_rep_large(graph::GraphRep, num_vertices::Int)::Bool
+    seen = falses(num_vertices)
+    stack = Vector{Int}(undef, num_vertices)
+    seen[1] = true
+    stack[1] = 1
+    stack_size = 1
+    reached = 1
+
+    while stack_size > 0
+        vertex = stack[stack_size]
+        stack_size -= 1
+        @inbounds for edge in graph
+            neighbor = if edge.first == vertex
+                edge.second
+            elseif edge.second == vertex
+                edge.first
+            else
+                continue
+            end
+            seen[neighbor] && continue
+            seen[neighbor] = true
+            reached += 1
+            stack_size += 1
+            stack[stack_size] = neighbor
+        end
+    end
+    return reached == num_vertices
+end
+
+function _is_connected_graph_rep(graph::GraphRep, num_vertices::Int)::Bool
+    num_vertices > 0 || return false
+    num_vertices == 1 && return true
+    return num_vertices <= 64 ?
+           _is_connected_graph_rep_u64(graph, num_vertices) :
+           _is_connected_graph_rep_large(graph, num_vertices)
+end
+
 """
     build_internal_graph(graph_rep::GraphRep, num_vertices::Int)::SimpleGraph
 
