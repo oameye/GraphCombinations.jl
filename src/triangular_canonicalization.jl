@@ -102,3 +102,80 @@ function _canonicalize_under_triangular_actions(
     )
     return _MappedGraphCanonicalizationResult(canonical, automorphism_order)
 end
+
+@inline function _triangular_multiplicity_bits(maximum_multiplicity::Int)::Int
+    maximum_multiplicity >= 0 ||
+        error("Internal error: multiplicity bound must be non-negative.")
+    iszero(maximum_multiplicity) && return 1
+    return 8 * sizeof(UInt) - leading_zeros(UInt(maximum_multiplicity))
+end
+
+@inline function _can_pack_triangular_key(
+    num_vertices::Int, maximum_multiplicity::Int
+)::Bool
+    bits = _triangular_multiplicity_bits(maximum_multiplicity)
+    slots = (num_vertices * (num_vertices + 1)) ÷ 2
+    return slots <= 128 ÷ bits
+end
+
+@inline function _pack_triangular_action(
+    multiplicities::Vector{Int}, action::Vector{Int}, bits::Int
+)::UInt128
+    key = UInt128(0)
+    shift = 0
+    @inbounds for source_index in action
+        multiplicity = multiplicities[source_index]
+        multiplicity >= 0 || error("Internal error: negative edge multiplicity.")
+        key |= UInt128(multiplicity) << shift
+        shift += bits
+    end
+    return key
+end
+
+struct _PackedTriangularCanonicalizationResult
+    multiplicities::Vector{Int}
+    key::UInt128
+    best_action_index::Int
+    automorphism_order::Int
+end
+
+function _canonicalize_packed_triangular_actions(
+    graph::GraphRep,
+    actions::Vector{Vector{Int}},
+    num_vertices::Int,
+    bits::Int,
+)::_PackedTriangularCanonicalizationResult
+    isempty(actions) && error("Internal error: triangular action group is empty.")
+
+    multiplicities = _graph_triangular_multiplicities(graph, num_vertices)
+    best_action_index = 1
+    automorphism_order = 1
+    for action_index in 2:length(actions)
+        comparison = _compare_triangular_actions(
+            multiplicities, actions[action_index], actions[best_action_index]
+        )
+        if comparison < 0
+            best_action_index = action_index
+            automorphism_order = 1
+        elseif iszero(comparison)
+            automorphism_order = _checked_increment(automorphism_order)
+        end
+    end
+
+    key = _pack_triangular_action(multiplicities, actions[best_action_index], bits)
+    return _PackedTriangularCanonicalizationResult(
+        multiplicities, key, best_action_index, automorphism_order
+    )
+end
+
+function _materialize_packed_triangular_result(
+    state::_PackedTriangularCanonicalizationResult,
+    actions::Vector{Vector{Int}},
+    num_vertices::Int,
+    num_edges::Int,
+)::_MappedGraphCanonicalizationResult
+    canonical = _materialize_triangular_action(
+        state.multiplicities, actions[state.best_action_index], num_vertices, num_edges
+    )
+    return _MappedGraphCanonicalizationResult(canonical, state.automorphism_order)
+end
