@@ -47,12 +47,18 @@ end
     )
     completions = @inferred GC.generate_weighted(problem)
     with_stats, stats = @inferred GC.generate_weighted_with_stats(problem)
-    internal = GC._weighted_port_matchings(problem._problem)
+    internal, internal_stats = @inferred GC._weighted_port_matchings_with_stats(
+        problem._problem
+    )
 
     @test completions == with_stats
     @test [(result.edges, result.weight) for result in completions] == internal
     @test sum(result -> result.weight, completions) == factorial(big(3))
-    @test stats.automorphisms == factorial(3)
+    @test stats.automorphisms == internal_stats.automorphisms == factorial(3)
+    @test stats.layer_states == internal_stats.layer_states
+    @test stats.transitions == internal_stats.transitions
+    @test stats.canonicalization_calls == internal_stats.canonicalization_calls
+    @test stats.merged_transitions == internal_stats.merged_transitions
     @test stats.pruned_transitions == 0
     @test stats.canonicalization_calls == stats.transitions + 1
 
