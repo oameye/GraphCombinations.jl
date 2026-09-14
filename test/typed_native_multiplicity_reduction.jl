@@ -66,8 +66,9 @@ end
     multiplicities = GCNativeTyped._graph_triangular_multiplicities(graph, 6)
     bits = GCNativeTyped._triangular_multiplicity_bits(2)
 
-    key, best_action_index, automorphism_order =
-        GCNativeTyped._canonicalize_native_triangular_state(multiplicities, actions, bits)
+    key, best_action_index, automorphism_order = GCNativeTyped._canonicalize_native_triangular_state(
+        multiplicities, actions, bits
+    )
     packed = GCNativeTyped._canonicalize_packed_triangular_actions(graph, actions, 6, bits)
 
     @test key == packed.key
