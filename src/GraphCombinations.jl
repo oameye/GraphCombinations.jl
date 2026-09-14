@@ -8,6 +8,7 @@ using DispatchDoctor: @stable
 
 @stable default_mode = "disable" default_codegen_level = "min" begin
     include("utils.jl")
+    include("canonical_actions.jl")
     include("native_graph.jl")
     include("relabeling_group.jl")
     include("partition_canonicalization.jl")
