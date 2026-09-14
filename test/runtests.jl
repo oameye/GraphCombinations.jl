@@ -78,6 +78,10 @@ else
         include("relabeling_group.jl")
     end
 
+    @testset "canonical actions" begin
+        include("canonical_actions.jl")
+    end
+
     @testset "Wick reference oracle" begin
         include("reference_oracle.jl")
     end
