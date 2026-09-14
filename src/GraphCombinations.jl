@@ -24,6 +24,7 @@ using Graphs, Multigraphs
     include("triangular_canonicalization.jl")
     include("typed_row_state_reduction.jl")
     include("typed_packed_row_state_reduction.jl")
+    include("typed_native_multiplicity_reduction.jl")
     include("generation.jl")
 end
 
