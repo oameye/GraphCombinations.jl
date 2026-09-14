@@ -76,9 +76,7 @@ function loop_subset_typed_problem()
 end
 
 function identity_group_typed_problem()
-    return GC.TypedMultigraphProblem(
-        fill(2, 6), collect(1:6); allowed=loopless_allowed(6)
-    )
+    return GC.TypedMultigraphProblem(fill(2, 6), collect(1:6); allowed=loopless_allowed(6))
 end
 
 function cycle_graph(num_vertices::Int)
