@@ -66,6 +66,10 @@ else
         include("typed_row_state_reduction.jl")
     end
 
+    @testset "typed native multiplicity reduction" begin
+        include("typed_native_multiplicity_reduction.jl")
+    end
+
     @testset "problem relabeling group" begin
         include("relabeling_group.jl")
     end
