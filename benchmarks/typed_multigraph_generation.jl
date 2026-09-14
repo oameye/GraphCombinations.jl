@@ -113,6 +113,7 @@ function typed_multigraph_generation!(SUITE)
     problem5 = loopless_typed_problem(5)
     problem6 = loopless_typed_problem(6)
     mappings6 = GC._typed_problem_relabelings(problem6)
+    actions6 = GC._triangular_relabeling_actions(mappings6, 6)
     graph6 = cycle_graph(6)
     bipartite8 = bipartite_typed_problem(4)
     fixed_species6 = fixed_species_typed_problem()
@@ -132,6 +133,9 @@ function typed_multigraph_generation!(SUITE)
     ) seconds = 5
     SUITE["Typed multigraph generation"]["canonicalize cycle n6 matrix"] = @benchmarkable GC._canonicalize_under_mappings(
         $graph6, $mappings6
+    ) seconds = 5
+    SUITE["Typed multigraph generation"]["canonicalize cycle n6 triangular"] = @benchmarkable GC._canonicalize_under_triangular_actions(
+        $graph6, $actions6, 6
     ) seconds = 5
     SUITE["Typed multigraph generation"]["generate loopless n5"] = @benchmarkable GC.generate_multigraphs(
         $problem5
