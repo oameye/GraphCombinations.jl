@@ -79,7 +79,9 @@ end
 function _foreach_typed_row_reduced_multigraph(
     f::F, problem::TypedMultigraphProblem
 ) where {F}
-    return _foreach_typed_row_reduced_multigraph(f, problem, _typed_problem_relabelings(problem))
+    return _foreach_typed_row_reduced_multigraph(
+        f, problem, _typed_problem_relabelings(problem)
+    )
 end
 
 function _enumerate_typed_reduced_vertex!(
@@ -232,13 +234,13 @@ end
 function _collect_typed_row_reduced(
     problem::TypedMultigraphProblem, connected::Bool
 )::Tuple{Dict{GraphRep,Int},TypedRowReductionStats}
-    return _collect_typed_row_reduced(problem, connected, _typed_problem_relabelings(problem))
+    return _collect_typed_row_reduced(
+        problem, connected, _typed_problem_relabelings(problem)
+    )
 end
 
 function _generate_typed_row_reduced(
-    problem::TypedMultigraphProblem,
-    mappings::Vector{Vector{Int}};
-    connected::Bool=true,
+    problem::TypedMultigraphProblem, mappings::Vector{Vector{Int}}; connected::Bool=true
 )::Vector{Tuple{GraphRep,BigInt}}
     isempty(problem._degrees) && return Vector{Tuple{GraphRep,BigInt}}()
     isodd(sum(problem._degrees)) && return Vector{Tuple{GraphRep,BigInt}}()
