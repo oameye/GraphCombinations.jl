@@ -100,6 +100,9 @@ function add_colored_port_profile_fixture!(
     group["internal traversal + stats"] = @benchmarkable GC._weighted_port_matchings_with_stats(
         $internal
     ) seconds = 5
+    group["compact traversal + stats"] = @benchmarkable GC._weighted_port_matchings_compact_with_stats(
+        $internal
+    ) seconds = 5
     group["public materialization"] = @benchmarkable GC._public_port_results(
         $internal_results
     )
