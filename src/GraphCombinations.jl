@@ -15,6 +15,7 @@ using DispatchDoctor: @stable
     include("direct_generation.jl")
     include("row_state_reduction.jl")
     include("colored_port_generation.jl")
+    include("colored_port_compact.jl")
     include("colored_port_pruning.jl")
     include("colored_port_api.jl")
     include("degree_sequence_problem.jl")
