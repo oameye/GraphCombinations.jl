@@ -74,9 +74,7 @@ function GC.transport_port_weight(
 end
 
 function add_colored_port_profile_fixture!(
-    profile::BenchmarkGroup,
-    name::String,
-    vertex_colors::Vector{Int},
+    profile::BenchmarkGroup, name::String, vertex_colors::Vector{Int}
 )
     data = colored_port_data(vertex_colors)
     problem = public_colored_port_problem(vertex_colors)
@@ -102,13 +100,15 @@ function add_colored_port_profile_fixture!(
     group["internal traversal + stats"] = @benchmarkable GC._weighted_port_matchings_with_stats(
         $internal
     ) seconds = 5
-    group["public materialization"] = @benchmarkable GC._public_port_results($internal_results)
+    group["public materialization"] = @benchmarkable GC._public_port_results(
+        $internal_results
+    )
     group["public generation"] = @benchmarkable GC.generate_weighted($problem) seconds = 5
 
     println(
         "Colored-port fixture [$name]: automorphisms=$(stats.automorphisms), " *
         "layers=$(stats.layer_states), transitions=$(stats.transitions), " *
-        "canonicalizations=$(stats.canonicalization_calls), " *
+        "canonicalization calls=$(stats.canonicalization_calls), " *
         "merged=$(stats.merged_transitions), completions=$(length(internal_results))",
     )
     return problem
@@ -130,12 +130,8 @@ function colored_port_generation!(SUITE)
     ) seconds = 5
 
     profile = SUITE["Colored port profile"] = BenchmarkGroup()
-    add_colored_port_profile_fixture!(
-        profile, "high-color low-symmetry", collect(1:6)
-    )
-    add_colored_port_profile_fixture!(
-        profile, "repeated-color order 3", [1, 2, 3, 3, 3]
-    )
+    add_colored_port_profile_fixture!(profile, "high-color low-symmetry", collect(1:6))
+    add_colored_port_profile_fixture!(profile, "repeated-color order 3", [1, 2, 3, 3, 3])
     repeated_order4 = add_colored_port_profile_fixture!(
         profile, "repeated-color order 4", [1, 2, 3, 3, 3, 3]
     )
@@ -146,16 +142,16 @@ function colored_port_generation!(SUITE)
         repeated_order4; transport=parity_transport
     )
     signed_group["public generation"] = @benchmarkable GC.generate_weighted(
-        $repeated_order4; transport=$parity_transport
+        $repeated_order4; transport=($parity_transport)
     ) seconds = 5
     signed_group["public generation + stats"] = @benchmarkable GC.generate_weighted_with_stats(
-        $repeated_order4; transport=$parity_transport
+        $repeated_order4; transport=($parity_transport)
     ) seconds = 5
     println(
         "Colored-port fixture [signed witness transport]: " *
         "automorphisms=$(signed_stats.automorphisms), layers=$(signed_stats.layer_states), " *
         "transitions=$(signed_stats.transitions), " *
-        "canonicalizations=$(signed_stats.canonicalization_calls), " *
+        "canonicalization calls=$(signed_stats.canonicalization_calls), " *
         "merged=$(signed_stats.merged_transitions)",
     )
 
