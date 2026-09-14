@@ -24,17 +24,21 @@ function DirectedGCGraph(
     @inbounds for edge in edges
         source = Int(first(edge))
         target = Int(last(edge))
-        1 <= source <= n ||
-            throw(ArgumentError("Source vertex $source is outside 1:$n."))
-        1 <= target <= n ||
-            throw(ArgumentError("Target vertex $target is outside 1:$n."))
+        1 <= source <= n || throw(ArgumentError("Source vertex $source is outside 1:$n."))
+        1 <= target <= n || throw(ArgumentError("Target vertex $target is outside 1:$n."))
         multiplicities[_directed_slot(source, target, n)] += 1
     end
     return DirectedGCGraph(n, multiplicities)
 end
 
-function DirectedGCGraph(edges::AbstractVector{<:Pair{<:Integer,<:Integer}})::DirectedGCGraph
-    n = isempty(edges) ? 0 : maximum(max(Int(first(edge)), Int(last(edge))) for edge in edges)
+function DirectedGCGraph(
+    edges::AbstractVector{<:Pair{<:Integer,<:Integer}}
+)::DirectedGCGraph
+    n = if isempty(edges)
+        0
+    else
+        maximum(max(Int(first(edge)), Int(last(edge))) for edge in edges)
+    end
     return DirectedGCGraph(edges, n)
 end
 
@@ -73,7 +77,9 @@ function Base.isequal(a::VertexRelabeling, b::VertexRelabeling)
     return isequal(a._mapping, b._mapping)
 end
 Base.:(==)(a::VertexRelabeling, b::VertexRelabeling) = isequal(a, b)
-Base.hash(relabeling::VertexRelabeling, h::UInt) = hash(relabeling._mapping, hash(VertexRelabeling, h))
+function Base.hash(relabeling::VertexRelabeling, h::UInt)
+    return hash(relabeling._mapping, hash(VertexRelabeling, h))
+end
 
 """
 Exact result of colored directed whole-graph canonicalization.
@@ -89,7 +95,8 @@ struct DirectedCanonicalizationResult
 end
 
 canonical_graph(result::DirectedCanonicalizationResult)::DirectedGCGraph = result._canonical
-canonical_relabeling(result::DirectedCanonicalizationResult)::VertexRelabeling = result._relabeling
+canonical_relabeling(result::DirectedCanonicalizationResult)::VertexRelabeling =
+    result._relabeling
 canonical_automorphism_order(result::DirectedCanonicalizationResult)::Int =
     result._automorphism_order
 
@@ -100,9 +107,7 @@ function _directed_relabelings(vertex_colors::Vector{Int})::Vector{Vector{Int}}
     return _problem_relabelings(vertex_colors, 0, _AcceptAllRelabelings())
 end
 
-function _directed_coordinate_action(
-    mapping::Vector{Int}, num_vertices::Int
-)::Vector{Int}
+function _directed_coordinate_action(mapping::Vector{Int}, num_vertices::Int)::Vector{Int}
     length(mapping) == num_vertices ||
         error("Internal error: directed relabeling has the wrong size.")
     inverse_mapping = Vector{Int}(undef, num_vertices)
@@ -113,8 +118,9 @@ function _directed_coordinate_action(
         old_source = inverse_mapping[new_source]
         for new_target in 1:num_vertices
             old_target = inverse_mapping[new_target]
-            action[_directed_slot(new_source, new_target, num_vertices)] =
-                _directed_slot(old_source, old_target, num_vertices)
+            action[_directed_slot(new_source, new_target, num_vertices)] = _directed_slot(
+                old_source, old_target, num_vertices
+            )
         end
     end
     return action
@@ -170,9 +176,7 @@ function canonicalize_directed(
     end
 
     canonical_multiplicities = similar(graph.multiplicities)
-    _write_coordinate_action!(
-        canonical_multiplicities, graph.multiplicities, best_action
-    )
+    _write_coordinate_action!(canonical_multiplicities, graph.multiplicities, best_action)
     canonical = DirectedGCGraph(graph.num_vertices, canonical_multiplicities)
     relabeling = VertexRelabeling(mappings[best_mapping_index])
     return DirectedCanonicalizationResult(canonical, relabeling, automorphism_order)
