@@ -127,7 +127,11 @@ function _canonical_form_inplace_permutations(
             v_new = first_internal <= v <= last_internal ? perm[v - first_internal + 1] : v
             candidate[i] = Edge(minmax(u_new, v_new)...)
         end
-        sort!(candidate)
+        if length(candidate) <= 32
+            sort!(candidate; alg=Base.Sort.InsertionSort)
+        else
+            sort!(candidate)
+        end
         _compare_graph_reps(candidate, current_canonical) < 0 &&
             copyto!(current_canonical, candidate)
         _next_permutation!(perm) || break
