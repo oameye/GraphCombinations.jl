@@ -442,6 +442,10 @@ function generate_multigraphs(
     end
 
     mappings = _typed_problem_relabelings(problem)
+    if _use_typed_row_state_reduction(length(mappings))
+        return _generate_typed_row_reduced(problem, mappings; connected)
+    end
+
     topologies = Dict{GraphRep,Int}()
     n = length(problem._degrees)
     _foreach_admissible_labeled_multigraph(problem._degrees, problem._allowed) do graph

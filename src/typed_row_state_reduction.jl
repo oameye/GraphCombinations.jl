@@ -1,5 +1,13 @@
 # --- Exact continuation-state reduction for typed multigraph problems ---
 
+# Typed continuation-state reduction has its own measured crossover. Four exact problem-preserving
+# relabelings still regress, while 36 and 576 relabelings win materially.
+const _TYPED_ROW_REDUCTION_MIN_RELABELINGS = 36
+
+@inline function _use_typed_row_state_reduction(num_relabelings::Int)::Bool
+    return num_relabelings >= _TYPED_ROW_REDUCTION_MIN_RELABELINGS
+end
+
 mutable struct TypedRowReductionStats
     states::Int
     duplicate_states::Int
@@ -72,10 +80,9 @@ function _accept_typed_row_state!(
 end
 
 function _foreach_typed_row_reduced_multigraph(
-    f::F, problem::TypedMultigraphProblem
+    f::F, problem::TypedMultigraphProblem, mappings::Vector{Vector{Int}}
 ) where {F}
     num_vertices = length(problem._degrees)
-    mappings = _typed_problem_relabelings(problem)
     row_actions = _typed_row_state_actions(mappings, num_vertices)
     seen = [Set{GraphRep}() for _ in 1:(num_vertices + 1)]
     stats = TypedRowReductionStats()
@@ -85,6 +92,14 @@ function _foreach_typed_row_reduced_multigraph(
         f, residual, graph, problem._allowed, 1, row_actions, num_vertices, seen, stats
     )
     return stats
+end
+
+function _foreach_typed_row_reduced_multigraph(
+    f::F, problem::TypedMultigraphProblem
+) where {F}
+    return _foreach_typed_row_reduced_multigraph(
+        f, problem, _typed_problem_relabelings(problem)
+    )
 end
 
 function _enumerate_typed_reduced_vertex!(
@@ -231,11 +246,11 @@ function _distribute_typed_reduced_vertex_edges!(
 end
 
 function _collect_typed_row_reduced(
-    problem::TypedMultigraphProblem, connected::Bool
+    problem::TypedMultigraphProblem, connected::Bool, mappings::Vector{Vector{Int}}
 )::Tuple{Dict{GraphRep,Int},TypedRowReductionStats}
     num_vertices = length(problem._degrees)
     topologies = Dict{GraphRep,Int}()
-    stats = _foreach_typed_row_reduced_multigraph(problem) do state
+    stats = _foreach_typed_row_reduced_multigraph(problem, mappings) do state
         graph = state.canonical
         if connected && !is_connected(build_internal_graph(graph, num_vertices))
             return nothing
@@ -248,13 +263,21 @@ function _collect_typed_row_reduced(
     return topologies, stats
 end
 
+function _collect_typed_row_reduced(
+    problem::TypedMultigraphProblem, connected::Bool
+)::Tuple{Dict{GraphRep,Int},TypedRowReductionStats}
+    return _collect_typed_row_reduced(
+        problem, connected, _typed_problem_relabelings(problem)
+    )
+end
+
 function _generate_typed_row_reduced(
-    problem::TypedMultigraphProblem; connected::Bool=true
+    problem::TypedMultigraphProblem, mappings::Vector{Vector{Int}}; connected::Bool=true
 )::Vector{Tuple{GraphRep,BigInt}}
     isempty(problem._degrees) && return Vector{Tuple{GraphRep,BigInt}}()
     isodd(sum(problem._degrees)) && return Vector{Tuple{GraphRep,BigInt}}()
 
-    topologies, _ = _collect_typed_row_reduced(problem, connected)
+    topologies, _ = _collect_typed_row_reduced(problem, connected, mappings)
     results = Vector{Tuple{GraphRep,BigInt}}()
     sizehint!(results, length(topologies))
     for (graph, automorphism_order) in topologies
@@ -262,6 +285,14 @@ function _generate_typed_row_reduced(
     end
     sort!(results; by=first)
     return results
+end
+
+function _generate_typed_row_reduced(
+    problem::TypedMultigraphProblem; connected::Bool=true
+)::Vector{Tuple{GraphRep,BigInt}}
+    return _generate_typed_row_reduced(
+        problem, _typed_problem_relabelings(problem); connected
+    )
 end
 
 function _typed_row_reduction_stats(
