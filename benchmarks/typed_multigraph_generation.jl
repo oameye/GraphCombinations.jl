@@ -147,16 +147,25 @@ function typed_multigraph_generation!(SUITE)
     SUITE["Typed continuation reduction"]["bipartite n8 row-reduced"] = @benchmarkable GC._generate_typed_row_reduced(
         $bipartite8
     ) seconds = 5
+    SUITE["Typed continuation reduction"]["bipartite n8 packed"] = @benchmarkable GC._generate_typed_packed_row_reduced(
+        $bipartite8
+    ) seconds = 5
     SUITE["Typed continuation reduction"]["fixed species n6 direct"] = @benchmarkable GC.generate_multigraphs(
         $fixed_species6
     ) seconds = 5
     SUITE["Typed continuation reduction"]["fixed species n6 row-reduced"] = @benchmarkable GC._generate_typed_row_reduced(
         $fixed_species6
     ) seconds = 5
+    SUITE["Typed continuation reduction"]["fixed species n6 packed"] = @benchmarkable GC._generate_typed_packed_row_reduced(
+        $fixed_species6
+    ) seconds = 5
     SUITE["Typed continuation reduction"]["loop subset n6 direct"] = @benchmarkable GC.generate_multigraphs(
         $loop_subset6
     ) seconds = 5
     SUITE["Typed continuation reduction"]["loop subset n6 row-reduced"] = @benchmarkable GC._generate_typed_row_reduced(
+        $loop_subset6
+    ) seconds = 5
+    SUITE["Typed continuation reduction"]["loop subset n6 packed"] = @benchmarkable GC._generate_typed_packed_row_reduced(
         $loop_subset6
     ) seconds = 5
 
