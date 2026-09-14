@@ -75,6 +75,12 @@ function loop_subset_typed_problem()
     return GC.TypedMultigraphProblem(fill(2, 6), [1, 1, 1, 2, 2, 2]; allowed)
 end
 
+function identity_group_typed_problem()
+    return GC.TypedMultigraphProblem(
+        fill(2, 6), collect(1:6); allowed=loopless_allowed(6)
+    )
+end
+
 function cycle_graph(num_vertices::Int)
     graph = Pair{Int,Int}[]
     sizehint!(graph, num_vertices)
@@ -118,6 +124,7 @@ function typed_multigraph_generation!(SUITE)
     bipartite8 = bipartite_typed_problem(4)
     fixed_species6 = fixed_species_typed_problem()
     loop_subset6 = loop_subset_typed_problem()
+    identity_group6 = identity_group_typed_problem()
 
     SUITE["Typed multigraph generation"]["construct loopless n6"] = @benchmarkable loopless_typed_problem(
         6
@@ -141,6 +148,12 @@ function typed_multigraph_generation!(SUITE)
         $problem5
     ) seconds = 5
 
+    SUITE["Typed continuation reduction"]["identity group n6 direct"] = @benchmarkable GC.generate_multigraphs(
+        $identity_group6
+    ) seconds = 5
+    SUITE["Typed continuation reduction"]["identity group n6 native"] = @benchmarkable GC._generate_typed_native_multiplicity(
+        $identity_group6
+    ) seconds = 5
     SUITE["Typed continuation reduction"]["bipartite n8 direct"] = @benchmarkable GC.generate_multigraphs(
         $bipartite8
     ) seconds = 5
