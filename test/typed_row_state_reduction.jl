@@ -71,7 +71,9 @@ end
     loop_subset = _typed_loop_subset_problem()
 
     bipartite_relabelings = length(GCTypedRows._typed_problem_relabelings(bipartite))
-    fixed_species_relabelings = length(GCTypedRows._typed_problem_relabelings(fixed_species))
+    fixed_species_relabelings = length(
+        GCTypedRows._typed_problem_relabelings(fixed_species)
+    )
     loop_subset_relabelings = length(GCTypedRows._typed_problem_relabelings(loop_subset))
 
     @test bipartite_relabelings == 576
