@@ -74,15 +74,7 @@ function _foreach_typed_row_reduced_multigraph(
     residual = copy(problem._degrees)
     graph = Edge[]
     _enumerate_typed_reduced_vertex!(
-        f,
-        residual,
-        graph,
-        problem._allowed,
-        1,
-        row_actions,
-        num_vertices,
-        seen,
-        stats,
+        f, residual, graph, problem._allowed, 1, row_actions, num_vertices, seen, stats
     )
     return stats
 end
@@ -118,15 +110,7 @@ function _enumerate_typed_reduced_vertex!(
         end
         residual[row] = 0
         _enumerate_typed_reduced_vertex!(
-            f,
-            residual,
-            graph,
-            allowed,
-            row + 1,
-            row_actions,
-            num_vertices,
-            seen,
-            stats,
+            f, residual, graph, allowed, row + 1, row_actions, num_vertices, seen, stats
         )
         residual[row] = remaining
         resize!(graph, old_length)
@@ -180,15 +164,7 @@ function _distribute_typed_reduced_vertex_edges!(
             old_residual = residual[row]
             residual[row] = 0
             _enumerate_typed_reduced_vertex!(
-                f,
-                residual,
-                graph,
-                allowed,
-                row + 1,
-                row_actions,
-                num_vertices,
-                seen,
-                stats,
+                f, residual, graph, allowed, row + 1, row_actions, num_vertices, seen, stats
             )
             residual[row] = old_residual
         end
