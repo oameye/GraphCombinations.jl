@@ -67,7 +67,8 @@ end
         @test native_disconnected ==
             GCNativeTyped._generate_typed_packed_row_reduced(problem; connected=false)
         @test GCNativeTyped.generate_multigraphs(problem) == native
-        @test GCNativeTyped.generate_multigraphs(problem; connected=false) == native_disconnected
+        @test GCNativeTyped.generate_multigraphs(problem; connected=false) ==
+            native_disconnected
     end
 end
 
