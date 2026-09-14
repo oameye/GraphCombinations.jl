@@ -33,16 +33,27 @@ function _typed_row_state_mappings(
     return states
 end
 
+function _typed_row_state_actions(
+    row_mappings::Vector{Vector{Vector{Int}}}, num_vertices::Int
+)::Vector{Vector{Vector{Int}}}
+    actions = Vector{Vector{Vector{Int}}}(undef, length(row_mappings))
+    @inbounds for row in eachindex(row_mappings)
+        actions[row] = _triangular_relabeling_actions(row_mappings[row], num_vertices)
+    end
+    return actions
+end
+
 function _accept_typed_row_state!(
     graph::GraphRep,
     row::Int,
-    row_mappings::Vector{Vector{Vector{Int}}},
+    row_actions::Vector{Vector{Vector{Int}}},
+    num_vertices::Int,
     seen::Vector{Set{GraphRep}},
     stats::TypedRowReductionStats,
 )::Tuple{Bool,_MappedGraphCanonicalizationResult}
     stats.states += 1
     stats.canonicalization_calls += 1
-    state = _canonicalize_under_mappings(graph, row_mappings[row])
+    state = _canonicalize_under_triangular_actions(graph, row_actions[row], num_vertices)
     if state.canonical in seen[row]
         stats.duplicate_states += 1
         return false, state
@@ -57,12 +68,21 @@ function _foreach_typed_row_reduced_multigraph(
     num_vertices = length(problem._degrees)
     mappings = _typed_problem_relabelings(problem)
     row_mappings = _typed_row_state_mappings(mappings, num_vertices)
+    row_actions = _typed_row_state_actions(row_mappings, num_vertices)
     seen = [Set{GraphRep}() for _ in 1:(num_vertices + 1)]
     stats = TypedRowReductionStats()
     residual = copy(problem._degrees)
     graph = Edge[]
     _enumerate_typed_reduced_vertex!(
-        f, residual, graph, problem._allowed, 1, row_mappings, seen, stats
+        f,
+        residual,
+        graph,
+        problem._allowed,
+        1,
+        row_actions,
+        num_vertices,
+        seen,
+        stats,
     )
     return stats
 end
@@ -73,12 +93,14 @@ function _enumerate_typed_reduced_vertex!(
     graph::GraphRep,
     allowed::BitMatrix,
     row::Int,
-    row_mappings::Vector{Vector{Vector{Int}}},
+    row_actions::Vector{Vector{Vector{Int}}},
+    num_vertices::Int,
     seen::Vector{Set{GraphRep}},
     stats::TypedRowReductionStats,
 ) where {F}
-    num_vertices = length(residual)
-    accepted, state = _accept_typed_row_state!(graph, row, row_mappings, seen, stats)
+    accepted, state = _accept_typed_row_state!(
+        graph, row, row_actions, num_vertices, seen, stats
+    )
     accepted || return nothing
 
     if row > num_vertices
@@ -96,7 +118,15 @@ function _enumerate_typed_reduced_vertex!(
         end
         residual[row] = 0
         _enumerate_typed_reduced_vertex!(
-            f, residual, graph, allowed, row + 1, row_mappings, seen, stats
+            f,
+            residual,
+            graph,
+            allowed,
+            row + 1,
+            row_actions,
+            num_vertices,
+            seen,
+            stats,
         )
         residual[row] = remaining
         resize!(graph, old_length)
@@ -115,7 +145,17 @@ function _enumerate_typed_reduced_vertex!(
             push!(graph, Edge(row, row))
         end
         _distribute_typed_reduced_vertex_edges!(
-            f, residual, graph, allowed, row, row + 1, remaining, row_mappings, seen, stats
+            f,
+            residual,
+            graph,
+            allowed,
+            row,
+            row + 1,
+            remaining,
+            row_actions,
+            num_vertices,
+            seen,
+            stats,
         )
         resize!(graph, old_length)
     end
@@ -130,17 +170,25 @@ function _distribute_typed_reduced_vertex_edges!(
     row::Int,
     column::Int,
     remaining::Int,
-    row_mappings::Vector{Vector{Vector{Int}}},
+    row_actions::Vector{Vector{Vector{Int}}},
+    num_vertices::Int,
     seen::Vector{Set{GraphRep}},
     stats::TypedRowReductionStats,
 ) where {F}
-    num_vertices = length(residual)
     if column > num_vertices
         if iszero(remaining)
             old_residual = residual[row]
             residual[row] = 0
             _enumerate_typed_reduced_vertex!(
-                f, residual, graph, allowed, row + 1, row_mappings, seen, stats
+                f,
+                residual,
+                graph,
+                allowed,
+                row + 1,
+                row_actions,
+                num_vertices,
+                seen,
+                stats,
             )
             residual[row] = old_residual
         end
@@ -162,7 +210,8 @@ function _distribute_typed_reduced_vertex_edges!(
             row,
             column + 1,
             remaining,
-            row_mappings,
+            row_actions,
+            num_vertices,
             seen,
             stats,
         )
@@ -186,7 +235,8 @@ function _distribute_typed_reduced_vertex_edges!(
             row,
             column + 1,
             remaining - multiplicity,
-            row_mappings,
+            row_actions,
+            num_vertices,
             seen,
             stats,
         )
