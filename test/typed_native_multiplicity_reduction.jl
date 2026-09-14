@@ -59,20 +59,32 @@ end
     )
 
     for problem in workloads
-        @test GCNativeTyped._generate_typed_native_multiplicity(problem) ==
-            GCNativeTyped._generate_typed_packed_row_reduced(problem)
-        @test GCNativeTyped._generate_typed_native_multiplicity(problem; connected=false) ==
+        native = GCNativeTyped._generate_typed_native_multiplicity(problem)
+        native_disconnected = GCNativeTyped._generate_typed_native_multiplicity(
+            problem; connected=false
+        )
+        @test native == GCNativeTyped._generate_typed_packed_row_reduced(problem)
+        @test native_disconnected ==
             GCNativeTyped._generate_typed_packed_row_reduced(problem; connected=false)
+        @test GCNativeTyped.generate_multigraphs(problem) == native
+        @test GCNativeTyped.generate_multigraphs(problem; connected=false) == native_disconnected
     end
 end
 
-@testset "identity typed relabeling group" begin
-    problem = _native_identity_group_problem()
-    @test length(GCNativeTyped._typed_problem_relabelings(problem)) == 1
-    @test GCNativeTyped._generate_typed_native_multiplicity(problem) ==
-        GCNativeTyped.generate_multigraphs(problem)
-    @test GCNativeTyped._generate_typed_native_multiplicity(problem; connected=false) ==
-        GCNativeTyped.generate_multigraphs(problem; connected=false)
+@testset "measured typed production crossover" begin
+    fixed_species = _native_fixed_species_problem()
+    fixed_mappings = GCNativeTyped._typed_problem_relabelings(fixed_species)
+    @test length(fixed_mappings) == 4
+    @test GCNativeTyped._use_typed_native_multiplicity(fixed_species, fixed_mappings)
+
+    identity = _native_identity_group_problem()
+    identity_mappings = GCNativeTyped._typed_problem_relabelings(identity)
+    @test length(identity_mappings) == 1
+    @test !GCNativeTyped._use_typed_native_multiplicity(identity, identity_mappings)
+    @test GCNativeTyped._generate_typed_native_multiplicity(identity) ==
+        GCNativeTyped.generate_multigraphs(identity)
+    @test GCNativeTyped._generate_typed_native_multiplicity(identity; connected=false) ==
+        GCNativeTyped.generate_multigraphs(identity; connected=false)
 end
 
 @testset "native triangular state canonicalization" begin
