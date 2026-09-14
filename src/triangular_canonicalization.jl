@@ -47,13 +47,9 @@ end
 @inline function _compare_triangular_actions(
     multiplicities::Vector{Int}, candidate_action::Vector{Int}, best_action::Vector{Int}
 )::Int
-    @inbounds for output_index in eachindex(candidate_action, best_action)
-        candidate = multiplicities[candidate_action[output_index]]
-        best = multiplicities[best_action[output_index]]
-        candidate == best && continue
-        return candidate > best ? -1 : 1
-    end
-    return 0
+    return _compare_coordinate_actions(
+        multiplicities, candidate_action, best_action, Val(true)
+    )
 end
 
 function _materialize_triangular_action(
