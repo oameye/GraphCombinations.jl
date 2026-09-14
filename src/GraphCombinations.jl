@@ -21,6 +21,7 @@ using Graphs, Multigraphs
     include("colored_port_api.jl")
     include("degree_sequence_problem.jl")
     include("typed_multigraph_problem.jl")
+    include("typed_row_state_reduction.jl")
     include("generation.jl")
 end
 
