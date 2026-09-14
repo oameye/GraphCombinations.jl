@@ -43,6 +43,25 @@ function _typed_row_state_actions(
     return actions
 end
 
+function _typed_row_state_actions(
+    mappings::Vector{Vector{Int}}, num_vertices::Int
+)::Vector{Vector{Vector{Int}}}
+    full_actions = _triangular_relabeling_actions(mappings, num_vertices)
+    states = Vector{Vector{Vector{Int}}}(undef, num_vertices + 1)
+    for row in 1:(num_vertices + 1)
+        row_actions = Vector{Vector{Int}}()
+        sizehint!(row_actions, length(full_actions))
+        @inbounds for mapping_index in eachindex(mappings, full_actions)
+            _typed_mapping_preserves_frontier(mappings[mapping_index], row) &&
+                push!(row_actions, full_actions[mapping_index])
+        end
+        isempty(row_actions) &&
+            error("Internal error: typed row-state action group is empty.")
+        states[row] = row_actions
+    end
+    return states
+end
+
 function _accept_typed_row_state!(
     graph::GraphRep,
     row::Int,
@@ -67,8 +86,7 @@ function _foreach_typed_row_reduced_multigraph(
 ) where {F}
     num_vertices = length(problem._degrees)
     mappings = _typed_problem_relabelings(problem)
-    row_mappings = _typed_row_state_mappings(mappings, num_vertices)
-    row_actions = _typed_row_state_actions(row_mappings, num_vertices)
+    row_actions = _typed_row_state_actions(mappings, num_vertices)
     seen = [Set{GraphRep}() for _ in 1:(num_vertices + 1)]
     stats = TypedRowReductionStats()
     residual = copy(problem._degrees)
