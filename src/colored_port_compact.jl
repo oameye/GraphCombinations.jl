@@ -44,8 +44,7 @@ end
     return (
         (
             ((source_vertex - 1) * layout.num_vertices + (target_vertex - 1)) *
-            layout.num_source_colors +
-            (source_color - 1)
+            layout.num_source_colors + (source_color - 1)
         ) * layout.num_target_colors + target_color
     )
 end
@@ -82,11 +81,7 @@ function _compact_port_actions(
                 for source_color in 1:layout.num_source_colors
                     for target_color in 1:layout.num_target_colors
                         old_index = _compact_port_edge_index(
-                            layout,
-                            source_vertex,
-                            target_vertex,
-                            source_color,
-                            target_color,
+                            layout, source_vertex, target_vertex, source_color, target_color
                         )
                         edge_destinations[old_index] = _compact_port_edge_index(
                             layout,
@@ -158,12 +153,10 @@ function _write_compact_port_action!(
         destination[action.edge_destinations[old_index]] = source[old_index]
     end
     @inbounds for old_index in 1:layout.source_count
-        destination[layout.source_offset + action.source_destinations[old_index]] =
-            source[layout.source_offset + old_index]
+        destination[layout.source_offset + action.source_destinations[old_index]] = source[layout.source_offset + old_index]
     end
     @inbounds for old_index in 1:layout.target_count
-        destination[layout.target_offset + action.target_destinations[old_index]] =
-            source[layout.target_offset + old_index]
+        destination[layout.target_offset + action.target_destinations[old_index]] = source[layout.target_offset + old_index]
     end
     return nothing
 end
@@ -242,21 +235,14 @@ function _materialize_compact_port_edges(
             for source_color in 1:layout.num_source_colors
                 for target_color in 1:layout.num_target_colors
                     edge_index = _compact_port_edge_index(
-                        layout,
-                        source_vertex,
-                        target_vertex,
-                        source_color,
-                        target_color,
+                        layout, source_vertex, target_vertex, source_color, target_color
                     )
                     multiplicity = key.data[edge_index]
                     for _ in 1:multiplicity
                         push!(
                             edges,
                             _PortEdge(
-                                source_vertex,
-                                target_vertex,
-                                source_color,
-                                target_color,
+                                source_vertex, target_vertex, source_color, target_color
                             ),
                         )
                     end
@@ -308,7 +294,8 @@ function _weighted_port_matchings_compact_with_stats(
         next_states = Dict{_CompactPortKey,BigInt}()
         for (key, parent_weight) in states
             source = _first_remaining_compact_source(key.data, layout)
-            source.found || error("Internal error: compact port-matching layers are inconsistent.")
+            source.found ||
+                error("Internal error: compact port-matching layers are inconsistent.")
             source_vertex = source.vertex
             source_color = source.color
             source_local = _compact_source_local_index(layout, source_vertex, source_color)
@@ -330,11 +317,7 @@ function _weighted_port_matchings_compact_with_stats(
 
                     transitions += 1
                     edge_index = _compact_port_edge_index(
-                        layout,
-                        source_vertex,
-                        target_vertex,
-                        source_color,
-                        target_color,
+                        layout, source_vertex, target_vertex, source_color, target_color
                     )
                     child[target_index] -= 1
                     child[edge_index] += 1
@@ -376,7 +359,8 @@ function _weighted_port_matchings_compact_with_stats(
     for (key, weight) in states
         _compact_port_targets_are_empty(key, layout) ||
             error("Internal error: unmatched target ports remain at compact completion.")
-        iszero(weight) || push!(results, (_materialize_compact_port_edges(key, layout), weight))
+        iszero(weight) ||
+            push!(results, (_materialize_compact_port_edges(key, layout), weight))
     end
     sort!(results; lt=(a, b) -> _lexless_port_edges(first(a), first(b)))
     stats = _PortGenerationStats(
