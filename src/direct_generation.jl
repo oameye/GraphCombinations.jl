@@ -131,7 +131,7 @@ function _collect_topologies_exhaustive(
     canonical_graphs = Dict{GraphRep,Nothing}()
 
     _foreach_labeled_multigraph(degrees) do graph
-        if connected && !is_connected(build_internal_graph(graph, num_vertices))
+        if connected && !_is_connected_graph_rep(graph, num_vertices)
             return nothing
         end
         canonical_graphs[canonical_form(graph, internal_indices)] = nothing
@@ -157,7 +157,7 @@ function _collect_topologies_partitioned(
     partitioned_graphs = Dict{GraphRep,Int}()
 
     _foreach_labeled_multigraph(degrees) do graph
-        if connected && !is_connected(build_internal_graph(graph, num_vertices))
+        if connected && !_is_connected_graph_rep(graph, num_vertices)
             return nothing
         end
 
