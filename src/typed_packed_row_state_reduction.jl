@@ -28,7 +28,7 @@ function _foreach_typed_packed_row_reduced_multigraph(
     num_vertices = length(problem._degrees)
     maximum_multiplicity = maximum(problem._degrees; init=0)
     _can_pack_triangular_key(num_vertices, maximum_multiplicity) || error(
-        "Internal error: typed problem does not fit the packed continuation-key representation."
+        "Internal error: typed problem does not fit the packed continuation-key representation.",
     )
 
     bits = _triangular_multiplicity_bits(maximum_multiplicity)
@@ -233,8 +233,9 @@ function _collect_typed_packed_row_reduced(
         if connected && !is_connected(build_internal_graph(graph, num_vertices))
             return nothing
         end
-        haskey(topologies, graph) &&
-            error("Internal error: packed typed row-state reduction generated a topology twice.")
+        haskey(topologies, graph) && error(
+            "Internal error: packed typed row-state reduction generated a topology twice.",
+        )
         topologies[graph] = state.automorphism_order
         return nothing
     end
