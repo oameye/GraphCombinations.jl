@@ -27,10 +27,7 @@ when both images are identical. `prefer_larger=true` reverses the ordinary lexic
 comparison; this is the convention used by multiplicity encodings of sorted edge lists.
 """
 @inline function _compare_coordinate_actions(
-    values::V,
-    candidate_action::Vector{Int},
-    best_action::Vector{Int},
-    ::Val{prefer_larger},
+    values::V, candidate_action::Vector{Int}, best_action::Vector{Int}, ::Val{prefer_larger}
 )::Int where {V<:AbstractArray{Int},prefer_larger}
     length(candidate_action) == length(best_action) ||
         error("Internal error: coordinate actions have different sizes.")
@@ -52,9 +49,7 @@ Compile the induced action for `num_blocks` repeated vertex-coordinate blocks.
 Each block is stored vertex-fast, i.e. `[v₁, …, vₙ]` followed by the next block. The returned
 vector follows the output-to-source convention used by `_write_coordinate_action!`.
 """
-function _vertex_block_coordinate_action(
-    mapping::Vector{Int}, num_blocks::Int
-)::Vector{Int}
+function _vertex_block_coordinate_action(mapping::Vector{Int}, num_blocks::Int)::Vector{Int}
     num_blocks >= 0 || throw(ArgumentError("num_blocks must be non-negative."))
     num_vertices = length(mapping)
     inverse_mapping = Vector{Int}(undef, num_vertices)
