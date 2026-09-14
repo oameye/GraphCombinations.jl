@@ -146,13 +146,13 @@ function typed_multigraph_generation!(SUITE)
         $problem5
     ) seconds = 5
 
-    SUITE["Typed continuation reduction"]["identity group n6 direct"] = @benchmarkable GC.generate_multigraphs(
+    SUITE["Typed continuation reduction"]["identity group n6 production"] = @benchmarkable GC.generate_multigraphs(
         $identity_group6
     ) seconds = 5
     SUITE["Typed continuation reduction"]["identity group n6 native"] = @benchmarkable GC._generate_typed_native_multiplicity(
         $identity_group6
     ) seconds = 5
-    SUITE["Typed continuation reduction"]["bipartite n8 direct"] = @benchmarkable GC.generate_multigraphs(
+    SUITE["Typed continuation reduction"]["bipartite n8 production"] = @benchmarkable GC.generate_multigraphs(
         $bipartite8
     ) seconds = 5
     SUITE["Typed continuation reduction"]["bipartite n8 row-reduced"] = @benchmarkable GC._generate_typed_row_reduced(
@@ -164,7 +164,7 @@ function typed_multigraph_generation!(SUITE)
     SUITE["Typed continuation reduction"]["bipartite n8 native"] = @benchmarkable GC._generate_typed_native_multiplicity(
         $bipartite8
     ) seconds = 5
-    SUITE["Typed continuation reduction"]["fixed species n6 direct"] = @benchmarkable GC.generate_multigraphs(
+    SUITE["Typed continuation reduction"]["fixed species n6 production"] = @benchmarkable GC.generate_multigraphs(
         $fixed_species6
     ) seconds = 5
     SUITE["Typed continuation reduction"]["fixed species n6 row-reduced"] = @benchmarkable GC._generate_typed_row_reduced(
@@ -176,7 +176,7 @@ function typed_multigraph_generation!(SUITE)
     SUITE["Typed continuation reduction"]["fixed species n6 native"] = @benchmarkable GC._generate_typed_native_multiplicity(
         $fixed_species6
     ) seconds = 5
-    SUITE["Typed continuation reduction"]["loop subset n6 direct"] = @benchmarkable GC.generate_multigraphs(
+    SUITE["Typed continuation reduction"]["loop subset n6 production"] = @benchmarkable GC.generate_multigraphs(
         $loop_subset6
     ) seconds = 5
     SUITE["Typed continuation reduction"]["loop subset n6 row-reduced"] = @benchmarkable GC._generate_typed_row_reduced(
