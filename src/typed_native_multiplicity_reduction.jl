@@ -250,13 +250,15 @@ function _collect_typed_native_multiplicity(
     topologies = Dict{GraphRep,Int}()
     stats = _foreach_typed_native_multiplicity_multigraph(problem) do state
         graph = state.canonical
-        length(graph) == num_edges ||
-            error("Internal error: native multiplicity recursion changed the graph edge count.")
+        length(graph) == num_edges || error(
+            "Internal error: native multiplicity recursion changed the graph edge count.",
+        )
         if connected && !is_connected(build_internal_graph(graph, num_vertices))
             return nothing
         end
-        haskey(topologies, graph) &&
-            error("Internal error: native typed row-state reduction generated a topology twice.")
+        haskey(topologies, graph) && error(
+            "Internal error: native typed row-state reduction generated a topology twice.",
+        )
         topologies[graph] = state.automorphism_order
         return nothing
     end
