@@ -82,6 +82,10 @@ else
         include("canonical_actions.jl")
     end
 
+    @testset "directed canonicalization" begin
+        include("directed_canonicalization.jl")
+    end
+
     @testset "Wick reference oracle" begin
         include("reference_oracle.jl")
     end
