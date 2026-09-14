@@ -43,6 +43,14 @@ function _native_loop_subset_problem()
     return TypedMultigraphProblem(fill(2, 6), [1, 1, 1, 2, 2, 2]; allowed)
 end
 
+function _native_identity_group_problem()
+    allowed = trues(6, 6)
+    @inbounds for vertex in 1:6
+        allowed[vertex, vertex] = false
+    end
+    return TypedMultigraphProblem(fill(2, 6), collect(1:6); allowed)
+end
+
 @testset "native triangular multiplicity recursion" begin
     workloads = (
         _native_bipartite_problem(4),
@@ -56,6 +64,15 @@ end
         @test GCNativeTyped._generate_typed_native_multiplicity(problem; connected=false) ==
             GCNativeTyped._generate_typed_packed_row_reduced(problem; connected=false)
     end
+end
+
+@testset "identity typed relabeling group" begin
+    problem = _native_identity_group_problem()
+    @test length(GCNativeTyped._typed_problem_relabelings(problem)) == 1
+    @test GCNativeTyped._generate_typed_native_multiplicity(problem) ==
+        GCNativeTyped.generate_multigraphs(problem)
+    @test GCNativeTyped._generate_typed_native_multiplicity(problem; connected=false) ==
+        GCNativeTyped.generate_multigraphs(problem; connected=false)
 end
 
 @testset "native triangular state canonicalization" begin
