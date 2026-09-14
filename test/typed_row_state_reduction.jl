@@ -65,6 +65,25 @@ end
     @test stats.complete_topologies > 0
 end
 
+@testset "measured typed row-reduction selector" begin
+    bipartite = _typed_bipartite_problem(4)
+    fixed_species = _typed_fixed_species_problem()
+    loop_subset = _typed_loop_subset_problem()
+
+    bipartite_relabelings = length(GCTypedRows._typed_problem_relabelings(bipartite))
+    fixed_species_relabelings = length(GCTypedRows._typed_problem_relabelings(fixed_species))
+    loop_subset_relabelings = length(GCTypedRows._typed_problem_relabelings(loop_subset))
+
+    @test bipartite_relabelings == 576
+    @test fixed_species_relabelings == 4
+    @test loop_subset_relabelings == 36
+
+    @test GCTypedRows._use_typed_row_state_reduction(bipartite_relabelings)
+    @test !GCTypedRows._use_typed_row_state_reduction(fixed_species_relabelings)
+    @test GCTypedRows._use_typed_row_state_reduction(loop_subset_relabelings)
+    @test GCTypedRows._TYPED_ROW_REDUCTION_MIN_RELABELINGS == 36
+end
+
 @testset "frontier-preserving typed relabelings" begin
     problem = _typed_bipartite_problem(3)
     mappings = GCTypedRows._typed_problem_relabelings(problem)
