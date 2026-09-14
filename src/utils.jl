@@ -159,10 +159,8 @@ end
 
             u_bit = UInt64(1) << (u - 1)
             v_bit = UInt64(1) << (v - 1)
-            !iszero(frontier & u_bit) && iszero(visited & v_bit) &&
-                (next_frontier |= v_bit)
-            !iszero(frontier & v_bit) && iszero(visited & u_bit) &&
-                (next_frontier |= u_bit)
+            !iszero(frontier & u_bit) && iszero(visited & v_bit) && (next_frontier |= v_bit)
+            !iszero(frontier & v_bit) && iszero(visited & u_bit) && (next_frontier |= u_bit)
         end
         next_frontier &= ~visited
         iszero(next_frontier) && break
@@ -206,9 +204,11 @@ end
 function _is_connected_graph_rep(graph::GraphRep, num_vertices::Int)::Bool
     num_vertices > 0 || return false
     num_vertices == 1 && return true
-    return num_vertices <= 64 ?
-           _is_connected_graph_rep_u64(graph, num_vertices) :
-           _is_connected_graph_rep_large(graph, num_vertices)
+    return if num_vertices <= 64
+        _is_connected_graph_rep_u64(graph, num_vertices)
+    else
+        _is_connected_graph_rep_large(graph, num_vertices)
+    end
 end
 
 """
