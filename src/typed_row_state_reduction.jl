@@ -9,9 +9,7 @@ end
 
 TypedRowReductionStats() = TypedRowReductionStats(0, 0, 0, 0)
 
-@inline function _typed_mapping_preserves_frontier(
-    mapping::Vector{Int}, row::Int
-)::Bool
+@inline function _typed_mapping_preserves_frontier(mapping::Vector{Int}, row::Int)::Bool
     @inbounds for vertex in eachindex(mapping)
         (vertex < row) == (mapping[vertex] < row) || return false
     end
@@ -64,14 +62,7 @@ function _foreach_typed_row_reduced_multigraph(
     residual = copy(problem._degrees)
     graph = Edge[]
     _enumerate_typed_reduced_vertex!(
-        f,
-        residual,
-        graph,
-        problem._allowed,
-        1,
-        row_mappings,
-        seen,
-        stats,
+        f, residual, graph, problem._allowed, 1, row_mappings, seen, stats
     )
     return stats
 end
@@ -105,14 +96,7 @@ function _enumerate_typed_reduced_vertex!(
         end
         residual[row] = 0
         _enumerate_typed_reduced_vertex!(
-            f,
-            residual,
-            graph,
-            allowed,
-            row + 1,
-            row_mappings,
-            seen,
-            stats,
+            f, residual, graph, allowed, row + 1, row_mappings, seen, stats
         )
         residual[row] = remaining
         resize!(graph, old_length)
@@ -131,16 +115,7 @@ function _enumerate_typed_reduced_vertex!(
             push!(graph, Edge(row, row))
         end
         _distribute_typed_reduced_vertex_edges!(
-            f,
-            residual,
-            graph,
-            allowed,
-            row,
-            row + 1,
-            remaining,
-            row_mappings,
-            seen,
-            stats,
+            f, residual, graph, allowed, row, row + 1, remaining, row_mappings, seen, stats
         )
         resize!(graph, old_length)
     end
@@ -165,24 +140,18 @@ function _distribute_typed_reduced_vertex_edges!(
             old_residual = residual[row]
             residual[row] = 0
             _enumerate_typed_reduced_vertex!(
-                f,
-                residual,
-                graph,
-                allowed,
-                row + 1,
-                row_mappings,
-                seen,
-                stats,
+                f, residual, graph, allowed, row + 1, row_mappings, seen, stats
             )
             residual[row] = old_residual
         end
         return nothing
     end
 
-    capacity_after_column = column == num_vertices ? 0 :
-                            _admissible_future_capacity(
-        residual, allowed, row, column + 1
-    )
+    capacity_after_column = if column == num_vertices
+        0
+    else
+        _admissible_future_capacity(residual, allowed, row, column + 1)
+    end
     if !allowed[row, column]
         remaining <= capacity_after_column || return nothing
         _distribute_typed_reduced_vertex_edges!(
