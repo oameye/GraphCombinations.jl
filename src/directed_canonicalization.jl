@@ -1,9 +1,9 @@
-# --- Native directed whole-graph canonical relabeling ---
+# --- Native colored directed whole-graph canonical relabeling ---
 
 """
     DirectedGCGraph(edges, num_vertices)
 
-GraphCombinations-owned directed multigraph representation for whole-graph canonical relabeling.
+GraphCombinations-owned directed multigraph representation for whole-graph canonicalization.
 Each input pair is interpreted as `source => target`; orientation, self-loops, and parallel-edge
 multiplicity are preserved exactly.
 """
@@ -42,6 +42,11 @@ function Base.isequal(a::DirectedGCGraph, b::DirectedGCGraph)
     return a.num_vertices == b.num_vertices && isequal(a.multiplicities, b.multiplicities)
 end
 Base.:(==)(a::DirectedGCGraph, b::DirectedGCGraph) = isequal(a, b)
+function Base.hash(graph::DirectedGCGraph, h::UInt)
+    h = hash(DirectedGCGraph, h)
+    h = hash(graph.num_vertices, h)
+    return hash(graph.multiplicities, h)
+end
 
 """
     VertexRelabeling(mapping)
@@ -64,33 +69,35 @@ end
 """Return a copy of the old-vertex to new-vertex mapping."""
 vertex_mapping(relabeling::VertexRelabeling)::Vector{Int} = copy(relabeling._mapping)
 
+function Base.isequal(a::VertexRelabeling, b::VertexRelabeling)
+    return isequal(a._mapping, b._mapping)
+end
+Base.:(==)(a::VertexRelabeling, b::VertexRelabeling) = isequal(a, b)
+Base.hash(relabeling::VertexRelabeling, h::UInt) = hash(relabeling._mapping, hash(VertexRelabeling, h))
+
+"""
+Exact result of colored directed whole-graph canonicalization.
+
+`canonical_graph` is the deterministic exact representative, `canonical_relabeling` maps old
+vertices to their canonical labels, and `canonical_automorphism_order` is the exact stabilizer
+order inside the color-preserving relabeling group.
+"""
+struct DirectedCanonicalizationResult
+    _canonical::DirectedGCGraph
+    _relabeling::VertexRelabeling
+    _automorphism_order::Int
+end
+
+canonical_graph(result::DirectedCanonicalizationResult)::DirectedGCGraph = result._canonical
+canonical_relabeling(result::DirectedCanonicalizationResult)::VertexRelabeling = result._relabeling
+canonical_automorphism_order(result::DirectedCanonicalizationResult)::Int =
+    result._automorphism_order
+
 struct _AcceptAllRelabelings end
 @inline (::_AcceptAllRelabelings)(::Vector{Int})::Bool = true
 
-function _fixed_vertex_colors(num_vertices::Int, fixed_vertices::Vector{Int})::Vector{Int}
-    fixed = falses(num_vertices)
-    @inbounds for vertex in fixed_vertices
-        1 <= vertex <= num_vertices ||
-            throw(ArgumentError("Fixed vertex $vertex is outside 1:$num_vertices."))
-        fixed[vertex] && throw(ArgumentError("Fixed vertices must be unique."))
-        fixed[vertex] = true
-    end
-
-    colors = ones(Int, num_vertices)
-    unique_color = 2
-    @inbounds for vertex in 1:num_vertices
-        fixed[vertex] || continue
-        colors[vertex] = unique_color
-        unique_color += 1
-    end
-    return colors
-end
-
-function _directed_relabelings(
-    num_vertices::Int, fixed_vertices::Vector{Int}
-)::Vector{Vector{Int}}
-    colors = _fixed_vertex_colors(num_vertices, fixed_vertices)
-    return _problem_relabelings(colors, 0, _AcceptAllRelabelings())
+function _directed_relabelings(vertex_colors::Vector{Int})::Vector{Vector{Int}}
+    return _problem_relabelings(vertex_colors, 0, _AcceptAllRelabelings())
 end
 
 function _directed_coordinate_action(
@@ -123,36 +130,64 @@ function _relabel_directed_graph(
 end
 
 """
-    canonical_relabeling(graph::DirectedGCGraph[, fixed_vertices]) -> VertexRelabeling
+    canonicalize_directed(graph::DirectedGCGraph, vertex_colors)
 
-Return the deterministic exact relabeling that maps `graph` to the lexicographically minimal
-native directed multiplicity representation while keeping every vertex in `fixed_vertices`
-individually fixed. All other vertices are interchangeable.
+Canonicalize an exact directed multigraph under all vertex relabelings preserving `vertex_colors`.
+Equal color values denote interchangeable vertices; singleton color classes are therefore fixed
+individually. The returned witness uses the explicit old-vertex to new-vertex convention.
 
-This intentionally supplies only the whole-graph relabeling capability required by current diagram
-consumers; it is not a general graph-isomorphism API.
+The current implementation deliberately enumerates the exact color-preserving relabeling group.
+This is the small, auditable reference/production candidate required by current downstream diagram
+workloads; refinement is added only if measurements justify it.
 """
-function canonical_relabeling(
-    graph::DirectedGCGraph, fixed_vertices::AbstractVector{<:Integer}
-)::VertexRelabeling
-    fixed = collect(Int, fixed_vertices)
-    mappings = _directed_relabelings(graph.num_vertices, fixed)
+function canonicalize_directed(
+    graph::DirectedGCGraph, vertex_colors::AbstractVector{<:Integer}
+)::DirectedCanonicalizationResult
+    length(vertex_colors) == graph.num_vertices ||
+        throw(ArgumentError("vertex_colors must have one entry per vertex."))
+    colors = collect(Int, vertex_colors)
+    mappings = _directed_relabelings(colors)
     isempty(mappings) && error("Internal error: directed relabeling group is empty.")
 
     best_mapping_index = 1
     best_action = _directed_coordinate_action(first(mappings), graph.num_vertices)
-    for mapping_index in 2:length(mappings)
-        candidate_action = _directed_coordinate_action(mappings[mapping_index], graph.num_vertices)
-        if _compare_coordinate_actions(
+    automorphism_order = 1
+
+    @inbounds for mapping_index in 2:length(mappings)
+        candidate_action = _directed_coordinate_action(
+            mappings[mapping_index], graph.num_vertices
+        )
+        comparison = _compare_coordinate_actions(
             graph.multiplicities, candidate_action, best_action, Val(false)
-        ) < 0
+        )
+        if comparison < 0
             best_mapping_index = mapping_index
             best_action = candidate_action
+            automorphism_order = 1
+        elseif iszero(comparison)
+            automorphism_order = _checked_increment(automorphism_order)
         end
     end
-    return VertexRelabeling(mappings[best_mapping_index])
+
+    canonical_multiplicities = similar(graph.multiplicities)
+    _write_coordinate_action!(
+        canonical_multiplicities, graph.multiplicities, best_action
+    )
+    canonical = DirectedGCGraph(graph.num_vertices, canonical_multiplicities)
+    relabeling = VertexRelabeling(mappings[best_mapping_index])
+    return DirectedCanonicalizationResult(canonical, relabeling, automorphism_order)
+end
+
+function canonicalize_directed(graph::DirectedGCGraph)::DirectedCanonicalizationResult
+    return canonicalize_directed(graph, ones(Int, graph.num_vertices))
+end
+
+function canonical_relabeling(
+    graph::DirectedGCGraph, vertex_colors::AbstractVector{<:Integer}
+)::VertexRelabeling
+    return canonical_relabeling(canonicalize_directed(graph, vertex_colors))
 end
 
 function canonical_relabeling(graph::DirectedGCGraph)::VertexRelabeling
-    return canonical_relabeling(graph, Int[])
+    return canonical_relabeling(canonicalize_directed(graph))
 end
