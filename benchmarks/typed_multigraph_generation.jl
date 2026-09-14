@@ -35,6 +35,46 @@ function mixed_color_typed_problem()
     )
 end
 
+function bipartite_typed_problem(num_per_color::Int)
+    num_vertices = 2 * num_per_color
+    allowed = falses(num_vertices, num_vertices)
+    @inbounds for left in 1:num_per_color
+        for right in (num_per_color + 1):num_vertices
+            allowed[left, right] = true
+            allowed[right, left] = true
+        end
+    end
+    return GC.TypedMultigraphProblem(
+        fill(2, num_vertices), vcat(fill(1, num_per_color), fill(2, num_per_color)); allowed
+    )
+end
+
+function fixed_species_typed_problem()
+    allowed = trues(6, 6)
+    @inbounds for vertex in 1:6
+        allowed[vertex, vertex] = false
+    end
+    @inbounds for vertex in 5:6
+        allowed[1, vertex] = false
+        allowed[vertex, 1] = false
+    end
+    @inbounds for vertex in 3:4
+        allowed[2, vertex] = false
+        allowed[vertex, 2] = false
+    end
+    return GC.TypedMultigraphProblem(
+        [1, 1, 3, 3, 3, 3], [10, 11, 1, 1, 2, 2]; num_fixed=2, allowed
+    )
+end
+
+function loop_subset_typed_problem()
+    allowed = trues(6, 6)
+    @inbounds for vertex in 4:6
+        allowed[vertex, vertex] = false
+    end
+    return GC.TypedMultigraphProblem(fill(2, 6), [1, 1, 1, 2, 2, 2]; allowed)
+end
+
 function cycle_graph(num_vertices::Int)
     graph = Pair{Int,Int}[]
     sizehint!(graph, num_vertices)
@@ -74,6 +114,9 @@ function typed_multigraph_generation!(SUITE)
     problem6 = loopless_typed_problem(6)
     mappings6 = GC._typed_problem_relabelings(problem6)
     graph6 = cycle_graph(6)
+    bipartite8 = bipartite_typed_problem(4)
+    fixed_species6 = fixed_species_typed_problem()
+    loop_subset6 = loop_subset_typed_problem()
 
     SUITE["Typed multigraph generation"]["construct loopless n6"] = @benchmarkable loopless_typed_problem(
         6
@@ -92,6 +135,25 @@ function typed_multigraph_generation!(SUITE)
     ) seconds = 5
     SUITE["Typed multigraph generation"]["generate loopless n5"] = @benchmarkable GC.generate_multigraphs(
         $problem5
+    ) seconds = 5
+
+    SUITE["Typed continuation reduction"]["bipartite n8 direct"] = @benchmarkable GC.generate_multigraphs(
+        $bipartite8
+    ) seconds = 5
+    SUITE["Typed continuation reduction"]["bipartite n8 row-reduced"] = @benchmarkable GC._generate_typed_row_reduced(
+        $bipartite8
+    ) seconds = 5
+    SUITE["Typed continuation reduction"]["fixed species n6 direct"] = @benchmarkable GC.generate_multigraphs(
+        $fixed_species6
+    ) seconds = 5
+    SUITE["Typed continuation reduction"]["fixed species n6 row-reduced"] = @benchmarkable GC._generate_typed_row_reduced(
+        $fixed_species6
+    ) seconds = 5
+    SUITE["Typed continuation reduction"]["loop subset n6 direct"] = @benchmarkable GC.generate_multigraphs(
+        $loop_subset6
+    ) seconds = 5
+    SUITE["Typed continuation reduction"]["loop subset n6 row-reduced"] = @benchmarkable GC._generate_typed_row_reduced(
+        $loop_subset6
     ) seconds = 5
 
     return nothing
