@@ -25,6 +25,7 @@ using Graphs, Multigraphs
     include("typed_row_state_reduction.jl")
     include("typed_packed_row_state_reduction.jl")
     include("typed_native_multiplicity_reduction.jl")
+    include("typed_native_dispatch.jl")
     include("generation.jl")
 end
 
