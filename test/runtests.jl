@@ -46,6 +46,10 @@ else
         include("generation.jl")
     end
 
+    @testset "native connectivity" begin
+        include("native_connectivity.jl")
+    end
+
     @testset "degree-sequence problem" begin
         include("degree_sequence_problem.jl")
     end
