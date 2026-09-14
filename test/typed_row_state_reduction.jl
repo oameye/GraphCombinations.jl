@@ -51,10 +51,14 @@ end
     )
 
     for problem in workloads
-        @test GCTypedRows._generate_typed_row_reduced(problem) ==
-            generate_multigraphs(problem)
+        oracle = generate_multigraphs(problem)
+        disconnected_oracle = generate_multigraphs(problem; connected=false)
+        @test GCTypedRows._generate_typed_row_reduced(problem) == oracle
         @test GCTypedRows._generate_typed_row_reduced(problem; connected=false) ==
-            generate_multigraphs(problem; connected=false)
+            disconnected_oracle
+        @test GCTypedRows._generate_typed_packed_row_reduced(problem) == oracle
+        @test GCTypedRows._generate_typed_packed_row_reduced(problem; connected=false) ==
+            disconnected_oracle
     end
 
     bipartite = first(workloads)
