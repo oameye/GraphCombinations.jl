@@ -128,7 +128,8 @@ function _canonical_form_inplace_permutations(
             candidate[i] = Edge(minmax(u_new, v_new)...)
         end
         sort!(candidate)
-        candidate < current_canonical && copyto!(current_canonical, candidate)
+        _compare_graph_reps(candidate, current_canonical) < 0 &&
+            copyto!(current_canonical, candidate)
         _next_permutation!(perm) || break
     end
 
