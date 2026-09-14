@@ -140,10 +140,7 @@ struct _PackedTriangularCanonicalizationResult
 end
 
 function _canonicalize_packed_triangular_actions(
-    graph::GraphRep,
-    actions::Vector{Vector{Int}},
-    num_vertices::Int,
-    bits::Int,
+    graph::GraphRep, actions::Vector{Vector{Int}}, num_vertices::Int, bits::Int
 )::_PackedTriangularCanonicalizationResult
     isempty(actions) && error("Internal error: triangular action group is empty.")
 
