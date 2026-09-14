@@ -5,9 +5,12 @@ version = "0.3.1"
 
 [deps]
 DispatchDoctor = "8d63f2c5-f18a-4cf2-ba9d-b3f60fc568c8"
-DocStringExtensions = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
+
+[weakdeps]
 Graphs = "86223c79-3864-5bf0-83f7-82e725a168b6"
-Multigraphs = "7ebac608-6c66-46e6-9856-b5f43e107bac"
+
+[extensions]
+GraphsExt = "Graphs"
 
 [compat]
 Aqua = "0.8.11"
@@ -15,10 +18,8 @@ CheckConcreteStructs = "0.1"
 Combinatorics = "1"
 DispatchDoctor = "0.4.28"
 Documenter = "1.10"
-DocStringExtensions = "0.9"
 ExplicitImports = "1.11"
 Graphs = "1.12"
-Multigraphs = "0.3"
 JET = "0.9.18, 0.10, 0.11, 0.12"
 Memoization = "0.2"
 Preferences = "1"
@@ -31,10 +32,11 @@ CheckConcreteStructs = "73c92db5-9da6-4938-911a-6443a7e94a58"
 Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 ExplicitImports = "7d51a73a-1435-4ff3-83d9-f097790105c7"
+Graphs = "86223c79-3864-5bf0-83f7-82e725a168b6"
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
 Memoization = "6fafb56a-5788-4b4e-91ca-c0cea6611c73"
 Preferences = "21216c6a-2e73-6563-6e65-726566657250"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["JET", "CheckConcreteStructs", "Combinatorics", "ExplicitImports", "Memoization", "Preferences", "Test", "Aqua", "Documenter"]
+test = ["JET", "CheckConcreteStructs", "Combinatorics", "ExplicitImports", "Graphs", "Memoization", "Preferences", "Test", "Aqua", "Documenter"]

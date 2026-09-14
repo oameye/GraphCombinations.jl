@@ -10,11 +10,13 @@ include("phi4_graphs.jl")
 include("pipeline_stages.jl")
 include("colored_port_generation.jl")
 include("typed_multigraph_generation.jl")
+include("native_connectivity.jl")
 
 phi_4_theory!(SUITE)
 pipeline_stages!(SUITE)
 colored_port_generation!(SUITE)
 typed_multigraph_generation!(SUITE)
+native_connectivity!(SUITE)
 
 BenchmarkTools.tune!(SUITE)
 results = BenchmarkTools.run(SUITE; verbose=true)

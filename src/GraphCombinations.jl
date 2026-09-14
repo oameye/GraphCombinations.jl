@@ -1,16 +1,14 @@
 """
-$(DocStringExtensions.README)
+GraphCombinations.jl provides exact generation, canonicalization, symmetry reduction, and
+combinatorial utilities for undirected multigraph problems.
 """
 module GraphCombinations
 
-using DocStringExtensions
 using DispatchDoctor: @stable
 
-using Graphs, Multigraphs
-
 @stable default_mode = "disable" default_codegen_level = "min" begin
-    include("MultiGraphWrap.jl")
     include("utils.jl")
+    include("native_graph.jl")
     include("relabeling_group.jl")
     include("partition_canonicalization.jl")
     include("matrix_canonicalization.jl")
@@ -29,7 +27,7 @@ using Graphs, Multigraphs
     include("generation.jl")
 end
 
-export allgraphs, combinatoric_factor, build_graph, total_degree, canonical_form
+export allgraphs, combinatoric_factor, build_graph, total_degree, canonical_form, GCGraph
 export DegreeSequenceProblem,
     TypedMultigraphProblem,
     generate_multigraphs,

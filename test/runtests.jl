@@ -30,8 +30,12 @@ else
     include(joinpath(@__DIR__, "..", "reference", "ReferenceGraphCombinations.jl"))
     const ReferenceGC = ReferenceGraphCombinations
 
-    @testset "Multigraph wrapper" begin
-        include("MultiGraphWrap.jl")
+    @testset "Graphs extension" begin
+        include("GraphsExt.jl")
+    end
+
+    @testset "native connectivity" begin
+        include("native_connectivity.jl")
     end
 
     @testset "wick_contractions" begin

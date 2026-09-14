@@ -105,6 +105,8 @@ pairing_count(total_degree) = prod(big(k) for k in 1:2:(total_degree - 1))
         @test reconstructed_pairings == pairing_count(total_degree(n))
 
         connected_results = ReferenceGC.allgraphs_wick_reference(n; connected=true)
-        @test all(graph -> GC.is_connected(build_graph(graph)), first.(connected_results))
+        @test all(
+            graph -> Graphs.is_connected(build_graph(graph)), first.(connected_results)
+        )
     end
 end
