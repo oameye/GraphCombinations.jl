@@ -46,11 +46,8 @@ end
     data[second_edge] = 1
     edges = @inferred GC._materialize_compact_port_edges(GC._CompactPortKey(data), layout)
 
-    @test edges == [
-        GC._PortEdge(1, 1, 1, 2),
-        GC._PortEdge(1, 1, 1, 2),
-        GC._PortEdge(1, 2, 1, 1),
-    ]
+    @test edges ==
+        [GC._PortEdge(1, 1, 1, 2), GC._PortEdge(1, 1, 1, 2), GC._PortEdge(1, 2, 1, 1)]
 end
 
 @testset "compact weighted traversal matches reference fixtures" begin
