@@ -24,11 +24,18 @@ vertex_degrees
 vertex_colors
 edge_admissibility
 fixed_vertex_count
-build_graph
+GraphCombinations.GCGraph
 combinatoric_factor
 total_degree
 canonical_form
 ```
+
+### Optional Graphs.jl interoperability
+
+`Graphs.jl` is an optional weak dependency. Loading both `GraphCombinations` and `Graphs`
+activates `GraphsExt`, which provides the `build_graph` interoperability path and a
+`Graphs.AbstractGraph`-compatible adapter for GC-owned multigraph values. Core generation,
+canonicalization, and connectivity do not require `Graphs.jl`.
 
 ## Weighted colored-port generation
 
@@ -66,12 +73,6 @@ transport_port_weight
 ```
 
 ## Private
-
-### Types
-
-```@docs
-GraphCombinations.MultigraphWrap
-```
 
 ### Functions
 

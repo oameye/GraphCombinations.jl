@@ -13,17 +13,13 @@ end
 """
     sort_graph_edges(graph::GraphRep)::GraphRep
 
-Sorts edges within a graph representation canonically.
-Ensures `a ≤ b` in each `a => b` and then sorts the vector of edges.
+Sort edges within a graph representation canonically.
 """
 function sort_graph_edges(graph::GraphRep)::GraphRep
-    # Ensure a ≤ b in each propagator and sort the edges
     sorted_props = [Edge(minmax(p.first, p.second)...) for p in graph]
-    return sort(sorted_props) # Sorts based on pairs, first element then second
+    return sort(sorted_props)
 end
 
-# Advance a permutation in-place to its lexicographic successor. The vector must contain distinct
-# ordered values. Returns `false` after the final descending permutation, leaving it unchanged.
 function _next_permutation!(p::Vector{Int})::Bool
     length(p) < 2 && return false
 
@@ -59,10 +55,6 @@ end
     return 0
 end
 
-# Canonicalize a graph and count the internal automorphism group during the same exhaustive
-# permutation traversal. Every orbit representative has exactly |Aut(G)| preimages under the
-# group action, so the number of permutations yielding the final canonical minimum is the
-# automorphism order. External vertices remain fixed because only `internal_indices` are permuted.
 function _canonicalize_with_automorphisms(
     graph::GraphRep, internal_indices::UnitRange{Int}
 )::CanonicalizationResult
@@ -103,9 +95,6 @@ function _canonicalize_with_automorphisms(
     return CanonicalizationResult(current_canonical, automorphism_order)
 end
 
-# Production exhaustive canonicalizer. Keep the graph-only fast path separate from automorphism
-# counting: most callers need only the canonical label, and direct generation computes
-# automorphism orders once per unique topology after deduplication.
 function _canonical_form_inplace_permutations(
     graph::GraphRep, internal_indices::UnitRange{Int}
 )::GraphRep
@@ -143,70 +132,76 @@ end
 """
     canonical_form(graph::GraphRep, internal_indices::UnitRange{Int})::GraphRep
 
-Finds the canonical representation of a graph under permutations of internal vertices.
-The canonical form is the lexicographically smallest graph representation achievable
-through permutation of `internal_indices`.
+Return the lexicographically smallest representation under permutations of `internal_indices`.
 """
 function canonical_form(graph::GraphRep, internal_indices::UnitRange{Int})::GraphRep
     return _canonical_form_inplace_permutations(graph, internal_indices)
 end
 
-"""
-    build_internal_graph(graph_rep::GraphRep, num_vertices::Int)::SimpleGraph
+@inline function _is_connected_graph_rep_u64(graph::GraphRep, num_vertices::Int)::Bool
+    visited = UInt64(1)
+    frontier = visited
 
-Builds a Graphs.SimpleGraph from an edges list.
-"""
-function build_internal_graph(graph_rep::GraphRep, num_vertices::Int)::SimpleGraph
-    g = SimpleGraph(num_vertices)
-    for prop in graph_rep
-        # Check if edge already exists can be useful for debugging, but add_edge handles it
-        add_edge!(g, prop.first, prop.second)
+    while !iszero(frontier)
+        next_frontier = UInt64(0)
+        @inbounds for edge in graph
+            u = edge.first
+            v = edge.second
+            u == v && continue
+
+            u_bit = UInt64(1) << (u - 1)
+            v_bit = UInt64(1) << (v - 1)
+            !iszero(frontier & u_bit) && iszero(visited & v_bit) && (next_frontier |= v_bit)
+            !iszero(frontier & v_bit) && iszero(visited & u_bit) && (next_frontier |= u_bit)
+        end
+        next_frontier &= ~visited
+        iszero(next_frontier) && break
+        visited |= next_frontier
+        frontier = next_frontier
     end
-    return g
+
+    target = num_vertices == 64 ? typemax(UInt64) : (UInt64(1) << num_vertices) - UInt64(1)
+    return visited == target
 end
 
-"""
-    $(TYPEDSIGNATURES)
+function _is_connected_graph_rep_large(graph::GraphRep, num_vertices::Int)::Bool
+    seen = falses(num_vertices)
+    stack = Vector{Int}(undef, num_vertices)
+    seen[1] = true
+    stack[1] = 1
+    stack_size = 1
+    reached = 1
 
-Builds a [`MultigraphWrap`](@ref) from an edges list and an explicit number of vertices.
-
-Vertex labels must lie in `1:num_vertices`. Parallel edges and self-loops are preserved exactly.
-"""
-function build_graph(graph_rep::GraphRep, num_vertices::Int)::MultigraphWrap
-    num_vertices >= 0 || throw(ArgumentError("num_vertices must be non-negative."))
-
-    adjacency = zeros(Int, num_vertices, num_vertices)
-    for prop in graph_rep
-        u, v = prop.first, prop.second
-        1 <= u <= num_vertices ||
-            throw(ArgumentError("Vertex label $u is outside 1:$num_vertices."))
-        1 <= v <= num_vertices ||
-            throw(ArgumentError("Vertex label $v is outside 1:$num_vertices."))
-
-        adjacency[u, v] += 1
-        u == v || (adjacency[v, u] += 1)
+    while stack_size > 0
+        vertex = stack[stack_size]
+        stack_size -= 1
+        @inbounds for edge in graph
+            neighbor = if edge.first == vertex
+                edge.second
+            elseif edge.second == vertex
+                edge.first
+            else
+                continue
+            end
+            seen[neighbor] && continue
+            seen[neighbor] = true
+            reached += 1
+            stack_size += 1
+            stack[stack_size] = neighbor
+        end
     end
-    return MultigraphWrap(Multigraph(adjacency))
+    return reached == num_vertices
 end
 
-"""
-    $(TYPEDSIGNATURES)
-
-Builds a [`MultigraphWrap`](@ref) from an edges list.
-
-Vertex labels are interpreted as one-based vertex indices, so the graph contains all vertices
-from `1` through the largest label appearing in `graph_rep`. This preserves non-contiguous
-labels such as `1 => 3`, for which vertex `2` is an isolated vertex.
-"""
-function build_graph(graph_rep::GraphRep)::MultigraphWrap
-    num_vertices =
-        isempty(graph_rep) ? 0 : maximum(max(p.first, p.second) for p in graph_rep)
-    return build_graph(graph_rep, num_vertices)
+function _is_connected_graph_rep(graph::GraphRep, num_vertices::Int)::Bool
+    num_vertices > 0 || return false
+    num_vertices == 1 && return true
+    return if num_vertices <= 64
+        _is_connected_graph_rep_u64(graph, num_vertices)
+    else
+        _is_connected_graph_rep_large(graph, num_vertices)
+    end
 end
 
-"""
-    $(TYPEDSIGNATURES)
-
-Calculates the total degree of a graph topology represented by a vector of the degrees of vertices.
-"""
+"""Calculate the total degree from `n[k] = number of degree-k vertices`."""
 total_degree(n::AbstractVector{<:Integer}) = sum(k * nk for (k, nk) in enumerate(n))
