@@ -23,6 +23,7 @@ using Graphs, Multigraphs
     include("typed_multigraph_problem.jl")
     include("triangular_canonicalization.jl")
     include("typed_row_state_reduction.jl")
+    include("typed_packed_row_state_reduction.jl")
     include("generation.jl")
 end
 
