@@ -187,10 +187,7 @@ function _record_directed_candidate!(state::_DirectedCanonicalSearchState)::Noth
 end
 
 function _enumerate_directed_cell!(
-    state::_DirectedCanonicalSearchState,
-    cell_index::Int,
-    target_start::Int,
-    depth::Int,
+    state::_DirectedCanonicalSearchState, cell_index::Int, target_start::Int, depth::Int
 )::Nothing
     cell = state.cells[cell_index]
     if depth > length(cell)
@@ -243,8 +240,9 @@ function _directed_graph_from_inverse(
         old_source = inverse_mapping[new_source]
         for new_target in 1:n
             old_target = inverse_mapping[new_target]
-            multiplicities[_directed_slot(new_source, new_target, n)] =
-                graph.multiplicities[_directed_slot(old_source, old_target, n)]
+            multiplicities[_directed_slot(new_source, new_target, n)] = graph.multiplicities[_directed_slot(
+                old_source, old_target, n
+            )]
         end
     end
     return DirectedGCGraph(n, multiplicities)
@@ -276,7 +274,8 @@ function canonicalize_directed(
         graph, cells, inverse_mapping, best_inverse_mapping, 0, false
     )
     _search_directed_cells!(state, 1, 1)
-    state.has_best || error("Internal error: directed canonical search produced no candidate.")
+    state.has_best ||
+        error("Internal error: directed canonical search produced no candidate.")
 
     canonical = _directed_graph_from_inverse(graph, state.best_inverse_mapping)
     mapping = _directed_mapping_from_inverse(state.best_inverse_mapping)
