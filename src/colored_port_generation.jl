@@ -200,6 +200,31 @@ function _port_automorphisms(problem::_PortMatchingProblem)::Vector{Vector{Int}}
     )
 end
 
+struct _PortCanonicalizationAction
+    mapping::Vector{Int}
+    source_counts::Vector{Int}
+    target_counts::Vector{Int}
+end
+
+function _port_canonicalization_actions(
+    problem::_PortMatchingProblem, automorphisms::Vector{Vector{Int}}
+)::Vector{_PortCanonicalizationAction}
+    num_source_colors = size(problem.source_ports, 2)
+    num_target_colors = size(problem.target_ports, 2)
+    actions = Vector{_PortCanonicalizationAction}(undef, length(automorphisms))
+    @inbounds for i in eachindex(automorphisms)
+        mapping = automorphisms[i]
+        source_counts = _vertex_block_coordinate_action(mapping, num_source_colors)
+        target_counts = if num_target_colors == num_source_colors
+            source_counts
+        else
+            _vertex_block_coordinate_action(mapping, num_target_colors)
+        end
+        actions[i] = _PortCanonicalizationAction(mapping, source_counts, target_counts)
+    end
+    return actions
+end
+
 @inline function _insertion_sort_port_edges!(edges::Vector{_PortEdge})::Nothing
     @inbounds for i in 2:length(edges)
         value = edges[i]
@@ -246,6 +271,18 @@ function _mapped_port_key(state::_PortMatchingState, mapping::Vector{Int})::_Por
     _write_mapped_port_edges!(edges, state, mapping)
     _write_mapped_port_counts!(source_ports, state.source_ports, mapping)
     _write_mapped_port_counts!(target_ports, state.target_ports, mapping)
+    return _PortStateKey(edges, source_ports, target_ports)
+end
+
+function _mapped_port_key(
+    state::_PortMatchingState, action::_PortCanonicalizationAction
+)::_PortStateKey
+    edges = Vector{_PortEdge}(undef, length(state.edges))
+    source_ports = Vector{Int}(undef, length(state.source_ports))
+    target_ports = Vector{Int}(undef, length(state.target_ports))
+    _write_mapped_port_edges!(edges, state, action.mapping)
+    _write_coordinate_action!(source_ports, state.source_ports, action.source_counts)
+    _write_coordinate_action!(target_ports, state.target_ports, action.target_counts)
     return _PortStateKey(edges, source_ports, target_ports)
 end
 
@@ -330,10 +367,48 @@ function _canonicalize_port_state(
 end
 
 function _canonicalize_port_state(
+    state::_PortMatchingState,
+    actions::Vector{_PortCanonicalizationAction},
+    workspace::_PortCanonicalizationWorkspace,
+)::Tuple{_PortStateKey,_PortMatchingState,Vector{Int}}
+    first_action = first(actions)
+    best_key = _mapped_port_key(state, first_action)
+    best_mapping = first_action.mapping
+    length(actions) == 1 &&
+        return best_key, _state_from_port_key(state, best_key), best_mapping
+
+    _prepare_port_workspace!(workspace, state)
+    @inbounds for i in 2:length(actions)
+        action = actions[i]
+        _write_mapped_port_edges!(workspace.edges, state, action.mapping)
+        _write_coordinate_action!(
+            workspace.source_ports, state.source_ports, action.source_counts
+        )
+        _write_coordinate_action!(
+            workspace.target_ports, state.target_ports, action.target_counts
+        )
+        if _scratch_port_key_is_lexless(workspace, best_key)
+            copyto!(best_key.edges, workspace.edges)
+            copyto!(best_key.source_ports, workspace.source_ports)
+            copyto!(best_key.target_ports, workspace.target_ports)
+            best_mapping = action.mapping
+        end
+    end
+    return best_key, _state_from_port_key(state, best_key), best_mapping
+end
+
+function _canonicalize_port_state(
     state::_PortMatchingState, automorphisms::Vector{Vector{Int}}
 )::Tuple{_PortStateKey,_PortMatchingState,Vector{Int}}
     workspace = _PortCanonicalizationWorkspace(state)
     return _canonicalize_port_state(state, automorphisms, workspace)
+end
+
+function _canonicalize_port_state(
+    state::_PortMatchingState, actions::Vector{_PortCanonicalizationAction}
+)::Tuple{_PortStateKey,_PortMatchingState,Vector{Int}}
+    workspace = _PortCanonicalizationWorkspace(state)
+    return _canonicalize_port_state(state, actions, workspace)
 end
 
 """
@@ -344,7 +419,9 @@ have identical remaining matching spaces as well as isomorphic completed edges.
 function _canonicalize_port_state(
     problem::_PortMatchingProblem, state::_PortMatchingState
 )::Tuple{_PortStateKey,_PortMatchingState,Vector{Int}}
-    return _canonicalize_port_state(state, _port_automorphisms(problem))
+    automorphisms = _port_automorphisms(problem)
+    actions = _port_canonicalization_actions(problem, automorphisms)
+    return _canonicalize_port_state(state, actions)
 end
 
 function _first_remaining_source(state::_PortMatchingState)::_PortSourceCursor
@@ -422,12 +499,13 @@ function _weighted_port_matchings_with_stats(
     problem::_PortMatchingProblem, transport::T
 )::Tuple{Vector{Tuple{Vector{_PortEdge},BigInt}},_PortGenerationStats} where {T}
     automorphisms = _port_automorphisms(problem)
+    actions = _port_canonicalization_actions(problem, automorphisms)
     initial = _PortMatchingState(
         _PortEdge[], copy(problem.source_ports), copy(problem.target_ports)
     )
     workspace = _PortCanonicalizationWorkspace(initial)
     initial_key, initial_state, initial_mapping = _canonicalize_port_state(
-        initial, automorphisms, workspace
+        initial, actions, workspace
     )
     initial_weight = _initial_port_weight(
         transport, initial, initial_state, initial_mapping
@@ -471,7 +549,7 @@ function _weighted_port_matchings_with_stats(
                     )
                     child = _PortMatchingState(child_edges, child_sources, child_targets)
                     key, canonical, mapping = _canonicalize_port_state(
-                        child, automorphisms, workspace
+                        child, actions, workspace
                     )
                     canonicalization_calls += 1
                     child_weight = _transport_port_weight(
@@ -487,7 +565,7 @@ function _weighted_port_matchings_with_stats(
         push!(layer_states, length(next_states))
         if isempty(next_states)
             stats = _PortGenerationStats(
-                length(automorphisms),
+                length(actions),
                 layer_states,
                 transitions,
                 canonicalization_calls,
@@ -507,7 +585,7 @@ function _weighted_port_matchings_with_stats(
     end
     sort!(results; lt=(a, b) -> _lexless_port_edges(first(a), first(b)))
     stats = _PortGenerationStats(
-        length(automorphisms),
+        length(actions),
         layer_states,
         transitions,
         canonicalization_calls,

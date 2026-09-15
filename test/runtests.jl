@@ -98,6 +98,10 @@ else
         include("colored_port_generation.jl")
     end
 
+    @testset "colored port canonical actions" begin
+        include("colored_port_canonical_actions.jl")
+    end
+
     @testset "colored port pruning" begin
         include("colored_port_pruning.jl")
     end
