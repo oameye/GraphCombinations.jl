@@ -4,8 +4,7 @@
     @test cells == [Int[2], Int[1], Int[3]]
 
     cycle = DirectedGCGraph([1 => 2, 2 => 3, 3 => 1], 3)
-    @test GraphCombinations._directed_refined_cells(cycle, Int[1, 1, 1]) ==
-        [Int[1, 2, 3]]
+    @test GraphCombinations._directed_refined_cells(cycle, Int[1, 1, 1]) == [Int[1, 2, 3]]
 
     empty_graph = DirectedGCGraph(Pair{Int,Int}[], 0)
     @test GraphCombinations._directed_refined_cells(empty_graph, Int[]) ==
@@ -28,8 +27,9 @@ end
     relabeled_graph = DirectedGCGraph(relabeled_edges, 4)
 
     refined = GraphCombinations._directed_refined_colors(graph, colors)
-    relabeled_refined =
-        GraphCombinations._directed_refined_colors(relabeled_graph, relabeled_colors)
+    relabeled_refined = GraphCombinations._directed_refined_colors(
+        relabeled_graph, relabeled_colors
+    )
     @inbounds for old_vertex in eachindex(colors)
         @test relabeled_refined[permutation[old_vertex]] == refined[old_vertex]
     end
