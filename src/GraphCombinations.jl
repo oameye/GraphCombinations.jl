@@ -11,6 +11,8 @@ using DispatchDoctor: @stable
     include("canonical_actions.jl")
     include("native_graph.jl")
     include("relabeling_group.jl")
+    include("directed_canonicalization.jl")
+    include("directed_refinement.jl")
     include("partition_canonicalization.jl")
     include("matrix_canonicalization.jl")
     include("direct_generation.jl")
@@ -28,7 +30,19 @@ using DispatchDoctor: @stable
     include("generation.jl")
 end
 
-export allgraphs, combinatoric_factor, build_graph, total_degree, canonical_form, GCGraph
+export allgraphs,
+    combinatoric_factor,
+    build_graph,
+    total_degree,
+    canonical_form,
+    GCGraph,
+    DirectedGCGraph,
+    DirectedCanonicalizationResult,
+    VertexRelabeling,
+    canonicalize_directed,
+    canonical_graph,
+    canonical_automorphism_order,
+    vertex_mapping
 export DegreeSequenceProblem,
     TypedMultigraphProblem,
     generate_multigraphs,
