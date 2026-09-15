@@ -39,10 +39,7 @@ function DirectedCanonicalizationBuffer(num_vertices::Integer)
     n = Int(num_vertices)
     n >= 0 || throw(ArgumentError("num_vertices must be non-negative."))
     return DirectedCanonicalizationBuffer(
-        Vector{Int}(undef, n * n),
-        Vector{Int}(undef, n),
-        Vector{Int}(undef, n),
-        0,
+        Vector{Int}(undef, n * n), Vector{Int}(undef, n), Vector{Int}(undef, n), 0
     )
 end
 
@@ -83,9 +80,9 @@ function _write_directed_buffer!(
         old_source = best_inverse_mapping[canonical_source]
         for canonical_target in 1:n
             old_target = best_inverse_mapping[canonical_target]
-            buffer.canonical_multiplicities[_directed_slot(
-                canonical_source, canonical_target, n
-            )] = graph.multiplicities[_directed_slot(old_source, old_target, n)]
+            buffer.canonical_multiplicities[_directed_slot(canonical_source, canonical_target, n)] = graph.multiplicities[_directed_slot(
+                old_source, old_target, n
+            )]
         end
     end
     buffer.automorphism_order = automorphism_order
@@ -113,14 +110,11 @@ function canonicalize_directed!(
     end
 
     state = _DirectedCanonicalSearchState(
-        graph,
-        workspace.inverse_mapping,
-        workspace.best_inverse_mapping,
-        0,
-        false,
+        graph, workspace.inverse_mapping, workspace.best_inverse_mapping, 0, false
     )
     _search_directed_partition!(state, workspace.colors)
-    state.has_best || error("Internal error: directed canonical search produced no candidate.")
+    state.has_best ||
+        error("Internal error: directed canonical search produced no candidate.")
     _write_directed_buffer!(
         buffer, graph, state.best_inverse_mapping, state.automorphism_order
     )
@@ -135,14 +129,11 @@ function canonicalize_directed!(
     _check_directed_workspace_size(buffer, workspace, graph)
     fill!(workspace.colors, 1)
     state = _DirectedCanonicalSearchState(
-        graph,
-        workspace.inverse_mapping,
-        workspace.best_inverse_mapping,
-        0,
-        false,
+        graph, workspace.inverse_mapping, workspace.best_inverse_mapping, 0, false
     )
     _search_directed_partition!(state, workspace.colors)
-    state.has_best || error("Internal error: directed canonical search produced no candidate.")
+    state.has_best ||
+        error("Internal error: directed canonical search produced no candidate.")
     _write_directed_buffer!(
         buffer, graph, state.best_inverse_mapping, state.automorphism_order
     )
@@ -150,7 +141,9 @@ function canonicalize_directed!(
 end
 
 """Return the canonical rank of one old vertex from an in-place result buffer."""
-@inline function canonical_rank(buffer::DirectedCanonicalizationBuffer, old_vertex::Integer)::Int
+@inline function canonical_rank(
+    buffer::DirectedCanonicalizationBuffer, old_vertex::Integer
+)::Int
     return buffer.old_to_canonical[Int(old_vertex)]
 end
 
