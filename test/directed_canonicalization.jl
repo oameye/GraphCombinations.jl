@@ -45,6 +45,28 @@ function _exhaustive_directed_automorphism_order(
     return order
 end
 
+function _directed_multiplicities_less(a::Vector{Int}, b::Vector{Int})::Bool
+    @inbounds for index in eachindex(a, b)
+        a[index] == b[index] && continue
+        return a[index] < b[index]
+    end
+    return false
+end
+
+function _exhaustive_directed_canonical_graph(
+    graph::DirectedGCGraph, colors::Vector{Int}
+)::DirectedGCGraph
+    best = nothing
+    for mapping in GraphCombinations._directed_relabelings(colors)
+        candidate = GraphCombinations._relabel_directed_graph(graph, mapping)
+        if isnothing(best) ||
+            _directed_multiplicities_less(candidate.multiplicities, best.multiplicities)
+            best = candidate
+        end
+    end
+    return something(best)
+end
+
 @testset "directed graph construction and fixed colors" begin
     graph = @inferred DirectedGCGraph([1 => 2, 1 => 2, 2 => 1, 2 => 2], 2)
     result = @inferred canonicalize_directed(graph, Int[10, 20])
@@ -194,6 +216,43 @@ end
                 @test canonical_automorphism_order(relabeled_result) ==
                     canonical_automorphism_order(result)
             end
+        end
+    end
+end
+
+@testset "individualized residual search agrees with exhaustive oracle" begin
+    n = 7
+    colors = ones(Int, n)
+    directed_cycle = DirectedGCGraph([vertex => mod1(vertex + 1, n) for vertex in 1:n], n)
+    bidirectional_cycle = DirectedGCGraph(
+        vcat(
+            [vertex => mod1(vertex + 1, n) for vertex in 1:n],
+            [mod1(vertex + 1, n) => vertex for vertex in 1:n],
+        ),
+        n,
+    )
+
+    for (graph, expected_automorphisms) in ((directed_cycle, n), (bidirectional_cycle, 2 * n))
+        cells = GraphCombinations._directed_refined_cells(graph, colors)
+        @test GraphCombinations._directed_residual_exceeds_limit(cells)
+
+        result = canonicalize_directed(graph, colors)
+        @test canonical_graph(result) == _exhaustive_directed_canonical_graph(graph, colors)
+        @test canonical_automorphism_order(result) == expected_automorphisms
+        @test canonical_automorphism_order(result) ==
+            _exhaustive_directed_automorphism_order(graph, colors)
+        @test _apply_directed_witness(graph, canonical_relabeling(result)) ==
+            canonical_graph(result)
+
+        for permutation in (
+            Int[4, 7, 2, 6, 1, 5, 3], Int[7, 6, 5, 4, 3, 2, 1]
+        )
+            relabeled_graph, relabeled_colors = _relabel_directed_fixture(
+                graph, colors, permutation
+            )
+            relabeled_result = canonicalize_directed(relabeled_graph, relabeled_colors)
+            @test canonical_graph(relabeled_result) == canonical_graph(result)
+            @test canonical_automorphism_order(relabeled_result) == expected_automorphisms
         end
     end
 end
