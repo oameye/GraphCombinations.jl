@@ -10,7 +10,9 @@ function _relabel_directed_fixture(
     n = graph.num_vertices
     edges = Pair{Int,Int}[]
     @inbounds for source in 1:n, target in 1:n
-        multiplicity = graph.multiplicities[GraphCombinations._directed_slot(source, target, n)]
+        multiplicity = graph.multiplicities[GraphCombinations._directed_slot(
+            source, target, n
+        )]
         for _ in 1:multiplicity
             push!(edges, permutation[source] => permutation[target])
         end
@@ -144,7 +146,9 @@ end
     graph = DirectedGCGraph([1 => 1, 1 => 3, 1 => 3, 2 => 4, 3 => 2, 4 => 1], 4)
     colors = Int[10, 10, 20, 30]
     permutation = Int[3, 1, 4, 2]
-    relabeled_graph, relabeled_colors = _relabel_directed_fixture(graph, colors, permutation)
+    relabeled_graph, relabeled_colors = _relabel_directed_fixture(
+        graph, colors, permutation
+    )
 
     result = canonicalize_directed(graph, colors)
     relabeled_result = canonicalize_directed(relabeled_graph, relabeled_colors)
@@ -155,15 +159,16 @@ end
     @test _canonicalized_directed_colors(relabeled_colors, relabeled_result) == sort(colors)
     @test _apply_directed_witness(graph, canonical_relabeling(result)) ==
         canonical_graph(result)
-    @test _apply_directed_witness(relabeled_graph, canonical_relabeling(relabeled_result)) ==
-        canonical_graph(relabeled_result)
+    @test _apply_directed_witness(
+        relabeled_graph, canonical_relabeling(relabeled_result)
+    ) == canonical_graph(relabeled_result)
 end
 
 @testset "exhaustive three-vertex directed certification" begin
     permutations = GraphCombinations._directed_relabelings(ones(Int, 3))
     colorings = (Int[1, 1, 1], Int[1, 1, 2], Int[1, 2, 3])
 
-    for mask in 0:(2^9 - 1)
+    for mask in 0:(2 ^ 9 - 1)
         edges = Pair{Int,Int}[]
         bit_index = 0
         for source in 1:3, target in 1:3
@@ -181,8 +186,9 @@ end
             @test _canonicalized_directed_colors(colors, result) == sort(colors)
 
             for permutation in permutations
-                relabeled_graph, relabeled_colors =
-                    _relabel_directed_fixture(graph, colors, permutation)
+                relabeled_graph, relabeled_colors = _relabel_directed_fixture(
+                    graph, colors, permutation
+                )
                 relabeled_result = canonicalize_directed(relabeled_graph, relabeled_colors)
                 @test canonical_graph(relabeled_result) == canonical_graph(result)
                 @test canonical_automorphism_order(relabeled_result) ==
