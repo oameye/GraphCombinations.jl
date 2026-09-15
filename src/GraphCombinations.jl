@@ -12,6 +12,7 @@ using DispatchDoctor: @stable
     include("native_graph.jl")
     include("relabeling_group.jl")
     include("directed_canonicalization.jl")
+    include("directed_refinement.jl")
     include("partition_canonicalization.jl")
     include("matrix_canonicalization.jl")
     include("direct_generation.jl")
