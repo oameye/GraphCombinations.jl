@@ -4,6 +4,45 @@ function _apply_directed_witness(
     return GraphCombinations._relabel_directed_graph(graph, vertex_mapping(relabeling))
 end
 
+function _relabel_directed_fixture(
+    graph::DirectedGCGraph, colors::Vector{Int}, permutation::Vector{Int}
+)::Tuple{DirectedGCGraph,Vector{Int}}
+    n = graph.num_vertices
+    edges = Pair{Int,Int}[]
+    @inbounds for source in 1:n, target in 1:n
+        multiplicity = graph.multiplicities[GraphCombinations._directed_slot(source, target, n)]
+        for _ in 1:multiplicity
+            push!(edges, permutation[source] => permutation[target])
+        end
+    end
+    relabeled_colors = similar(colors)
+    @inbounds for old_vertex in eachindex(colors)
+        relabeled_colors[permutation[old_vertex]] = colors[old_vertex]
+    end
+    return DirectedGCGraph(edges, n), relabeled_colors
+end
+
+function _canonicalized_directed_colors(
+    colors::Vector{Int}, result::DirectedCanonicalizationResult
+)::Vector{Int}
+    mapping = vertex_mapping(canonical_relabeling(result))
+    canonical_colors = similar(colors)
+    @inbounds for old_vertex in eachindex(colors)
+        canonical_colors[mapping[old_vertex]] = colors[old_vertex]
+    end
+    return canonical_colors
+end
+
+function _exhaustive_directed_automorphism_order(
+    graph::DirectedGCGraph, colors::Vector{Int}
+)::Int
+    order = 0
+    for mapping in GraphCombinations._directed_relabelings(colors)
+        GraphCombinations._relabel_directed_graph(graph, mapping) == graph && (order += 1)
+    end
+    return order
+end
+
 @testset "directed graph construction and fixed colors" begin
     graph = @inferred DirectedGCGraph([1 => 2, 1 => 2, 2 => 1, 2 => 2], 2)
     result = @inferred canonicalize_directed(graph, Int[10, 20])
@@ -99,6 +138,58 @@ end
     @test canonical_graph(result) == canonical_graph(relabeled_result)
     @test canonical_automorphism_order(result) ==
         canonical_automorphism_order(relabeled_result)
+end
+
+@testset "color cells move canonically under arbitrary relabeling" begin
+    graph = DirectedGCGraph([1 => 1, 1 => 3, 1 => 3, 2 => 4, 3 => 2, 4 => 1], 4)
+    colors = Int[10, 10, 20, 30]
+    permutation = Int[3, 1, 4, 2]
+    relabeled_graph, relabeled_colors = _relabel_directed_fixture(graph, colors, permutation)
+
+    result = canonicalize_directed(graph, colors)
+    relabeled_result = canonicalize_directed(relabeled_graph, relabeled_colors)
+    @test canonical_graph(result) == canonical_graph(relabeled_result)
+    @test canonical_automorphism_order(result) ==
+        canonical_automorphism_order(relabeled_result)
+    @test _canonicalized_directed_colors(colors, result) == sort(colors)
+    @test _canonicalized_directed_colors(relabeled_colors, relabeled_result) == sort(colors)
+    @test _apply_directed_witness(graph, canonical_relabeling(result)) ==
+        canonical_graph(result)
+    @test _apply_directed_witness(relabeled_graph, canonical_relabeling(relabeled_result)) ==
+        canonical_graph(relabeled_result)
+end
+
+@testset "exhaustive three-vertex directed certification" begin
+    permutations = GraphCombinations._directed_relabelings(ones(Int, 3))
+    colorings = (Int[1, 1, 1], Int[1, 1, 2], Int[1, 2, 3])
+
+    for mask in 0:(2^9 - 1)
+        edges = Pair{Int,Int}[]
+        bit_index = 0
+        for source in 1:3, target in 1:3
+            isodd(mask >> bit_index) && push!(edges, source => target)
+            bit_index += 1
+        end
+        graph = DirectedGCGraph(edges, 3)
+
+        for colors in colorings
+            result = canonicalize_directed(graph, colors)
+            @test canonical_automorphism_order(result) ==
+                _exhaustive_directed_automorphism_order(graph, colors)
+            @test _apply_directed_witness(graph, canonical_relabeling(result)) ==
+                canonical_graph(result)
+            @test _canonicalized_directed_colors(colors, result) == sort(colors)
+
+            for permutation in permutations
+                relabeled_graph, relabeled_colors =
+                    _relabel_directed_fixture(graph, colors, permutation)
+                relabeled_result = canonicalize_directed(relabeled_graph, relabeled_colors)
+                @test canonical_graph(relabeled_result) == canonical_graph(result)
+                @test canonical_automorphism_order(relabeled_result) ==
+                    canonical_automorphism_order(result)
+            end
+        end
+    end
 end
 
 @testset "empty directed graph" begin
