@@ -33,12 +33,13 @@ function _weighted_port_matchings_pruned_with_stats(
     problem::_PortMatchingProblem, keep_child::F, transport::T
 )::Tuple{Vector{Tuple{Vector{_PortEdge},BigInt}},_PrunedPortGenerationStats} where {F,T}
     automorphisms = _port_automorphisms(problem)
+    actions = _port_canonicalization_actions(problem, automorphisms)
     initial = _PortMatchingState(
         _PortEdge[], copy(problem.source_ports), copy(problem.target_ports)
     )
     workspace = _PortCanonicalizationWorkspace(initial)
     initial_key, initial_state, initial_mapping = _canonicalize_port_state(
-        initial, automorphisms, workspace
+        initial, actions, workspace
     )
     initial_weight = _initial_port_weight(
         transport, initial, initial_state, initial_mapping
@@ -88,7 +89,7 @@ function _weighted_port_matchings_pruned_with_stats(
                     end
 
                     key, canonical, mapping = _canonicalize_port_state(
-                        child, automorphisms, workspace
+                        child, actions, workspace
                     )
                     canonicalization_calls += 1
                     child_weight = _transport_port_weight(
@@ -104,7 +105,7 @@ function _weighted_port_matchings_pruned_with_stats(
         push!(layer_states, length(next_states))
         if isempty(next_states)
             stats = _PrunedPortGenerationStats(
-                length(automorphisms),
+                length(actions),
                 layer_states,
                 transitions,
                 canonicalization_calls,
@@ -125,7 +126,7 @@ function _weighted_port_matchings_pruned_with_stats(
     end
     sort!(results; lt=(a, b) -> _lexless_port_edges(first(a), first(b)))
     stats = _PrunedPortGenerationStats(
-        length(automorphisms),
+        length(actions),
         layer_states,
         transitions,
         canonicalization_calls,
