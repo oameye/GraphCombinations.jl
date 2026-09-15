@@ -138,7 +138,6 @@ end
 
 mutable struct _DirectedCanonicalSearchState
     graph::DirectedGCGraph
-    cells::Vector{Vector{Int}}
     inverse_mapping::Vector{Int}
     best_inverse_mapping::Vector{Int}
     automorphism_order::Int
@@ -186,45 +185,6 @@ function _record_directed_candidate!(state::_DirectedCanonicalSearchState)::Noth
     return nothing
 end
 
-function _enumerate_directed_cell!(
-    state::_DirectedCanonicalSearchState, cell_index::Int, target_start::Int, depth::Int
-)::Nothing
-    cell = state.cells[cell_index]
-    if depth > length(cell)
-        _search_directed_cells!(state, cell_index + 1, target_start + length(cell))
-        return nothing
-    end
-
-    target = target_start + depth - 1
-    @inbounds for swap_index in depth:length(cell)
-        cell[depth], cell[swap_index] = cell[swap_index], cell[depth]
-        state.inverse_mapping[target] = cell[depth]
-        _enumerate_directed_cell!(state, cell_index, target_start, depth + 1)
-        cell[depth], cell[swap_index] = cell[swap_index], cell[depth]
-    end
-    return nothing
-end
-
-function _search_directed_cells!(
-    state::_DirectedCanonicalSearchState, cell_index::Int, target_start::Int
-)::Nothing
-    if cell_index > length(state.cells)
-        _record_directed_candidate!(state)
-        return nothing
-    end
-
-    cell = state.cells[cell_index]
-    if length(cell) == 1
-        state.inverse_mapping[target_start] = first(cell)
-        _search_directed_cells!(state, cell_index + 1, target_start + 1)
-    else
-        _enumerate_directed_cell!(state, cell_index, target_start, 1)
-    end
-    return nothing
-end
-
-const _DIRECTED_RESIDUAL_ENUMERATION_LIMIT = 1024
-
 function _directed_cells_from_colors(colors::Vector{Int})::Vector{Vector{Int}}
     num_colors = isempty(colors) ? 0 : maximum(colors)
     cells = [Int[] for _ in 1:num_colors]
@@ -232,19 +192,6 @@ function _directed_cells_from_colors(colors::Vector{Int})::Vector{Vector{Int}}
         push!(cells[colors[vertex]], vertex)
     end
     return cells
-end
-
-function _directed_residual_exceeds_limit(
-    cells::Vector{Vector{Int}}, limit::Int=_DIRECTED_RESIDUAL_ENUMERATION_LIMIT
-)::Bool
-    work = 1
-    @inbounds for cell in cells
-        for factor in 2:length(cell)
-            work > limit ÷ factor && return true
-            work *= factor
-        end
-    end
-    return false
 end
 
 function _directed_target_color(cells::Vector{Vector{Int}})::Int
@@ -279,20 +226,30 @@ function _directed_individualized_colors(
     return individualized
 end
 
+function _record_directed_discrete_partition!(
+    state::_DirectedCanonicalSearchState, cells::Vector{Vector{Int}}
+)::Nothing
+    @inbounds for canonical_vertex in eachindex(cells)
+        cell = cells[canonical_vertex]
+        length(cell) == 1 ||
+            error("Internal error: attempted to record a non-discrete directed partition.")
+        state.inverse_mapping[canonical_vertex] = first(cell)
+    end
+    _record_directed_candidate!(state)
+    return nothing
+end
+
 function _search_directed_partition!(
     state::_DirectedCanonicalSearchState, colors::Vector{Int}
 )::Nothing
     refined_colors = _directed_refined_colors(state.graph, colors)
     cells = _directed_cells_from_colors(refined_colors)
-    if !_directed_residual_exceeds_limit(cells)
-        state.cells = cells
-        _search_directed_cells!(state, 1, 1)
+    target_color = _directed_target_color(cells)
+    if iszero(target_color)
+        _record_directed_discrete_partition!(state, cells)
         return nothing
     end
 
-    target_color = _directed_target_color(cells)
-    iszero(target_color) &&
-        error("Internal error: directed individualization found no non-singleton cell.")
     @inbounds for chosen_vertex in cells[target_color]
         individualized = _directed_individualized_colors(
             refined_colors, target_color, chosen_vertex
@@ -334,13 +291,12 @@ Canonicalize an exact directed multigraph under all vertex relabelings preservin
 Equal color values denote interchangeable vertices. The returned witness uses the explicit
 old-vertex to canonical-vertex convention.
 
-The search first computes stable directed weighted equitable refinement. Residual cells are
-enumerated directly while their exact permutation product is at most
-`$_DIRECTED_RESIDUAL_ENUMERATION_LIMIT`. Above that measured crossover, the largest unresolved
-cell is individualized one vertex at a time and the same exact refinement is repeated. Branches
-are compared only through the complete directed multiplicity image; no hashes, group generators,
-or heuristic pruning affect equality. Equal best leaves give the exact color-preserving
-automorphism order.
+The search uses one exact individualization-refinement convention throughout. Each node computes
+the stable directed weighted equitable refinement; if the partition is not discrete, the largest
+canonical cell is selected and every choice of one distinguished vertex is explored. Leaves are
+compared through the complete directed multiplicity image. No probabilistic hash, automorphism
+pruning, group generator, or component recursion affects the result. Equal best leaves give the
+exact color-preserving automorphism order.
 """
 function canonicalize_directed(
     graph::DirectedGCGraph, vertex_colors::AbstractVector{<:Integer}
@@ -350,9 +306,7 @@ function canonicalize_directed(
     colors = collect(Int, vertex_colors)
     inverse_mapping = Vector{Int}(undef, graph.num_vertices)
     best_inverse_mapping = similar(inverse_mapping)
-    state = _DirectedCanonicalSearchState(
-        graph, Vector{Vector{Int}}(), inverse_mapping, best_inverse_mapping, 0, false
-    )
+    state = _DirectedCanonicalSearchState(graph, inverse_mapping, best_inverse_mapping, 0, false)
     _search_directed_partition!(state, colors)
     state.has_best ||
         error("Internal error: directed canonical search produced no candidate.")
