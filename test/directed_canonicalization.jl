@@ -210,7 +210,8 @@ end
         n,
     )
 
-    for (graph, expected_automorphisms) in ((directed_cycle, n), (bidirectional_cycle, 2 * n))
+    for (graph, expected_automorphisms) in
+        ((directed_cycle, n), (bidirectional_cycle, 2 * n))
         result = canonicalize_directed(graph, colors)
         @test canonical_automorphism_order(result) == expected_automorphisms
         @test canonical_automorphism_order(result) ==
@@ -218,9 +219,7 @@ end
         @test _apply_directed_witness(graph, canonical_relabeling(result)) ==
             canonical_graph(result)
 
-        for permutation in (
-            Int[4, 7, 2, 6, 1, 5, 3], Int[7, 6, 5, 4, 3, 2, 1]
-        )
+        for permutation in (Int[4, 7, 2, 6, 1, 5, 3], Int[7, 6, 5, 4, 3, 2, 1])
             relabeled_graph, relabeled_colors = _relabel_directed_fixture(
                 graph, colors, permutation
             )
