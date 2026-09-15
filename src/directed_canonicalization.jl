@@ -103,6 +103,7 @@ canonical_automorphism_order(result::DirectedCanonicalizationResult)::Int =
 struct _AcceptAllRelabelings end
 @inline (::_AcceptAllRelabelings)(::Vector{Int})::Bool = true
 
+# Exhaustive helper retained as an independent small-graph oracle for the refined search.
 function _directed_relabelings(vertex_colors::Vector{Int})::Vector{Vector{Int}}
     return _problem_relabelings(vertex_colors, 0, _AcceptAllRelabelings())
 end
@@ -135,16 +136,132 @@ function _relabel_directed_graph(
     return DirectedGCGraph(graph.num_vertices, multiplicities)
 end
 
+mutable struct _DirectedCanonicalSearchState
+    graph::DirectedGCGraph
+    cells::Vector{Vector{Int}}
+    inverse_mapping::Vector{Int}
+    best_inverse_mapping::Vector{Int}
+    automorphism_order::Int
+    has_best::Bool
+end
+
+@inline function _compare_directed_inverse_mappings(
+    graph::DirectedGCGraph, candidate::Vector{Int}, best::Vector{Int}
+)::Int
+    n = graph.num_vertices
+    @inbounds for new_source in 1:n
+        candidate_source = candidate[new_source]
+        best_source = best[new_source]
+        for new_target in 1:n
+            candidate_value = graph.multiplicities[_directed_slot(
+                candidate_source, candidate[new_target], n
+            )]
+            best_value = graph.multiplicities[_directed_slot(
+                best_source, best[new_target], n
+            )]
+            candidate_value == best_value && continue
+            return candidate_value < best_value ? -1 : 1
+        end
+    end
+    return 0
+end
+
+function _record_directed_candidate!(state::_DirectedCanonicalSearchState)::Nothing
+    if !state.has_best
+        copyto!(state.best_inverse_mapping, state.inverse_mapping)
+        state.automorphism_order = 1
+        state.has_best = true
+        return nothing
+    end
+
+    comparison = _compare_directed_inverse_mappings(
+        state.graph, state.inverse_mapping, state.best_inverse_mapping
+    )
+    if comparison < 0
+        copyto!(state.best_inverse_mapping, state.inverse_mapping)
+        state.automorphism_order = 1
+    elseif iszero(comparison)
+        state.automorphism_order = _checked_increment(state.automorphism_order)
+    end
+    return nothing
+end
+
+function _enumerate_directed_cell!(
+    state::_DirectedCanonicalSearchState,
+    cell_index::Int,
+    target_start::Int,
+    depth::Int,
+)::Nothing
+    cell = state.cells[cell_index]
+    if depth > length(cell)
+        _search_directed_cells!(state, cell_index + 1, target_start + length(cell))
+        return nothing
+    end
+
+    target = target_start + depth - 1
+    @inbounds for swap_index in depth:length(cell)
+        cell[depth], cell[swap_index] = cell[swap_index], cell[depth]
+        state.inverse_mapping[target] = cell[depth]
+        _enumerate_directed_cell!(state, cell_index, target_start, depth + 1)
+        cell[depth], cell[swap_index] = cell[swap_index], cell[depth]
+    end
+    return nothing
+end
+
+function _search_directed_cells!(
+    state::_DirectedCanonicalSearchState, cell_index::Int, target_start::Int
+)::Nothing
+    if cell_index > length(state.cells)
+        _record_directed_candidate!(state)
+        return nothing
+    end
+
+    cell = state.cells[cell_index]
+    if length(cell) == 1
+        state.inverse_mapping[target_start] = first(cell)
+        _search_directed_cells!(state, cell_index + 1, target_start + 1)
+    else
+        _enumerate_directed_cell!(state, cell_index, target_start, 1)
+    end
+    return nothing
+end
+
+function _directed_mapping_from_inverse(inverse_mapping::Vector{Int})::Vector{Int}
+    mapping = similar(inverse_mapping)
+    @inbounds for new_vertex in eachindex(inverse_mapping)
+        mapping[inverse_mapping[new_vertex]] = new_vertex
+    end
+    return mapping
+end
+
+function _directed_graph_from_inverse(
+    graph::DirectedGCGraph, inverse_mapping::Vector{Int}
+)::DirectedGCGraph
+    n = graph.num_vertices
+    multiplicities = similar(graph.multiplicities)
+    @inbounds for new_source in 1:n
+        old_source = inverse_mapping[new_source]
+        for new_target in 1:n
+            old_target = inverse_mapping[new_target]
+            multiplicities[_directed_slot(new_source, new_target, n)] =
+                graph.multiplicities[_directed_slot(old_source, old_target, n)]
+        end
+    end
+    return DirectedGCGraph(n, multiplicities)
+end
+
 """
     canonicalize_directed(graph::DirectedGCGraph, vertex_colors)
 
 Canonicalize an exact directed multigraph under all vertex relabelings preserving `vertex_colors`.
-Equal color values denote interchangeable vertices; singleton color classes are therefore fixed
-individually. The returned witness uses the explicit old-vertex to new-vertex convention.
+Equal color values denote interchangeable vertices. The returned witness uses the explicit
+old-vertex to canonical-vertex convention.
 
-The current implementation deliberately enumerates the exact color-preserving relabeling group.
-This is the small, auditable reference/production candidate required by current downstream diagram
-workloads; refinement is added only if measurements justify it.
+The search first computes the stable directed weighted equitable refinement of the input colors.
+The refined cells are placed in deterministic canonical blocks and only unresolved permutations
+inside those cells are enumerated. Residual candidates are streamed: the full relabeling group is
+never materialized. Because every color-preserving automorphism preserves the stable refinement,
+the number of residual mappings producing the canonical image is the exact automorphism order.
 """
 function canonicalize_directed(
     graph::DirectedGCGraph, vertex_colors::AbstractVector{<:Integer}
@@ -152,34 +269,19 @@ function canonicalize_directed(
     length(vertex_colors) == graph.num_vertices ||
         throw(ArgumentError("vertex_colors must have one entry per vertex."))
     colors = collect(Int, vertex_colors)
-    mappings = _directed_relabelings(colors)
-    isempty(mappings) && error("Internal error: directed relabeling group is empty.")
+    cells = _directed_refined_cells(graph, colors)
+    inverse_mapping = Vector{Int}(undef, graph.num_vertices)
+    best_inverse_mapping = similar(inverse_mapping)
+    state = _DirectedCanonicalSearchState(
+        graph, cells, inverse_mapping, best_inverse_mapping, 0, false
+    )
+    _search_directed_cells!(state, 1, 1)
+    state.has_best || error("Internal error: directed canonical search produced no candidate.")
 
-    best_mapping_index = 1
-    best_action = _directed_coordinate_action(first(mappings), graph.num_vertices)
-    automorphism_order = 1
-
-    @inbounds for mapping_index in 2:length(mappings)
-        candidate_action = _directed_coordinate_action(
-            mappings[mapping_index], graph.num_vertices
-        )
-        comparison = _compare_coordinate_actions(
-            graph.multiplicities, candidate_action, best_action, Val(false)
-        )
-        if comparison < 0
-            best_mapping_index = mapping_index
-            best_action = candidate_action
-            automorphism_order = 1
-        elseif iszero(comparison)
-            automorphism_order = _checked_increment(automorphism_order)
-        end
-    end
-
-    canonical_multiplicities = similar(graph.multiplicities)
-    _write_coordinate_action!(canonical_multiplicities, graph.multiplicities, best_action)
-    canonical = DirectedGCGraph(graph.num_vertices, canonical_multiplicities)
-    relabeling = VertexRelabeling(mappings[best_mapping_index])
-    return DirectedCanonicalizationResult(canonical, relabeling, automorphism_order)
+    canonical = _directed_graph_from_inverse(graph, state.best_inverse_mapping)
+    mapping = _directed_mapping_from_inverse(state.best_inverse_mapping)
+    relabeling = VertexRelabeling(mapping)
+    return DirectedCanonicalizationResult(canonical, relabeling, state.automorphism_order)
 end
 
 function canonicalize_directed(graph::DirectedGCGraph)::DirectedCanonicalizationResult
