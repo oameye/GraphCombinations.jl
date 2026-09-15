@@ -13,6 +13,7 @@ using DispatchDoctor: @stable
     include("relabeling_group.jl")
     include("directed_canonicalization.jl")
     include("directed_refinement.jl")
+    include("directed_workspace.jl")
     include("partition_canonicalization.jl")
     include("matrix_canonicalization.jl")
     include("direct_generation.jl")
@@ -38,10 +39,15 @@ export allgraphs,
     GCGraph,
     DirectedGCGraph,
     DirectedCanonicalizationResult,
+    DirectedCanonicalizationWorkspace,
+    DirectedCanonicalizationBuffer,
     VertexRelabeling,
     canonicalize_directed,
+    canonicalize_directed!,
     canonical_graph,
     canonical_automorphism_order,
+    canonical_rank,
+    original_vertex,
     vertex_mapping
 export DegreeSequenceProblem,
     TypedMultigraphProblem,
