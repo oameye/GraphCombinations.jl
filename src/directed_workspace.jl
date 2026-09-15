@@ -192,10 +192,12 @@ function _directed_workspace_refine_once!(
         offset = (vertex - 1) * stride
         for other in 1:n
             cell = workspace.color_stack[other, depth]
-            workspace.signatures[offset + 2 * cell] +=
-                graph.multiplicities[_directed_slot(vertex, other, n)]
-            workspace.signatures[offset + 2 * cell + 1] +=
-                graph.multiplicities[_directed_slot(other, vertex, n)]
+            workspace.signatures[offset + 2 * cell] += graph.multiplicities[_directed_slot(
+                vertex, other, n
+            )]
+            workspace.signatures[offset + 2 * cell + 1] += graph.multiplicities[_directed_slot(
+                other, vertex, n
+            )]
         end
     end
 
