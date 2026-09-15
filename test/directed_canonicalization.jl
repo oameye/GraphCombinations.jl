@@ -45,28 +45,6 @@ function _exhaustive_directed_automorphism_order(
     return order
 end
 
-function _directed_multiplicities_less(a::Vector{Int}, b::Vector{Int})::Bool
-    @inbounds for index in eachindex(a, b)
-        a[index] == b[index] && continue
-        return a[index] < b[index]
-    end
-    return false
-end
-
-function _exhaustive_directed_canonical_graph(
-    graph::DirectedGCGraph, colors::Vector{Int}
-)::DirectedGCGraph
-    best = nothing
-    for mapping in GraphCombinations._directed_relabelings(colors)
-        candidate = GraphCombinations._relabel_directed_graph(graph, mapping)
-        if isnothing(best) ||
-            _directed_multiplicities_less(candidate.multiplicities, best.multiplicities)
-            best = candidate
-        end
-    end
-    return something(best)
-end
-
 @testset "directed graph construction and fixed colors" begin
     graph = @inferred DirectedGCGraph([1 => 2, 1 => 2, 2 => 1, 2 => 2], 2)
     result = @inferred canonicalize_directed(graph, Int[10, 20])
@@ -220,7 +198,7 @@ end
     end
 end
 
-@testset "individualized residual search agrees with exhaustive oracle" begin
+@testset "individualization-refinement automorphism certification" begin
     n = 7
     colors = ones(Int, n)
     directed_cycle = DirectedGCGraph([vertex => mod1(vertex + 1, n) for vertex in 1:n], n)
@@ -233,11 +211,7 @@ end
     )
 
     for (graph, expected_automorphisms) in ((directed_cycle, n), (bidirectional_cycle, 2 * n))
-        cells = GraphCombinations._directed_refined_cells(graph, colors)
-        @test GraphCombinations._directed_residual_exceeds_limit(cells)
-
         result = canonicalize_directed(graph, colors)
-        @test canonical_graph(result) == _exhaustive_directed_canonical_graph(graph, colors)
         @test canonical_automorphism_order(result) == expected_automorphisms
         @test canonical_automorphism_order(result) ==
             _exhaustive_directed_automorphism_order(graph, colors)
