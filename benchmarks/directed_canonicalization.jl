@@ -21,17 +21,7 @@ function directed_canonicalization!(SUITE)
         (
             "loops and multiplicity",
             GC.DirectedGCGraph(
-                [
-                    1 => 1,
-                    1 => 2,
-                    1 => 2,
-                    2 => 3,
-                    2 => 3,
-                    3 => 1,
-                    4 => 4,
-                    4 => 1,
-                ],
-                4,
+                [1 => 1, 1 => 2, 1 => 2, 2 => 3, 2 => 3, 3 => 1, 4 => 4, 4 => 1], 4
             ),
             Int[1, 1, 1, 2],
         ),
@@ -68,8 +58,9 @@ function directed_canonicalization!(SUITE)
         buffer = GC.DirectedCanonicalizationBuffer(graph.num_vertices)
         GC.canonicalize_directed!(buffer, workspace, graph, colors)
 
-        SUITE["Directed canonicalization"][name]["allocating"] =
-            @benchmarkable GC.canonicalize_directed($graph, $colors) seconds = 5
+        SUITE["Directed canonicalization"][name]["allocating"] = @benchmarkable GC.canonicalize_directed(
+            $graph, $colors
+        ) seconds = 5
         SUITE["Directed canonicalization"][name]["workspace"] = @benchmarkable GC.canonicalize_directed!(
             $buffer, $workspace, $graph, $colors
         ) seconds = 5
