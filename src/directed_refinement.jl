@@ -19,10 +19,10 @@ function _directed_refinement_signatures(
         signature[1] = colors[vertex]
         for other in 1:n
             cell = colors[other]
-            signature[2 * cell] +=
-                graph.multiplicities[_directed_slot(vertex, other, n)]
-            signature[2 * cell + 1] +=
-                graph.multiplicities[_directed_slot(other, vertex, n)]
+            signature[2 * cell] += graph.multiplicities[_directed_slot(vertex, other, n)]
+            signature[2 * cell + 1] += graph.multiplicities[_directed_slot(
+                other, vertex, n
+            )]
         end
     end
     return signatures
@@ -36,9 +36,7 @@ end
     return false
 end
 
-function _directed_refine_once(
-    graph::DirectedGCGraph, colors::Vector{Int}
-)::Vector{Int}
+function _directed_refine_once(graph::DirectedGCGraph, colors::Vector{Int})::Vector{Int}
     signatures = _directed_refinement_signatures(graph, colors)
     order = collect(eachindex(colors))
     sort!(order; lt=(a, b) -> _directed_signature_less(signatures[a], signatures[b]))
