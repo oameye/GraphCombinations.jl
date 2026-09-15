@@ -306,7 +306,9 @@ function canonicalize_directed(
     colors = collect(Int, vertex_colors)
     inverse_mapping = Vector{Int}(undef, graph.num_vertices)
     best_inverse_mapping = similar(inverse_mapping)
-    state = _DirectedCanonicalSearchState(graph, inverse_mapping, best_inverse_mapping, 0, false)
+    state = _DirectedCanonicalSearchState(
+        graph, inverse_mapping, best_inverse_mapping, 0, false
+    )
     _search_directed_partition!(state, colors)
     state.has_best ||
         error("Internal error: directed canonical search produced no candidate.")
