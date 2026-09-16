@@ -2,7 +2,8 @@ import GraphCombinations as GC
 
 function _directed_cycle(num_vertices::Int)
     return GC.DirectedGCGraph(
-        [vertex => mod1(vertex + 1, num_vertices) for vertex in 1:num_vertices], num_vertices
+        [vertex => mod1(vertex + 1, num_vertices) for vertex in 1:num_vertices],
+        num_vertices,
     )
 end
 
@@ -19,8 +20,8 @@ end
 function _complete_directed_graph(num_vertices::Int)
     return GC.DirectedGCGraph(
         [
-            source => target for source in 1:num_vertices for target in 1:num_vertices if
-            source != target
+            source => target for source in 1:num_vertices for
+            target in 1:num_vertices if source != target
         ],
         num_vertices,
     )
@@ -50,10 +51,14 @@ function _color_cell_sizes(colors::Vector{Int})
 end
 
 function _initial_relabeling_group_order(colors::Vector{Int})
-    return foldl(*, (factorial(cell_size) for cell_size in _color_cell_sizes(colors)); init=1)
+    return foldl(
+        *, (factorial(cell_size) for cell_size in _color_cell_sizes(colors)); init=1
+    )
 end
 
-function _report_directed_fixture!(name::String, graph::GC.DirectedGCGraph, colors::Vector{Int})
+function _report_directed_fixture!(
+    name::String, graph::GC.DirectedGCGraph, colors::Vector{Int}
+)
     workspace = GC.DirectedCanonicalizationWorkspace(graph.num_vertices)
     buffer = GC.DirectedCanonicalizationBuffer(graph.num_vertices)
     GC.canonicalize_directed!(buffer, workspace, graph, colors)
@@ -90,11 +95,7 @@ function directed_canonicalization!(SUITE)
         ),
         ("directed cycle", _directed_cycle(7), ones(Int, 7)),
         ("bidirectional cycle", _bidirectional_cycle(7), ones(Int, 7)),
-        (
-            "almost discrete colors",
-            _directed_cycle(8),
-            Int[1, 2, 3, 4, 5, 6, 7, 7],
-        ),
+        ("almost discrete colors", _directed_cycle(8), Int[1, 2, 3, 4, 5, 6, 7, 7]),
         (
             "fixed center",
             GC.DirectedGCGraph(
