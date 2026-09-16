@@ -1,5 +1,39 @@
 # Release notes
 
+## v0.4.0
+
+GraphCombinations v0.4.0 adds exact colored directed multigraph canonical labeling with a reusable allocation-free production workspace. The API is additive; existing scalar and weighted colored-port interfaces are unchanged.
+
+### Directed canonicalization API
+
+The release adds:
+
+- `DirectedGCGraph` for exact directed multigraphs with loops and repeated-edge multiplicity;
+- `canonicalize_directed` for allocating exact canonicalization;
+- `DirectedCanonicalizationWorkspace` and `DirectedCanonicalizationBuffer` together with `canonicalize_directed!` for repeated warmed canonicalization;
+- `canonical_graph` and `canonical_automorphism_order` for the canonical image and exact color-preserving automorphism order;
+- `canonical_rank` and `original_vertex` for both directions of the canonical relabeling witness.
+
+Vertex colors are opaque labels. Canonical vertex numbers are combinatorial coordinates rather than consumer semantics; downstream packages must transport their own meaning through the returned witness.
+
+### Exactness and production architecture
+
+The production kernel uses deterministic exact individualization/refinement with flat reusable workspace storage and direct canonical-image comparison. It supports direction, self-loops, repeated directed edges, fixed vertices through unique colors, repeated color cells, and disconnected graphs.
+
+The optimized workspace implementation is checked exhaustively against the independent allocating/reference canonicalizer over all 512 simple directed graphs on three vertices and multiple color partitions, including exact witness and automorphism-order agreement. Public hot entry points remain inferred and covered by the package DispatchDoctor/JET gates.
+
+### Performance and downstream acceptance
+
+Prepared workspaces permit zero warmed heap allocations on the certified production path. Permanent benchmark coverage includes tiny colored graphs, directed and bidirectional cycles, almost-discrete colorings, fixed vertices, loops and multiplicity, disconnected graphs, subdivision-style graphs, repeated-color cells, high-symmetry graphs, and scaling series.
+
+The first external acceptance corpus is KeldyshContraction.jl. On its certified loop-canonicalization workloads, the final v0.4.0 candidate measured approximately 16.65 μs versus 275.89 μs for Nauty at two loops, and 93.9 μs versus 523.9 μs at four loops, with the GC workspace at zero warmed allocations. The same downstream gate verifies all 384 signed four-loop coordinate spellings and representative bosonic and fermionic collision semantics.
+
+The migration decision is intentionally selective: workloads that do not meet the strict parity-or-better performance rule remain on their existing backend.
+
+### Compatibility
+
+v0.4.0 is an additive minor release. Existing users should not need code changes. Consumers requiring the new directed canonicalization workspace should depend on `GraphCombinations = "0.4"`.
+
 ## v0.3.0
 
 GraphCombinations v0.3.0 adds the production weighted colored-port backend and freezes a public downstream integration boundary for diagram engines that require directed, typed half-edge matching. The existing scalar `allgraphs` API and its exact graph semantics remain unchanged.
@@ -54,7 +88,7 @@ GraphCombinations v0.2.0 is a substantial rewrite of the graph-generation and ca
 - Edge representations use `Pair{Int,Int}` with canonical endpoints `a <= b`; self-loops are represented as `a => a`.
 - Output topology ordering remains deterministic after canonical reduction.
 
-The `Float64` to `BigInt` symmetry-denominator change is the main API compatibility boundary in this release. Code that explicitly requires floating-point symmetry factors should convert them at the use site.
+The `Float64` to `BigInt` symmetry-denominator change is the main API compatibility boundary in this release. Code that explicitly requires floating-point symmetry factors should convert at the use site.
 
 ### Generation and canonicalization
 
