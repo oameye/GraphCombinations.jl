@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789583643831,
+  "lastUpdate": 1789584384250,
   "repoUrl": "https://github.com/oameye/GraphCombinations.jl",
   "entries": {
     "Benchmark Results": [
@@ -9418,6 +9418,660 @@ window.BENCHMARK_DATA = {
           {
             "name": "Typed multigraph generation/generate loopless n5",
             "value": 38957,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=49408\nallocs=354\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "orjan.ameye@hotmail.com",
+            "name": "Orjan Ameye",
+            "username": "oameye"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f865c7cc915004d4e4038703f8c4b1a4d3a7ee1c",
+          "message": "release: v0.4.0 (#160)\n\nBump GraphCombinations to v0.4.0 and document the certified colored-directed canonicalization API.",
+          "timestamp": "2026-09-16T20:34:19+02:00",
+          "tree_id": "7b5992f1127a459c066a5248b7834fdcf99688a2",
+          "url": "https://github.com/oameye/GraphCombinations.jl/commit/f865c7cc915004d4e4038703f8c4b1a4d3a7ee1c"
+        },
+        "date": 1789584383293,
+        "tool": "julia",
+        "benches": [
+          {
+            "name": "Canonical/in-place - 2 internal",
+            "value": 204.2657142857143,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=512\nallocs=4\nparams={\"evals\":700,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Canonical/in-place - 3 internal",
+            "value": 370.412037037037,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=608\nallocs=4\nparams={\"evals\":216,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Canonical/in-place - 4 internal",
+            "value": 1553.9,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=720\nallocs=4\nparams={\"evals\":10,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Canonical/in-place - 5 internal",
+            "value": 8452.666666666666,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=816\nallocs=4\nparams={\"evals\":3,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Canonical/in-place mixed - 4 internal",
+            "value": 1215.3,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=624\nallocs=4\nparams={\"evals\":10,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Canonical/matrix - 3 internal",
+            "value": 302.457249070632,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=672\nallocs=5\nparams={\"evals\":269,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Canonical/matrix - 4 internal",
+            "value": 647.0028571428572,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=864\nallocs=5\nparams={\"evals\":175,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Canonical/matrix - 5 internal",
+            "value": 2742.8888888888887,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=976\nallocs=5\nparams={\"evals\":9,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Canonical/partition key - 5 internal",
+            "value": 5069.428571428572,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=11920\nallocs=142\nparams={\"evals\":7,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Canonical/partition key mixed - 4 internal",
+            "value": 3775.75,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=8960\nallocs=110\nparams={\"evals\":8,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Canonical/partition key symmetric - 5 internal",
+            "value": 3306.125,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=7680\nallocs=77\nparams={\"evals\":8,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Canonical/reference - 2 internal",
+            "value": 1552.9,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=3744\nallocs=38\nparams={\"evals\":10,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Canonical/reference - 3 internal",
+            "value": 3730.75,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=9008\nallocs=83\nparams={\"evals\":8,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Canonical/reference - 4 internal",
+            "value": 14476,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=34352\nallocs=282\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Canonical/reference - 5 internal",
+            "value": 82654,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=201296\nallocs=1458\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Canonical/scratch - 2 internal",
+            "value": 984.6315789473684,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=2224\nallocs=27\nparams={\"evals\":57,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Canonical/scratch - 3 internal",
+            "value": 1844.4,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=3808\nallocs=48\nparams={\"evals\":10,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Canonical/scratch - 4 internal",
+            "value": 5839.25,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=11520\nallocs=139\nparams={\"evals\":6,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Canonical/scratch - 5 internal",
+            "value": 39704,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=78656\nallocs=739\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Colored port generation/order 4",
+            "value": 2209512,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=1576104\nallocs=10724\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Colored port generation/order 4 public",
+            "value": 2206086,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=1577656\nallocs=10726\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Colored port generation/order 5",
+            "value": 58336281,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=12583288\nallocs=62080\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Connectivity/Graphs adapter connected",
+            "value": 344.6593886462882,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=544\nallocs=3\nparams={\"evals\":229,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Connectivity/Graphs adapter disconnected",
+            "value": 221.13333333333333,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=496\nallocs=3\nparams={\"evals\":540,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Connectivity/native connected",
+            "value": 124.25055679287306,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=0\nallocs=0\nparams={\"evals\":898,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Connectivity/native disconnected",
+            "value": 37.640120967741936,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=0\nallocs=0\nparams={\"evals\":992,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Direct/allgraphs - 2 loops",
+            "value": 7739.5,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=12416\nallocs=204\nparams={\"evals\":4,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Direct/allgraphs - 3 loops",
+            "value": 59982,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=74816\nallocs=971\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Direct/allgraphs - 4 loops",
+            "value": 2379488,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=964896\nallocs=7576\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Direct/allgraphs - 5 loops",
+            "value": 121313347.5,
+            "unit": "ns",
+            "extra": "gctime=11549879\nmemory=213332912\nallocs=2494086\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Direct/labeled candidates - 2 loops",
+            "value": 1384.5,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=2336\nallocs=21\nparams={\"evals\":10,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Direct/labeled candidates - 3 loops",
+            "value": 11250,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=17648\nallocs=106\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Direct/labeled candidates - 4 loops",
+            "value": 162923.5,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=277264\nallocs=1337\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Direct/labeled candidates - 5 loops",
+            "value": 4940589.5,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=6349696\nallocs=26462\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Directed canonicalization/almost discrete colors/certified allocating",
+            "value": 2343.222222222222,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=7280\nallocs=56\nparams={\"evals\":9,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Directed canonicalization/almost discrete colors/workspace setup + run",
+            "value": 936.2535211267606,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=3600\nallocs=13\nparams={\"evals\":71,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Directed canonicalization/almost discrete colors/workspace warmed",
+            "value": 448.30808080808083,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=0\nallocs=0\nparams={\"evals\":198,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Directed canonicalization/bidirectional cycle/certified allocating",
+            "value": 44954,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=106208\nallocs=982\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Directed canonicalization/bidirectional cycle/workspace setup + run",
+            "value": 11301,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=2944\nallocs=13\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Directed canonicalization/bidirectional cycle/workspace warmed",
+            "value": 11452,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=0\nallocs=0\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Directed canonicalization/directed cycle/certified allocating",
+            "value": 21480,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=54016\nallocs=478\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Directed canonicalization/directed cycle/workspace setup + run",
+            "value": 6650.4,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=2944\nallocs=13\nparams={\"evals\":5,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Directed canonicalization/directed cycle/workspace warmed",
+            "value": 6055.4,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=0\nallocs=0\nparams={\"evals\":5,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Directed canonicalization/disconnected colored/certified allocating",
+            "value": 15759,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=37152\nallocs=390\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Directed canonicalization/disconnected colored/workspace setup + run",
+            "value": 2837.4444444444443,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=1984\nallocs=13\nparams={\"evals\":9,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Directed canonicalization/disconnected colored/workspace warmed",
+            "value": 2339.8888888888887,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=0\nallocs=0\nparams={\"evals\":9,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Directed canonicalization/fixed center/certified allocating",
+            "value": 1877975,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=4221856\nallocs=40628\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Directed canonicalization/fixed center/workspace setup + run",
+            "value": 355331,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=2944\nallocs=13\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Directed canonicalization/fixed center/workspace warmed",
+            "value": 350200,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=0\nallocs=0\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Directed canonicalization/high symmetry/certified allocating",
+            "value": 1648426,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=3685360\nallocs=36917\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Directed canonicalization/high symmetry/workspace setup + run",
+            "value": 284470,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=2560\nallocs=13\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Directed canonicalization/high symmetry/workspace warmed",
+            "value": 291342,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=0\nallocs=0\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Directed canonicalization/loops and multiplicity/certified allocating",
+            "value": 1440.7,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=3760\nallocs=40\nparams={\"evals\":10,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Directed canonicalization/loops and multiplicity/workspace setup + run",
+            "value": 574.9197860962566,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=1712\nallocs=13\nparams={\"evals\":187,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Directed canonicalization/loops and multiplicity/workspace warmed",
+            "value": 260.2942430703625,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=0\nallocs=0\nparams={\"evals\":469,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Directed canonicalization/many small unresolved cells/certified allocating",
+            "value": 308489.5,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=909904\nallocs=6519\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Directed canonicalization/many small unresolved cells/workspace setup + run",
+            "value": 59680.5,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=6608\nallocs=13\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Directed canonicalization/many small unresolved cells/workspace warmed",
+            "value": 57858,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=0\nallocs=0\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Directed canonicalization/scaling/bidirectional cycle n=3",
+            "value": 935.2,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=0\nallocs=0\nparams={\"evals\":55,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Directed canonicalization/scaling/bidirectional cycle n=5",
+            "value": 4013.1428571428573,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=0\nallocs=0\nparams={\"evals\":7,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Directed canonicalization/scaling/bidirectional cycle n=7",
+            "value": 10800,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=0\nallocs=0\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Directed canonicalization/scaling/bidirectional cycle n=9",
+            "value": 27832,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=0\nallocs=0\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Directed canonicalization/scaling/directed cycle n=3",
+            "value": 572.2260273972603,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=0\nallocs=0\nparams={\"evals\":146,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Directed canonicalization/scaling/directed cycle n=5",
+            "value": 2033.7777777777778,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=0\nallocs=0\nparams={\"evals\":9,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Directed canonicalization/scaling/directed cycle n=7",
+            "value": 6024.5,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=0\nallocs=0\nparams={\"evals\":6,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Directed canonicalization/scaling/directed cycle n=9",
+            "value": 13525,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=0\nallocs=0\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Directed canonicalization/subdivision style/certified allocating",
+            "value": 7271.6,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=21664\nallocs=163\nparams={\"evals\":5,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Directed canonicalization/subdivision style/workspace setup + run",
+            "value": 2426.722222222222,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=5024\nallocs=13\nparams={\"evals\":9,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Directed canonicalization/subdivision style/workspace warmed",
+            "value": 1635.1,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=0\nallocs=0\nparams={\"evals\":10,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Directed canonicalization/tiny colored/certified allocating",
+            "value": 1472.7,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=3824\nallocs=40\nparams={\"evals\":10,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Directed canonicalization/tiny colored/workspace setup + run",
+            "value": 570.5873015873016,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=1712\nallocs=13\nparams={\"evals\":189,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Directed canonicalization/tiny colored/workspace warmed",
+            "value": 236.70431211498973,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=0\nallocs=0\nparams={\"evals\":487,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Phi^4 theory/2 loops",
+            "value": 8260.25,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=12936\nallocs=228\nparams={\"evals\":4,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Phi^4 theory/3 loops",
+            "value": 60763,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=75336\nallocs=995\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Pipeline/Wick pairings cached",
+            "value": 220,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=192\nallocs=4\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Pipeline/Wick pairings cold",
+            "value": 104735,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=336528\nallocs=3021\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Pipeline/allgraphs production",
+            "value": 8225,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=12936\nallocs=228\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Pipeline/canonical form",
+            "value": 200.18049155145928,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=512\nallocs=4\nparams={\"evals\":651,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Pipeline/connected filter",
+            "value": 111267,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=243552\nallocs=1542\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Pipeline/isomorphism reduction",
+            "value": 213121.5,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=393856\nallocs=3077\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "RowReduced/allgraphs - 3 loops",
+            "value": 189603,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=387168\nallocs=5013\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "RowReduced/allgraphs - 4 loops",
+            "value": 1484674,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=2916048\nallocs=36370\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "RowReduced/allgraphs - 5 loops",
+            "value": 12517771,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=24117136\nallocs=292219\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":10,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Typed continuation reduction/bipartite n8 native",
+            "value": 409592,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=353600\nallocs=1335\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Typed continuation reduction/bipartite n8 packed",
+            "value": 417277,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=379936\nallocs=1408\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Typed continuation reduction/bipartite n8 production",
+            "value": 409942.5,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=353600\nallocs=1335\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Typed continuation reduction/bipartite n8 row-reduced",
+            "value": 429629.5,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=388736\nallocs=1475\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Typed continuation reduction/fixed species n6 native",
+            "value": 23364,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=24080\nallocs=364\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Typed continuation reduction/fixed species n6 packed",
+            "value": 28393,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=39744\nallocs=435\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Typed continuation reduction/fixed species n6 production",
+            "value": 23344,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=24080\nallocs=364\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Typed continuation reduction/fixed species n6 row-reduced",
+            "value": 31268,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=45040\nallocs=493\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Typed continuation reduction/identity group n6 native",
+            "value": 206845,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=180480\nallocs=3434\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Typed continuation reduction/identity group n6 production",
+            "value": 139900,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=171936\nallocs=3591\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Typed continuation reduction/loop subset n6 native",
+            "value": 74979,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=36480\nallocs=344\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Typed continuation reduction/loop subset n6 packed",
+            "value": 88064,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=74544\nallocs=515\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Typed continuation reduction/loop subset n6 production",
+            "value": 75190,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=36480\nallocs=344\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Typed continuation reduction/loop subset n6 row-reduced",
+            "value": 96390,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=90896\nallocs=666\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Typed multigraph generation/canonicalize cycle n6 edge-list",
+            "value": 25768,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=320\nallocs=2\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Typed multigraph generation/canonicalize cycle n6 matrix",
+            "value": 12694,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=752\nallocs=4\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Typed multigraph generation/canonicalize cycle n6 triangular",
+            "value": 5547,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=384\nallocs=2\nparams={\"evals\":6,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Typed multigraph generation/construct admissibility-refined n6",
+            "value": 47207,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=105904\nallocs=1495\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Typed multigraph generation/construct degree-split n6",
+            "value": 3465.25,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=7504\nallocs=99\nparams={\"evals\":8,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Typed multigraph generation/construct loopless n6",
+            "value": 2857.5555555555557,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=5488\nallocs=71\nparams={\"evals\":9,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Typed multigraph generation/construct mixed-color n6",
+            "value": 3982.5,
+            "unit": "ns",
+            "extra": "gctime=0\nmemory=9008\nallocs=117\nparams={\"evals\":8,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
+          },
+          {
+            "name": "Typed multigraph generation/generate loopless n5",
+            "value": 36448,
             "unit": "ns",
             "extra": "gctime=0\nmemory=49408\nallocs=354\nparams={\"evals\":1,\"evals_set\":false,\"gcsample\":false,\"gctrial\":true,\"memory_tolerance\":0.01,\"overhead\":0,\"samples\":10000,\"seconds\":5,\"time_tolerance\":0.05}"
           }
