@@ -1,12 +1,12 @@
 # --- Reusable production storage for directed canonicalization ---
 
 """
-    DirectedCanonicalizationWorkspace(num_vertices)
+    DirectedCanonicalizationWorkspace(capacity)
 
-Reusable flat scratch storage for repeated exact directed canonicalization at one graph size.
-The workspace owns the complete individualization/refinement search scratch, including one color
-column per possible search depth, flat refinement signatures, ordering/count buffers, both witness
-orientations, and search counters.
+Reusable flat scratch storage for repeated exact directed canonicalization of graphs with at most
+`capacity` vertices. The workspace owns the complete individualization/refinement search scratch,
+including one color column per possible search depth, flat refinement signatures,
+ordering/count buffers, both witness orientations, and search counters.
 """
 mutable struct DirectedCanonicalizationWorkspace
     colors::Vector{Int}
@@ -24,9 +24,9 @@ mutable struct DirectedCanonicalizationWorkspace
     refinement_rounds::Int
 end
 
-function DirectedCanonicalizationWorkspace(num_vertices::Integer)
-    n = Int(num_vertices)
-    n >= 0 || throw(ArgumentError("num_vertices must be non-negative."))
+function DirectedCanonicalizationWorkspace(capacity::Integer)
+    n = Int(capacity)
+    n >= 0 || throw(ArgumentError("capacity must be non-negative."))
     return DirectedCanonicalizationWorkspace(
         Vector{Int}(undef, n),
         Matrix{Int}(undef, n, n + 1),
@@ -45,55 +45,57 @@ function DirectedCanonicalizationWorkspace(num_vertices::Integer)
 end
 
 """
-    DirectedCanonicalizationBuffer(num_vertices)
+    DirectedCanonicalizationBuffer(capacity)
 
-Reusable output storage for `canonicalize_directed!`. It retains the canonical multiplicity image,
-the old-vertex -> canonical-rank witness, the inverse canonical-rank -> old-vertex order, and the
-exact color-preserving automorphism order without constructing a fresh result object graph.
+Reusable output storage for `canonicalize_directed!` on graphs with at most `capacity` vertices.
+It retains the active canonical multiplicity image, the old-vertex -> canonical-rank witness, the
+inverse canonical-rank -> old-vertex order, and the exact color-preserving automorphism order
+without constructing a fresh result object graph.
 """
 mutable struct DirectedCanonicalizationBuffer
     canonical_multiplicities::Vector{Int}
     old_to_canonical::Vector{Int}
     canonical_to_old::Vector{Int}
     automorphism_order::Int
+    num_vertices::Int
 end
 
-function DirectedCanonicalizationBuffer(num_vertices::Integer)
-    n = Int(num_vertices)
-    n >= 0 || throw(ArgumentError("num_vertices must be non-negative."))
+function DirectedCanonicalizationBuffer(capacity::Integer)
+    n = Int(capacity)
+    n >= 0 || throw(ArgumentError("capacity must be non-negative."))
     return DirectedCanonicalizationBuffer(
-        Vector{Int}(undef, n * n), Vector{Int}(undef, n), Vector{Int}(undef, n), 0
+        Vector{Int}(undef, n * n), Vector{Int}(undef, n), Vector{Int}(undef, n), 0, n
     )
 end
 
-@inline function _check_directed_workspace_size(
+@inline function _check_directed_workspace_capacity(
     buffer::DirectedCanonicalizationBuffer,
     workspace::DirectedCanonicalizationWorkspace,
     graph::DirectedGCGraph,
 )::Nothing
     n = graph.num_vertices
-    length(workspace.colors) == n ||
-        throw(DimensionMismatch("directed canonicalization workspace has the wrong size"))
-    size(workspace.color_stack) == (n, n + 1) ||
-        throw(DimensionMismatch("directed canonicalization workspace has the wrong size"))
-    length(workspace.refined_colors) == n ||
-        throw(DimensionMismatch("directed canonicalization workspace has the wrong size"))
-    length(workspace.order) == n ||
-        throw(DimensionMismatch("directed canonicalization workspace has the wrong size"))
-    length(workspace.signatures) == n * (1 + 2 * n) ||
-        throw(DimensionMismatch("directed canonicalization workspace has the wrong size"))
-    length(workspace.cell_counts) == n ||
-        throw(DimensionMismatch("directed canonicalization workspace has the wrong size"))
-    length(workspace.inverse_mapping) == n ||
-        throw(DimensionMismatch("directed canonicalization workspace has the wrong size"))
-    length(workspace.best_inverse_mapping) == n ||
-        throw(DimensionMismatch("directed canonicalization workspace has the wrong size"))
-    length(buffer.old_to_canonical) == n ||
-        throw(DimensionMismatch("directed canonicalization buffer has the wrong size"))
-    length(buffer.canonical_to_old) == n ||
-        throw(DimensionMismatch("directed canonicalization buffer has the wrong size"))
-    length(buffer.canonical_multiplicities) == n * n ||
-        throw(DimensionMismatch("directed canonicalization buffer has the wrong size"))
+    length(workspace.colors) >= n ||
+        throw(DimensionMismatch("directed canonicalization workspace capacity is too small"))
+    size(workspace.color_stack, 1) >= n && size(workspace.color_stack, 2) >= n + 1 ||
+        throw(DimensionMismatch("directed canonicalization workspace capacity is too small"))
+    length(workspace.refined_colors) >= n ||
+        throw(DimensionMismatch("directed canonicalization workspace capacity is too small"))
+    length(workspace.order) >= n ||
+        throw(DimensionMismatch("directed canonicalization workspace capacity is too small"))
+    length(workspace.signatures) >= n * (1 + 2 * n) ||
+        throw(DimensionMismatch("directed canonicalization workspace capacity is too small"))
+    length(workspace.cell_counts) >= n ||
+        throw(DimensionMismatch("directed canonicalization workspace capacity is too small"))
+    length(workspace.inverse_mapping) >= n ||
+        throw(DimensionMismatch("directed canonicalization workspace capacity is too small"))
+    length(workspace.best_inverse_mapping) >= n ||
+        throw(DimensionMismatch("directed canonicalization workspace capacity is too small"))
+    length(buffer.old_to_canonical) >= n ||
+        throw(DimensionMismatch("directed canonicalization buffer capacity is too small"))
+    length(buffer.canonical_to_old) >= n ||
+        throw(DimensionMismatch("directed canonicalization buffer capacity is too small"))
+    length(buffer.canonical_multiplicities) >= n * n ||
+        throw(DimensionMismatch("directed canonicalization buffer capacity is too small"))
     return nothing
 end
 
@@ -136,9 +138,8 @@ function _directed_workspace_sort_signatures!(
 end
 
 function _directed_workspace_initialize_colors!(
-    workspace::DirectedCanonicalizationWorkspace
+    workspace::DirectedCanonicalizationWorkspace, n::Int
 )::Nothing
-    n = length(workspace.colors)
     @inbounds for vertex in 1:n
         workspace.order[vertex] = vertex
     end
@@ -171,7 +172,7 @@ function _directed_workspace_refine_once!(
     workspace::DirectedCanonicalizationWorkspace, graph::DirectedGCGraph, depth::Int
 )::Bool
     n = graph.num_vertices
-    isempty(workspace.colors) && return true
+    iszero(n) && return true
 
     num_colors = 0
     @inbounds for vertex in 1:n
@@ -237,7 +238,9 @@ function _directed_workspace_target_color!(
     workspace::DirectedCanonicalizationWorkspace, graph::DirectedGCGraph, depth::Int
 )::Int
     n = graph.num_vertices
-    fill!(workspace.cell_counts, 0)
+    @inbounds for color in 1:n
+        workspace.cell_counts[color] = 0
+    end
     num_colors = 0
     @inbounds for vertex in 1:n
         color = workspace.color_stack[vertex, depth]
@@ -260,8 +263,9 @@ end
 function _record_directed_workspace_candidate!(
     workspace::DirectedCanonicalizationWorkspace, graph::DirectedGCGraph
 )::Nothing
+    n = graph.num_vertices
     if !workspace.has_best
-        copyto!(workspace.best_inverse_mapping, workspace.inverse_mapping)
+        copyto!(workspace.best_inverse_mapping, 1, workspace.inverse_mapping, 1, n)
         workspace.automorphism_order = 1
         workspace.has_best = true
         return nothing
@@ -271,7 +275,7 @@ function _record_directed_workspace_candidate!(
         graph, workspace.inverse_mapping, workspace.best_inverse_mapping
     )
     if comparison < 0
-        copyto!(workspace.best_inverse_mapping, workspace.inverse_mapping)
+        copyto!(workspace.best_inverse_mapping, 1, workspace.inverse_mapping, 1, n)
         workspace.automorphism_order = 1
     elseif iszero(comparison)
         workspace.automorphism_order = _checked_increment(workspace.automorphism_order)
@@ -342,7 +346,7 @@ function _write_directed_buffer!(
     automorphism_order::Int,
 )::Nothing
     n = graph.num_vertices
-    copyto!(buffer.canonical_to_old, best_inverse_mapping)
+    copyto!(buffer.canonical_to_old, 1, best_inverse_mapping, 1, n)
     @inbounds for canonical_vertex in 1:n
         old_vertex = best_inverse_mapping[canonical_vertex]
         buffer.old_to_canonical[old_vertex] = canonical_vertex
@@ -357,15 +361,16 @@ function _write_directed_buffer!(
         end
     end
     buffer.automorphism_order = automorphism_order
+    buffer.num_vertices = n
     return nothing
 end
 
 """
     canonicalize_directed!(buffer, workspace, graph, vertex_colors)
 
-Canonicalize `graph` using reusable flat output and search storage. For a prepared workspace of the
-correct graph size the successful hot path performs refinement, individualization, leaf comparison,
-and witness construction without creating per-search vectors or canonical graph objects.
+Canonicalize `graph` using reusable flat output and search storage. The buffer and workspace may
+have greater capacity than the active graph. Once prepared, refinement, individualization, leaf
+comparison, and witness construction do not create per-search vectors or canonical graph objects.
 """
 function canonicalize_directed!(
     buffer::DirectedCanonicalizationBuffer,
@@ -373,15 +378,16 @@ function canonicalize_directed!(
     graph::DirectedGCGraph,
     vertex_colors::AbstractVector{<:Integer},
 )::DirectedCanonicalizationBuffer
-    length(vertex_colors) == graph.num_vertices ||
+    n = graph.num_vertices
+    length(vertex_colors) == n ||
         throw(ArgumentError("vertex_colors must have one entry per vertex."))
-    _check_directed_workspace_size(buffer, workspace, graph)
-    @inbounds for vertex in eachindex(workspace.colors)
+    _check_directed_workspace_capacity(buffer, workspace, graph)
+    @inbounds for vertex in 1:n
         workspace.colors[vertex] = Int(vertex_colors[vertex])
     end
 
     _reset_directed_workspace_search!(workspace)
-    _directed_workspace_initialize_colors!(workspace)
+    _directed_workspace_initialize_colors!(workspace, n)
     _search_directed_partition_workspace!(workspace, graph, 1)
     workspace.has_best ||
         error("Internal error: directed canonical search produced no candidate.")
@@ -396,10 +402,13 @@ function canonicalize_directed!(
     workspace::DirectedCanonicalizationWorkspace,
     graph::DirectedGCGraph,
 )::DirectedCanonicalizationBuffer
-    _check_directed_workspace_size(buffer, workspace, graph)
-    fill!(workspace.colors, 1)
+    n = graph.num_vertices
+    _check_directed_workspace_capacity(buffer, workspace, graph)
+    @inbounds for vertex in 1:n
+        workspace.colors[vertex] = 1
+    end
     _reset_directed_workspace_search!(workspace)
-    _directed_workspace_initialize_colors!(workspace)
+    _directed_workspace_initialize_colors!(workspace, n)
     _search_directed_partition_workspace!(workspace, graph, 1)
     workspace.has_best ||
         error("Internal error: directed canonical search produced no candidate.")
@@ -409,23 +418,27 @@ function canonicalize_directed!(
     return buffer
 end
 
-"""Return the canonical rank of one old vertex from an in-place result buffer."""
+"""Return the canonical rank of one old vertex from the active in-place result."""
 @inline function canonical_rank(
     buffer::DirectedCanonicalizationBuffer, old_vertex::Integer
 )::Int
-    return buffer.old_to_canonical[Int(old_vertex)]
+    vertex = Int(old_vertex)
+    1 <= vertex <= buffer.num_vertices || throw(BoundsError(buffer.old_to_canonical, vertex))
+    return buffer.old_to_canonical[vertex]
 end
 
-"""Return the old vertex occupying one canonical rank from an in-place result buffer."""
+"""Return the old vertex occupying one canonical rank from the active in-place result."""
 @inline function original_vertex(
     buffer::DirectedCanonicalizationBuffer, canonical_vertex::Integer
 )::Int
-    return buffer.canonical_to_old[Int(canonical_vertex)]
+    vertex = Int(canonical_vertex)
+    1 <= vertex <= buffer.num_vertices || throw(BoundsError(buffer.canonical_to_old, vertex))
+    return buffer.canonical_to_old[vertex]
 end
 
 function canonical_graph(buffer::DirectedCanonicalizationBuffer)::DirectedGCGraph
-    n = length(buffer.old_to_canonical)
-    return DirectedGCGraph(n, copy(buffer.canonical_multiplicities))
+    n = buffer.num_vertices
+    return DirectedGCGraph(n, copy(buffer.canonical_multiplicities[1:(n * n)]))
 end
 
 canonical_automorphism_order(buffer::DirectedCanonicalizationBuffer)::Int =
