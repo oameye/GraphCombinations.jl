@@ -241,7 +241,7 @@ function canonicalize_active_word!(
     end
     reset_active_search!(workspace)
     word_initialize_colors!(word, n)
-    active_search!(workspace, graph, 1, 1, 0)
+    active_search!(workspace, graph, 1, 1, UInt64(0))
     word.has_best || error("active word canonical search produced no candidate")
     write_word_buffer!(buffer, word, graph)
     return buffer
