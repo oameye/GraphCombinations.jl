@@ -89,8 +89,12 @@ function canonicalize_directed!(
     graph::DirectedGCGraphBuffer,
     vertex_colors::AbstractVector{<:Integer},
 )::DirectedCanonicalizationBuffer
+    n = graph.num_vertices
+    length(vertex_colors) >= n ||
+        throw(ArgumentError("vertex_colors must cover every active vertex."))
+    active_colors = @view vertex_colors[1:n]
     return canonicalize_directed!(
-        buffer, workspace, _directed_graph_view(graph), vertex_colors
+        buffer, workspace, _directed_graph_view(graph), active_colors
     )
 end
 
