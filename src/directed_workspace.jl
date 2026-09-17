@@ -257,10 +257,10 @@ function _directed_workspace_target_color!(
     end
 
     target_color = 0
-    target_size = 1
+    target_size = typemax(Int)
     @inbounds for color in 1:num_colors
         count = workspace.cell_counts[color]
-        if count > target_size
+        if 1 < count < target_size
             target_color = color
             target_size = count
         end
