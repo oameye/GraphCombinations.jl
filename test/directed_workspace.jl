@@ -67,6 +67,37 @@ end
     @test canonical_automorphism_order(buffer) == 14
 end
 
+@testset "reusable directed graph input buffer" begin
+    pair_edges = [1 => 1, 1 => 3, 1 => 3, 2 => 4, 3 => 2, 4 => 1]
+    tuple_edges = [(first(edge), last(edge)) for edge in pair_edges]
+    colors = Int[10, 10, 20, 30]
+    expected = canonicalize_directed(DirectedGCGraph(pair_edges, 4), colors)
+
+    graph = DirectedGCGraphBuffer(4)
+    workspace = DirectedCanonicalizationWorkspace(4)
+    buffer = DirectedCanonicalizationBuffer(4)
+
+    @test @inferred(load_directed_graph!(graph, tuple_edges)) === graph
+    @test @inferred(canonicalize_directed!(buffer, workspace, graph, colors)) === buffer
+    @test canonical_graph(buffer) == canonical_graph(expected)
+    @test canonical_automorphism_order(buffer) == canonical_automorphism_order(expected)
+
+    load_directed_graph!(graph, pair_edges)
+    canonicalize_directed!(buffer, workspace, graph, colors)
+    @test canonical_graph(buffer) == canonical_graph(expected)
+
+    load_directed_graph!(graph, tuple_edges)
+    canonicalize_directed!(buffer, workspace, graph, colors)
+    allocated = @allocated begin
+        load_directed_graph!(graph, tuple_edges)
+        canonicalize_directed!(buffer, workspace, graph, colors)
+    end
+    @test allocated == 0
+
+    @test_throws ArgumentError load_directed_graph!(graph, [(0, 1)])
+    @test_throws ArgumentError load_directed_graph!(graph, [(1, 5)])
+end
+
 @testset "uncolored and empty reusable canonicalization" begin
     graph = DirectedGCGraph([1 => 2, 2 => 3, 3 => 1], 3)
     expected = canonicalize_directed(graph)
@@ -96,6 +127,15 @@ end
         DirectedCanonicalizationBuffer(2),
         DirectedCanonicalizationWorkspace(3),
         graph,
+        Int[1, 1],
+    )
+
+    graph_buffer = DirectedGCGraphBuffer(2)
+    load_directed_graph!(graph_buffer, [(1, 2)])
+    @test_throws DimensionMismatch canonicalize_directed!(
+        DirectedCanonicalizationBuffer(3),
+        DirectedCanonicalizationWorkspace(2),
+        graph_buffer,
         Int[1, 1],
     )
 end
