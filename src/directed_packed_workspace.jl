@@ -55,9 +55,7 @@ function _prepare_packed_directed_rows!(
 end
 
 function _packed_directed_workspace_refine_once!(
-    packed::PackedDirectedCanonicalizationWorkspace,
-    graph::DirectedGCGraph,
-    depth::Int,
+    packed::PackedDirectedCanonicalizationWorkspace, graph::DirectedGCGraph, depth::Int
 )::Bool
     workspace = packed.workspace
     n = graph.num_vertices
@@ -114,9 +112,7 @@ function _packed_directed_workspace_refine_once!(
 end
 
 function _packed_directed_workspace_refine!(
-    packed::PackedDirectedCanonicalizationWorkspace,
-    graph::DirectedGCGraph,
-    depth::Int,
+    packed::PackedDirectedCanonicalizationWorkspace, graph::DirectedGCGraph, depth::Int
 )::Nothing
     while !_packed_directed_workspace_refine_once!(packed, graph, depth)
     end
