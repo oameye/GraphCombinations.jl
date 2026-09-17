@@ -74,22 +74,30 @@ end
     graph::DirectedGCGraph,
 )::Nothing
     n = graph.num_vertices
-    length(workspace.colors) >= n ||
-        throw(DimensionMismatch("directed canonicalization workspace capacity is too small"))
-    size(workspace.color_stack, 1) >= n && size(workspace.color_stack, 2) >= n + 1 ||
-        throw(DimensionMismatch("directed canonicalization workspace capacity is too small"))
-    length(workspace.refined_colors) >= n ||
-        throw(DimensionMismatch("directed canonicalization workspace capacity is too small"))
-    length(workspace.order) >= n ||
-        throw(DimensionMismatch("directed canonicalization workspace capacity is too small"))
-    length(workspace.signatures) >= n * (1 + 2 * n) ||
-        throw(DimensionMismatch("directed canonicalization workspace capacity is too small"))
-    length(workspace.cell_counts) >= n ||
-        throw(DimensionMismatch("directed canonicalization workspace capacity is too small"))
-    length(workspace.inverse_mapping) >= n ||
-        throw(DimensionMismatch("directed canonicalization workspace capacity is too small"))
-    length(workspace.best_inverse_mapping) >= n ||
-        throw(DimensionMismatch("directed canonicalization workspace capacity is too small"))
+    length(workspace.colors) >= n || throw(
+        DimensionMismatch("directed canonicalization workspace capacity is too small")
+    )
+    size(workspace.color_stack, 1) >= n && size(workspace.color_stack, 2) >= n + 1 || throw(
+        DimensionMismatch("directed canonicalization workspace capacity is too small")
+    )
+    length(workspace.refined_colors) >= n || throw(
+        DimensionMismatch("directed canonicalization workspace capacity is too small")
+    )
+    length(workspace.order) >= n || throw(
+        DimensionMismatch("directed canonicalization workspace capacity is too small")
+    )
+    length(workspace.signatures) >= n * (1 + 2 * n) || throw(
+        DimensionMismatch("directed canonicalization workspace capacity is too small")
+    )
+    length(workspace.cell_counts) >= n || throw(
+        DimensionMismatch("directed canonicalization workspace capacity is too small")
+    )
+    length(workspace.inverse_mapping) >= n || throw(
+        DimensionMismatch("directed canonicalization workspace capacity is too small")
+    )
+    length(workspace.best_inverse_mapping) >= n || throw(
+        DimensionMismatch("directed canonicalization workspace capacity is too small")
+    )
     length(buffer.old_to_canonical) >= n ||
         throw(DimensionMismatch("directed canonicalization buffer capacity is too small"))
     length(buffer.canonical_to_old) >= n ||
@@ -265,7 +273,7 @@ function _record_directed_workspace_candidate!(
 )::Nothing
     n = graph.num_vertices
     if !workspace.has_best
-        copyto!(workspace.best_inverse_mapping, 1, workspace.inverse_mapping, 1, n)
+        iszero(n) || copyto!(workspace.best_inverse_mapping, 1, workspace.inverse_mapping, 1, n)
         workspace.automorphism_order = 1
         workspace.has_best = true
         return nothing
@@ -275,7 +283,7 @@ function _record_directed_workspace_candidate!(
         graph, workspace.inverse_mapping, workspace.best_inverse_mapping
     )
     if comparison < 0
-        copyto!(workspace.best_inverse_mapping, 1, workspace.inverse_mapping, 1, n)
+        iszero(n) || copyto!(workspace.best_inverse_mapping, 1, workspace.inverse_mapping, 1, n)
         workspace.automorphism_order = 1
     elseif iszero(comparison)
         workspace.automorphism_order = _checked_increment(workspace.automorphism_order)
@@ -346,7 +354,7 @@ function _write_directed_buffer!(
     automorphism_order::Int,
 )::Nothing
     n = graph.num_vertices
-    copyto!(buffer.canonical_to_old, 1, best_inverse_mapping, 1, n)
+    iszero(n) || copyto!(buffer.canonical_to_old, 1, best_inverse_mapping, 1, n)
     @inbounds for canonical_vertex in 1:n
         old_vertex = best_inverse_mapping[canonical_vertex]
         buffer.old_to_canonical[old_vertex] = canonical_vertex
@@ -423,7 +431,8 @@ end
     buffer::DirectedCanonicalizationBuffer, old_vertex::Integer
 )::Int
     vertex = Int(old_vertex)
-    1 <= vertex <= buffer.num_vertices || throw(BoundsError(buffer.old_to_canonical, vertex))
+    1 <= vertex <= buffer.num_vertices ||
+        throw(BoundsError(buffer.old_to_canonical, vertex))
     return buffer.old_to_canonical[vertex]
 end
 
@@ -432,13 +441,16 @@ end
     buffer::DirectedCanonicalizationBuffer, canonical_vertex::Integer
 )::Int
     vertex = Int(canonical_vertex)
-    1 <= vertex <= buffer.num_vertices || throw(BoundsError(buffer.canonical_to_old, vertex))
+    1 <= vertex <= buffer.num_vertices ||
+        throw(BoundsError(buffer.canonical_to_old, vertex))
     return buffer.canonical_to_old[vertex]
 end
 
 function canonical_graph(buffer::DirectedCanonicalizationBuffer)::DirectedGCGraph
     n = buffer.num_vertices
-    return DirectedGCGraph(n, copy(buffer.canonical_multiplicities[1:(n * n)]))
+    multiplicities = Vector{Int}(undef, n * n)
+    iszero(n) || copyto!(multiplicities, 1, buffer.canonical_multiplicities, 1, n * n)
+    return DirectedGCGraph(n, multiplicities)
 end
 
 canonical_automorphism_order(buffer::DirectedCanonicalizationBuffer)::Int =
