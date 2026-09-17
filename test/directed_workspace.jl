@@ -98,7 +98,9 @@ end
     colors = Int[10, 10, 20, 30]
     small_colors = Int[7, 7]
     expected = canonicalize_directed(DirectedGCGraph(pair_edges, 4), colors)
-    expected_small = canonicalize_directed(DirectedGCGraph(Pair[1 => 2, 2 => 1, 2 => 2], 2), small_colors)
+    expected_small = canonicalize_directed(
+        DirectedGCGraph([1 => 2, 2 => 1, 2 => 2], 2), small_colors
+    )
 
     graph = DirectedGCGraphBuffer(6)
     workspace = DirectedCanonicalizationWorkspace(6)
@@ -163,7 +165,8 @@ end
     larger_buffer = DirectedCanonicalizationBuffer(4)
     larger_workspace = DirectedCanonicalizationWorkspace(4)
     canonicalize_directed!(larger_buffer, larger_workspace, graph, Int[1, 1, 1])
-    @test canonical_graph(larger_buffer) == canonical_graph(canonicalize_directed(graph, Int[1, 1, 1]))
+    @test canonical_graph(larger_buffer) ==
+        canonical_graph(canonicalize_directed(graph, Int[1, 1, 1]))
 
     graph_buffer = DirectedGCGraphBuffer(3)
     load_directed_graph!(graph_buffer, [(1, 2), (2, 3)], 3)
