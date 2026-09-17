@@ -105,31 +105,40 @@ end
     graph = DirectedGCGraphBuffer(6)
     workspace = DirectedCanonicalizationWorkspace(6)
     buffer = DirectedCanonicalizationBuffer(6)
+    color_buffer = fill(-1, 6)
 
+    copyto!(color_buffer, 1, colors, 1, length(colors))
     @test @inferred(load_directed_graph!(graph, tuple_edges, 4)) === graph
-    @test @inferred(canonicalize_directed!(buffer, workspace, graph, colors)) === buffer
+    @test @inferred(canonicalize_directed!(buffer, workspace, graph, color_buffer)) === buffer
     @test canonical_graph(buffer) == canonical_graph(expected)
     @test canonical_automorphism_order(buffer) == canonical_automorphism_order(expected)
 
+    copyto!(color_buffer, 1, small_colors, 1, length(small_colors))
     load_directed_graph!(graph, small_edges, 2)
-    canonicalize_directed!(buffer, workspace, graph, small_colors)
+    canonicalize_directed!(buffer, workspace, graph, color_buffer)
     @test canonical_graph(buffer) == canonical_graph(expected_small)
 
+    copyto!(color_buffer, 1, colors, 1, length(colors))
     load_directed_graph!(graph, pair_edges, 4)
-    canonicalize_directed!(buffer, workspace, graph, colors)
+    canonicalize_directed!(buffer, workspace, graph, color_buffer)
     @test canonical_graph(buffer) == canonical_graph(expected)
 
     allocated = @allocated begin
+        copyto!(color_buffer, 1, small_colors, 1, length(small_colors))
         load_directed_graph!(graph, small_edges, 2)
-        canonicalize_directed!(buffer, workspace, graph, small_colors)
+        canonicalize_directed!(buffer, workspace, graph, color_buffer)
+        copyto!(color_buffer, 1, colors, 1, length(colors))
         load_directed_graph!(graph, tuple_edges, 4)
-        canonicalize_directed!(buffer, workspace, graph, colors)
+        canonicalize_directed!(buffer, workspace, graph, color_buffer)
     end
     @test allocated == 0
 
     @test_throws ArgumentError load_directed_graph!(graph, [(0, 1)], 2)
     @test_throws ArgumentError load_directed_graph!(graph, [(1, 5)], 4)
     @test_throws DimensionMismatch load_directed_graph!(graph, pair_edges, 7)
+    @test_throws ArgumentError canonicalize_directed!(
+        buffer, workspace, graph, Int[1, 2, 3]
+    )
 end
 
 @testset "uncolored and empty reusable canonicalization" begin
