@@ -49,7 +49,8 @@ end
     expected_large = canonicalize_directed(large, large_colors)
     canonicalize_directed_packed!(buffer, packed_workspace, large, large_colors)
     @test canonical_graph(buffer) == canonical_graph(expected_large)
-    @test canonical_automorphism_order(buffer) == canonical_automorphism_order(expected_large)
+    @test canonical_automorphism_order(buffer) ==
+        canonical_automorphism_order(expected_large)
 end
 
 @testset "packed directed graph buffer and allocation contract" begin
