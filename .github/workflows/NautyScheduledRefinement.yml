@@ -5,7 +5,7 @@ on:
     paths:
       - 'research/nauty_word_refinement_probe.jl'
       - 'research/nauty_active_refinement_probe.jl'
-      - 'research/nauty_scheduled_refinement_probe.jl'
+      - 'research/nauty_scheduled_refinement_probe_v2.jl'
       - '.github/workflows/NautyScheduledRefinement.yml'
       - 'src/directed_*.jl'
   workflow_dispatch:
@@ -35,7 +35,7 @@ jobs:
       - name: Run exactness and performance probe
         run: |
           set -o pipefail
-          julia --project=. research/nauty_scheduled_refinement_probe.jl | tee /tmp/scheduled-refinement-probe.txt
+          julia --project=. research/nauty_scheduled_refinement_probe_v2.jl | tee /tmp/scheduled-refinement-probe.txt
       - name: Publish probe result
         if: ${{ always() && github.event_name == 'pull_request' }}
         env:
