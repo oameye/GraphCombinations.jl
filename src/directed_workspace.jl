@@ -273,7 +273,8 @@ function _record_directed_workspace_candidate!(
 )::Nothing
     n = graph.num_vertices
     if !workspace.has_best
-        iszero(n) || copyto!(workspace.best_inverse_mapping, 1, workspace.inverse_mapping, 1, n)
+        iszero(n) ||
+            copyto!(workspace.best_inverse_mapping, 1, workspace.inverse_mapping, 1, n)
         workspace.automorphism_order = 1
         workspace.has_best = true
         return nothing
@@ -283,7 +284,8 @@ function _record_directed_workspace_candidate!(
         graph, workspace.inverse_mapping, workspace.best_inverse_mapping
     )
     if comparison < 0
-        iszero(n) || copyto!(workspace.best_inverse_mapping, 1, workspace.inverse_mapping, 1, n)
+        iszero(n) ||
+            copyto!(workspace.best_inverse_mapping, 1, workspace.inverse_mapping, 1, n)
         workspace.automorphism_order = 1
     elseif iszero(comparison)
         workspace.automorphism_order = _checked_increment(workspace.automorphism_order)
