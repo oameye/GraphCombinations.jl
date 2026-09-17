@@ -132,7 +132,8 @@ function active_refine!(
                 fragment_mask = workspace.fragment_masks[fragment]
                 workspace.next_cells[next_count] = fragment_mask
                 tail += 1
-                tail <= length(workspace.queue) || error("active splitter queue capacity exceeded")
+                tail <= length(workspace.queue) ||
+                    error("active splitter queue capacity exceeded")
                 workspace.queue[tail] = fragment_mask
             end
         end
@@ -209,11 +210,7 @@ function active_search!(
             end
         end
         active_search!(
-            workspace,
-            graph,
-            child_depth,
-            child_multiplicity,
-            _vertex_bit(chosen_vertex),
+            workspace, graph, child_depth, child_multiplicity, _vertex_bit(chosen_vertex)
         )
     end
     return nothing
