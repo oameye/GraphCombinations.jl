@@ -109,7 +109,8 @@ end
 
     copyto!(color_buffer, 1, colors, 1, length(colors))
     @test @inferred(load_directed_graph!(graph, tuple_edges, 4)) === graph
-    @test @inferred(canonicalize_directed!(buffer, workspace, graph, color_buffer)) === buffer
+    @test @inferred(canonicalize_directed!(buffer, workspace, graph, color_buffer)) ===
+        buffer
     @test canonical_graph(buffer) == canonical_graph(expected)
     @test canonical_automorphism_order(buffer) == canonical_automorphism_order(expected)
 
