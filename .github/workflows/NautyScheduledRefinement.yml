@@ -1,0 +1,43 @@
+name: Nauty scheduled refinement probe
+
+on:
+  pull_request:
+    paths:
+      - 'research/nauty_word_refinement_probe.jl'
+      - 'research/nauty_active_refinement_probe.jl'
+      - 'research/nauty_scheduled_refinement_probe_v2.jl'
+      - '.github/workflows/NautyScheduledRefinement.yml'
+      - 'src/directed_*.jl'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: '1.13'
+          show-versioninfo: true
+      - uses: julia-actions/cache@v3
+      - name: Instantiate research environment
+        run: julia --project=. -e 'using Pkg; Pkg.instantiate(); Pkg.add(name="BenchmarkTools", version="1")'
+      - name: Run exactness and performance probe
+        run: |
+          set -o pipefail
+          julia --project=. research/nauty_scheduled_refinement_probe_v2.jl | tee /tmp/scheduled-refinement-probe.txt
+      - name: Publish probe result
+        if: ${{ always() && github.event_name == 'pull_request' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh pr comment "${{ github.event.pull_request.number }}" --body-file /tmp/scheduled-refinement-probe.txt
