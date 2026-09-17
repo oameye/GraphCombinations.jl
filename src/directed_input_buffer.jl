@@ -31,6 +31,13 @@ end
     return nothing
 end
 
+"""
+    load_directed_graph!(graph, edges)
+
+Replace the complete edge multiset stored in a reusable `DirectedGCGraphBuffer`. Both
+`source => target` pairs and `(source, target)` integer tuples are accepted. Repeated entries
+accumulate exact edge multiplicity.
+"""
 function load_directed_graph!(
     graph::DirectedGCGraphBuffer,
     edges::AbstractVector{<:Pair{<:Integer,<:Integer}},
@@ -55,4 +62,21 @@ end
 
 @inline function _directed_graph_view(graph::DirectedGCGraphBuffer)::DirectedGCGraph
     return DirectedGCGraph(graph.num_vertices, graph.multiplicities)
+end
+
+function canonicalize_directed!(
+    buffer::DirectedCanonicalizationBuffer,
+    workspace::DirectedCanonicalizationWorkspace,
+    graph::DirectedGCGraphBuffer,
+    vertex_colors::AbstractVector{<:Integer},
+)::DirectedCanonicalizationBuffer
+    return canonicalize_directed!(buffer, workspace, _directed_graph_view(graph), vertex_colors)
+end
+
+function canonicalize_directed!(
+    buffer::DirectedCanonicalizationBuffer,
+    workspace::DirectedCanonicalizationWorkspace,
+    graph::DirectedGCGraphBuffer,
+)::DirectedCanonicalizationBuffer
+    return canonicalize_directed!(buffer, workspace, _directed_graph_view(graph))
 end
