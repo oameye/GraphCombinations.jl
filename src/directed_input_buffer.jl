@@ -8,7 +8,7 @@ Unlike `DirectedGCGraph`, this type is scratch storage rather than a hashable gr
 new edge set with `load_directed_graph!` and pass the buffer directly to
 `canonicalize_directed!`.
 """
-mutable struct DirectedGCGraphBuffer
+struct DirectedGCGraphBuffer
     num_vertices::Int
     multiplicities::Vector{Int}
 end
