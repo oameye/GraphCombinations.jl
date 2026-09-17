@@ -1,5 +1,49 @@
 # Release notes
 
+## v0.5.0
+
+GraphCombinations v0.5.0 extends the exact directed-canonicalization backend with capacity-sized reusable input storage and two exact individualization/refinement search optimizations. The release is additive and was driven by production integration in KeldyshContraction.jl.
+
+### Reusable capacity API
+
+The directed hot path now supports one reusable allocation sized for the largest graph in a workload:
+
+- `DirectedGCGraphBuffer(capacity)` owns mutable directed-multiplicity input scratch;
+- `load_directed_graph!` reloads `Pair` or `(source, target)` edge vectors at any active size up to capacity;
+- `DirectedCanonicalizationWorkspace(capacity)` and `DirectedCanonicalizationBuffer(capacity)` accept active graphs smaller than their allocation capacity;
+- `canonicalize_directed!` consumes the mutable input buffer directly, so downstream packages no longer need to mutate `DirectedGCGraph` internals or maintain per-size workspace caches.
+
+The immutable `DirectedGCGraph` remains the hashable/value representation. The mutable buffer is explicitly scratch storage for repeated hot-path use.
+
+### Exact directed search improvements
+
+The production individualization/refinement search now chooses the smallest non-singleton refined color cell, with deterministic ties from canonical color order. This reduces unnecessary branching without changing canonical semantics.
+
+The search also quotients branches related by a proven exact twin transposition automorphism. Two vertices are treated as twins only when exchanging them preserves the complete directed multiplicity graph and they lie in the same current target cell. One representative branch is visited for each exact twin class, while checked branch multiplicity is propagated to leaves so the exact color-preserving automorphism order is unchanged.
+
+A dedicated regression verifies that four same-color edgeless twins collapse to one visited leaf while retaining automorphism order `4! = 24`. Canonical graph comparison and relabeling-witness semantics remain unchanged.
+
+### Certification
+
+The reusable-workspace suite is now wired directly into normal package tests. Allocation assertions are additionally exercised in an explicit Julia 1.13 no-coverage lane because coverage instrumentation itself allocates on newer Julia versions.
+
+The release candidate is green on Julia LTS, 1.12, and 1.13, including static analysis, exact workspace/reference agreement, changing active graph sizes, automorphism-order certification, zero-allocation warmed input/canonicalization paths, formatting, and spell checking.
+
+### Downstream acceptance
+
+KeldyshContraction.jl retains Nauty as an independent oracle and switches only its dummy-loop momentum canonicalization candidate. On the exact final v0.5.0 candidate, the downstream acceptance fixture measured:
+
+- two-loop full quotient: 248.52 μs with GC versus 838.46 μs with Nauty (`0.296x`), with memory ratio `0.687x`;
+- two-loop warmed canonical-transform sweep: `0.204x` Nauty;
+- four-loop full quotient: 884.25 μs with GC versus 1847.18 μs with Nauty (`0.479x`), with memory ratio `0.634x`;
+- four-loop warmed canonical-transform sweep: 609.9 μs with GC versus 1498.08 μs with Nauty (`0.407x`).
+
+The exact downstream GC/Nauty semantic oracle passes `4 / 4`. The migration remains selective: physical one-shot propagator canonicalization and historical topology-numbering compatibility stay on Nauty.
+
+### Compatibility
+
+v0.5.0 is an additive minor release. Existing users should not need code changes. Consumers requiring the reusable capacity-sized directed input API should depend on `GraphCombinations = "0.5"`.
+
 ## v0.4.0
 
 GraphCombinations v0.4.0 adds exact colored directed multigraph canonical labeling with a reusable allocation-free production workspace. The API is additive; existing scalar and weighted colored-port interfaces are unchanged.
@@ -36,7 +80,7 @@ v0.4.0 is an additive minor release. Existing users should not need code changes
 
 ## v0.3.0
 
-GraphCombinations v0.3.0 adds the production weighted colored-port backend and freezes a public downstream integration boundary for diagram engines that require directed, typed half-edge matching. The existing scalar `allgraphs` API and its exact graph semantics remain unchanged.
+GraphCombinations v0.3.0 adds the production weighted colored-port backend and freezes a public downstream integration boundary for diagram engines that require directed, typed half-edge matching. The existing scalar `allgraphs` API and its exact graph semantics are unchanged.
 
 ### Weighted colored-port API
 
