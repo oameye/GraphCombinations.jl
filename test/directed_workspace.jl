@@ -63,7 +63,7 @@ end
 
     canonicalize_directed!(buffer, workspace, graph, colors)
     allocated = @allocated canonicalize_directed!(buffer, workspace, graph, colors)
-    @test allocated == 0
+    @test !iszero(Base.JLOptions().code_coverage) || allocated == 0
     @test canonical_automorphism_order(buffer) == 14
 end
 
@@ -132,7 +132,7 @@ end
         load_directed_graph!(graph, tuple_edges, 4)
         canonicalize_directed!(buffer, workspace, graph, color_buffer)
     end
-    @test allocated == 0
+    @test !iszero(Base.JLOptions().code_coverage) || allocated == 0
 
     @test_throws ArgumentError load_directed_graph!(graph, [(0, 1)], 2)
     @test_throws ArgumentError load_directed_graph!(graph, [(1, 5)], 4)
