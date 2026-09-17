@@ -94,6 +94,10 @@ else
         include("directed_workspace.jl")
     end
 
+    @testset "packed directed workspace" begin
+        include("directed_packed_workspace.jl")
+    end
+
     @testset "Wick reference oracle" begin
         include("reference_oracle.jl")
     end
