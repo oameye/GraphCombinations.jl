@@ -39,8 +39,7 @@ Replace the complete edge multiset stored in a reusable `DirectedGCGraphBuffer`.
 accumulate exact edge multiplicity.
 """
 function load_directed_graph!(
-    graph::DirectedGCGraphBuffer,
-    edges::AbstractVector{<:Pair{<:Integer,<:Integer}},
+    graph::DirectedGCGraphBuffer, edges::AbstractVector{<:Pair{<:Integer,<:Integer}}
 )::DirectedGCGraphBuffer
     fill!(graph.multiplicities, 0)
     @inbounds for edge in edges
@@ -50,8 +49,7 @@ function load_directed_graph!(
 end
 
 function load_directed_graph!(
-    graph::DirectedGCGraphBuffer,
-    edges::AbstractVector{<:Tuple{<:Integer,<:Integer}},
+    graph::DirectedGCGraphBuffer, edges::AbstractVector{<:Tuple{<:Integer,<:Integer}}
 )::DirectedGCGraphBuffer
     fill!(graph.multiplicities, 0)
     @inbounds for edge in edges
@@ -70,7 +68,9 @@ function canonicalize_directed!(
     graph::DirectedGCGraphBuffer,
     vertex_colors::AbstractVector{<:Integer},
 )::DirectedCanonicalizationBuffer
-    return canonicalize_directed!(buffer, workspace, _directed_graph_view(graph), vertex_colors)
+    return canonicalize_directed!(
+        buffer, workspace, _directed_graph_view(graph), vertex_colors
+    )
 end
 
 function canonicalize_directed!(
