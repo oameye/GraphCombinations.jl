@@ -11,8 +11,7 @@ end
 ExperimentalPathStats() = ExperimentalPathStats(0, 0, 0, 0, 0)
 
 function experimental_leaf_inverse(
-    graph::GC.DirectedGCGraph,
-    colors::Vector{Int},
+    graph::GC.DirectedGCGraph, colors::Vector{Int}
 )::Vector{Int}
     n = graph.num_vertices
     packed = GC.PackedDirectedCanonicalizationWorkspace(n)
@@ -81,9 +80,7 @@ end
 end
 
 function same_labelled_image(
-    graph::GC.DirectedGCGraph,
-    left_inverse::Vector{Int},
-    right_inverse::Vector{Int},
+    graph::GC.DirectedGCGraph, left_inverse::Vector{Int}, right_inverse::Vector{Int}
 )::Bool
     n = graph.num_vertices
     @inbounds for canonical_source in 1:n
@@ -93,7 +90,7 @@ function same_labelled_image(
             left_target = left_inverse[canonical_target]
             right_target = right_inverse[canonical_target]
             graph.multiplicities[GC._directed_slot(left_source, left_target, n)] ==
-                graph.multiplicities[GC._directed_slot(right_source, right_target, n)] ||
+            graph.multiplicities[GC._directed_slot(right_source, right_target, n)] ||
                 return false
         end
     end
@@ -122,7 +119,7 @@ function verify_graph_automorphism(
             mapped_target = permutation[target]
             1 <= mapped_target <= n || return false
             graph.multiplicities[GC._directed_slot(source, target, n)] ==
-                graph.multiplicities[GC._directed_slot(mapped_source, mapped_target, n)] ||
+            graph.multiplicities[GC._directed_slot(mapped_source, mapped_target, n)] ||
                 return false
         end
     end
@@ -130,9 +127,7 @@ function verify_graph_automorphism(
 end
 
 function verify_partition_transport(
-    left_colors::Vector{Int},
-    right_colors::Vector{Int},
-    permutation::Vector{Int},
+    left_colors::Vector{Int}, right_colors::Vector{Int}, permutation::Vector{Int}
 )::Bool
     length(left_colors) == length(right_colors) == length(permutation) || return false
     @inbounds for vertex in eachindex(left_colors)
@@ -191,8 +186,7 @@ function quotient_frontier_by_experimental_paths(
 end
 
 function levelwise_trace_experimental_canonical_inverse(
-    graph::GC.DirectedGCGraph,
-    initial_colors::AbstractVector{<:Integer},
+    graph::GC.DirectedGCGraph, initial_colors::AbstractVector{<:Integer}
 )::Tuple{Vector{Int},LevelwiseTraceSearchStats,ExperimentalPathStats}
     n = graph.num_vertices
     colors = collect(Int, initial_colors)
@@ -219,7 +213,7 @@ function levelwise_trace_experimental_canonical_inverse(
                     graph, candidate_inverse, best_inverse
                 )
                 if comparison < 0 ||
-                   (iszero(comparison) && inverse_lex_less(candidate_inverse, best_inverse))
+                    (iszero(comparison) && inverse_lex_less(candidate_inverse, best_inverse))
                     best_inverse = candidate_inverse
                 end
             end
@@ -232,10 +226,13 @@ function levelwise_trace_experimental_canonical_inverse(
 
         for node in frontier
             target_color = target_color_from_partition(node.colors)
-            iszero(target_color) && error("mixed discrete/non-discrete maximal trace frontier")
+            iszero(target_color) &&
+                error("mixed discrete/non-discrete maximal trace frontier")
             @inbounds for chosen_vertex in 1:n
                 node.colors[chosen_vertex] == target_color || continue
-                raw_child = individualize_partition(node.colors, target_color, chosen_vertex)
+                raw_child = individualize_partition(
+                    node.colors, target_color, chosen_vertex
+                )
                 child_colors, child_trace = refine_partition_with_trace!(
                     traced, graph, raw_child
                 )
@@ -256,7 +253,8 @@ function levelwise_trace_experimental_canonical_inverse(
             end
         end
 
-        isempty(next_frontier) && error("experimental trace search produced an empty frontier")
+        isempty(next_frontier) &&
+            error("experimental trace search produced an empty frontier")
         if !iszero(target_color_from_partition(next_frontier[1].colors))
             next_frontier = quotient_frontier_by_experimental_paths(
                 graph, next_frontier, experimental
@@ -268,8 +266,7 @@ function levelwise_trace_experimental_canonical_inverse(
 end
 
 function levelwise_trace_experimental_canonical_buffer(
-    graph::GC.DirectedGCGraph,
-    initial_colors::AbstractVector{<:Integer},
+    graph::GC.DirectedGCGraph, initial_colors::AbstractVector{<:Integer}
 )::Tuple{GC.DirectedCanonicalizationBuffer,LevelwiseTraceSearchStats,ExperimentalPathStats}
     inverse, stats, experimental = levelwise_trace_experimental_canonical_inverse(
         graph, initial_colors
@@ -285,9 +282,9 @@ function levelwise_trace_experimental_canonical_buffer(
         old_source = inverse[canonical_source]
         for canonical_target in 1:n
             old_target = inverse[canonical_target]
-            buffer.canonical_multiplicities[GC._directed_slot(
-                canonical_source, canonical_target, n
-            )] = graph.multiplicities[GC._directed_slot(old_source, old_target, n)]
+            buffer.canonical_multiplicities[GC._directed_slot(canonical_source, canonical_target, n)] = graph.multiplicities[GC._directed_slot(
+                old_source, old_target, n
+            )]
         end
     end
     buffer.automorphism_order = 0
