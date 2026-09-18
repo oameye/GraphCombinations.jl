@@ -390,23 +390,20 @@ function _record_packed_directed_leaf!(
     return nothing
 end
 
-function _packed_directed_seed_root_twins!(
+function _packed_directed_seed_chosen_root_twins!(
     packed::PackedDirectedCanonicalizationWorkspace,
     graph::DirectedGCGraph,
+    chosen_vertex::Int,
     target_mask::UInt64,
 )::Nothing
     members = target_mask
     @inbounds while !iszero(members)
-        left = trailing_zeros(members) + 1
-        later = members & ~_packed_directed_vertex_bit(left)
-        while !iszero(later)
-            right = trailing_zeros(later) + 1
-            if _directed_workspace_exact_twins(graph, left, right)
-                _packed_directed_orbit_union!(packed, left, right)
-            end
-            later &= later - UInt64(1)
-        end
+        candidate = trailing_zeros(members) + 1
         members &= members - UInt64(1)
+        candidate > chosen_vertex || continue
+        if _directed_workspace_exact_twins(graph, chosen_vertex, candidate)
+            _packed_directed_orbit_union!(packed, chosen_vertex, candidate)
+        end
     end
     return nothing
 end
@@ -463,7 +460,6 @@ function _search_packed_directed_root_workspace!(
     packed.root_branch_order = 0
     packed.root_best_stabilizer_order = 0
     packed.root_orbit_active = true
-    _packed_directed_seed_root_twins!(packed, graph, target_mask)
 
     @inbounds for chosen_vertex in 1:n
         iszero(target_mask & _packed_directed_vertex_bit(chosen_vertex)) && continue
@@ -472,6 +468,9 @@ function _search_packed_directed_root_workspace!(
             continue
         end
 
+        _packed_directed_seed_chosen_root_twins!(
+            packed, graph, chosen_vertex, target_mask
+        )
         packed.root_current_vertex = chosen_vertex
         packed.root_branch_order = 0
         packed.root_explored_mask |= _packed_directed_vertex_bit(chosen_vertex)
