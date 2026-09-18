@@ -1,0 +1,42 @@
+name: Packed depth-2 stabilizer orbit research
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - research-packed-depth2-stabilizer-orbits
+    paths:
+      - research/packed_depth2_stabilizer_orbits.jl
+      - research/packed_depth2_stabilizer_product_fixtures.jl
+      - .github/workflows/PackedDepth2StabilizerResearch.yml
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: lts
+          arch: x64
+
+      - uses: julia-actions/cache@v3
+
+      - name: Instantiate benchmark environment
+        run: |
+          cd benchmarks
+          julia --project --color=yes -e '
+            using Pkg
+            Pkg.develop(PackageSpec(path=joinpath(pwd(), "..")))
+            Pkg.instantiate()'
+
+      - name: Run exactness and performance attribution
+        run: |
+          set -o pipefail
+          cd benchmarks
+          julia --project --color=yes ../research/packed_depth2_stabilizer_product_fixtures.jl \
+            | tee ../depth2-stabilizer-results.txt
