@@ -78,25 +78,26 @@ jobs:
               @inbounds for chosen_vertex in 1:n
           '''
 
-          insertion = '''        packed.root_current_vertex = chosen_vertex
-              packed.root_branch_order = 0
-          '''
-          replacement = '''        _packed_directed_seed_chosen_root_twins!(
-                  packed, graph, chosen_vertex, target_mask
-              )
-              packed.root_current_vertex = chosen_vertex
-              packed.root_branch_order = 0
-          '''
-
           for old, new, label in (
               (old_function, new_function, "root twin helper"),
               (old_seed, new_seed, "eager root twin seed"),
-              (insertion, replacement, "lazy root twin insertion"),
           ):
               count = text.count(old)
               if count != 1:
                   raise SystemExit(f"expected exactly one {label} replacement, found {count}")
               text = text.replace(old, new, 1)
+
+          marker = "packed.root_current_vertex = chosen_vertex"
+          count = text.count(marker)
+          if count != 1:
+              raise SystemExit(f"expected exactly one root-current marker, found {count}")
+          replacement = (
+              "_packed_directed_seed_chosen_root_twins!(\n"
+              "            packed, graph, chosen_vertex, target_mask\n"
+              "        )\n"
+              "        packed.root_current_vertex = chosen_vertex"
+          )
+          text = text.replace(marker, replacement, 1)
 
           path.write_text(text)
           PY
