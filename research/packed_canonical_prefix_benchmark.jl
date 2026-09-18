@@ -1,6 +1,98 @@
 using BenchmarkTools
 import GraphCombinations as GC
 
+const VARIANT = get(ENV, "GC_VARIANT", "unknown")
+
+if VARIANT == "candidate"
+    @eval GC begin
+        @inline function _research_prefix_column_less(
+            packed::PackedDirectedCanonicalizationWorkspace,
+            left::Int,
+            right::Int,
+            prefix_rows::Int,
+        )::Bool
+            left == right && return false
+            left_bit = _packed_directed_vertex_bit(left)
+            right_bit = _packed_directed_vertex_bit(right)
+            @inbounds for source_position in 1:prefix_rows
+                source_mask = packed.cell_masks[source_position]
+                source = trailing_zeros(source_mask) + 1
+                row = packed.out_rows[source]
+                left_value = !iszero(row & left_bit)
+                right_value = !iszero(row & right_bit)
+                left_value == right_value && continue
+                return !left_value && right_value
+            end
+            return left < right
+        end
+
+        function _packed_directed_canonical_prefix_prunable!(
+            packed::PackedDirectedCanonicalizationWorkspace,
+            graph::DirectedGCGraph,
+            num_colors::Int,
+        )::Bool
+            workspace = packed.workspace
+            workspace.has_best || return false
+
+            prefix_rows = 0
+            @inbounds for color in 1:num_colors
+                count_ones(packed.cell_masks[color]) == 1 || break
+                prefix_rows += 1
+            end
+            iszero(prefix_rows) && return false
+            packed.canonical_prefix_checks += 1
+
+            target_position = 0
+            @inbounds for target_color in 1:num_colors
+                cell_mask = packed.cell_masks[target_color]
+                cell_start = target_position + 1
+                members = cell_mask
+                while !iszero(members)
+                    vertex = trailing_zeros(members) + 1
+                    target_position += 1
+                    workspace.order[target_position] = vertex
+                    members &= members - UInt64(1)
+                end
+
+                for index in (cell_start + 1):target_position
+                    vertex = workspace.order[index]
+                    position = index - 1
+                    while position >= cell_start && _research_prefix_column_less(
+                        packed, vertex, workspace.order[position], prefix_rows
+                    )
+                        workspace.order[position + 1] = workspace.order[position]
+                        position -= 1
+                    end
+                    workspace.order[position + 1] = vertex
+                end
+            end
+
+            n = graph.num_vertices
+            @inbounds for source_position in 1:prefix_rows
+                source = trailing_zeros(packed.cell_masks[source_position]) + 1
+                candidate_row = packed.out_rows[source]
+                best_source = workspace.best_inverse_mapping[source_position]
+                best_row = packed.out_rows[best_source]
+                for position in 1:n
+                    target = workspace.order[position]
+                    candidate_value = !iszero(
+                        candidate_row & _packed_directed_vertex_bit(target)
+                    )
+                    best_target = workspace.best_inverse_mapping[position]
+                    best_value = !iszero(best_row & _packed_directed_vertex_bit(best_target))
+                    candidate_value == best_value && continue
+                    if candidate_value && !best_value
+                        packed.canonical_prefix_prunes += 1
+                        return true
+                    end
+                    return false
+                end
+            end
+            return false
+        end
+    end
+end
+
 function directed_cycle(n::Int)
     return GC.DirectedGCGraph([v => mod1(v + 1, n) for v in 1:n], n), ones(Int, n)
 end
@@ -71,6 +163,42 @@ function two_permutation_regular(permutation::Vector{Int})
     return GC.DirectedGCGraph(edges, n), ones(Int, n)
 end
 
+function certify_research_override()::Nothing
+    VARIANT == "candidate" || return nothing
+    general_workspace = GC.DirectedCanonicalizationWorkspace(3)
+    packed_workspace = GC.PackedDirectedCanonicalizationWorkspace(3)
+    general_buffer = GC.DirectedCanonicalizationBuffer(3)
+    packed_buffer = GC.DirectedCanonicalizationBuffer(3)
+    colorings = (Int[1, 1, 1], Int[1, 1, 2], Int[1, 2, 3])
+
+    for mask in 0:(2 ^ 9 - 1)
+        edges = Pair{Int,Int}[]
+        bit = 0
+        for source in 1:3, target in 1:3
+            isodd(mask >> bit) && push!(edges, source => target)
+            bit += 1
+        end
+        graph = GC.DirectedGCGraph(edges, 3)
+        for colors in colorings
+            GC.canonicalize_directed!(general_buffer, general_workspace, graph, colors)
+            GC.canonicalize_directed_packed!(
+                packed_buffer, packed_workspace, graph, colors
+            )
+            GC.canonical_graph(packed_buffer) == GC.canonical_graph(general_buffer) ||
+                error("research prefix override changed the canonical image")
+            GC.canonical_automorphism_order(packed_buffer) ==
+                GC.canonical_automorphism_order(general_buffer) ||
+                error("research prefix override changed the automorphism order")
+            for vertex in 1:3
+                GC.canonical_rank(packed_buffer, vertex) ==
+                    GC.canonical_rank(general_buffer, vertex) ||
+                    error("research prefix override changed the canonical witness")
+            end
+        end
+    end
+    return nothing
+end
+
 function metric(workspace, name::Symbol)
     return hasproperty(workspace, name) ? getproperty(workspace, name) : -1
 end
@@ -86,11 +214,10 @@ function benchmark_fixture(name::String, graph::GC.DirectedGCGraph, colors::Vect
     ) samples = 180 seconds = 1 evals = 1
     estimate = minimum(trial)
     search = workspace.workspace
-    variant = get(ENV, "GC_VARIANT", "unknown")
 
     println(
         "RESULT|",
-        variant,
+        VARIANT,
         "|",
         name,
         "|",
@@ -118,6 +245,8 @@ function benchmark_fixture(name::String, graph::GC.DirectedGCGraph, colors::Vect
     )
     return nothing
 end
+
+certify_research_override()
 
 fixtures = (
     ("cycle-15", directed_cycle(15)...),
