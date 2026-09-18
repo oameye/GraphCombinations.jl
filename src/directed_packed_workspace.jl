@@ -108,12 +108,13 @@ end
 end
 
 @inline function _packed_directed_cached_key(
-    packed::PackedDirectedCanonicalizationWorkspace,
-    vertex::Int,
-    touched_vertices::UInt64,
+    packed::PackedDirectedCanonicalizationWorkspace, vertex::Int, touched_vertices::UInt64
 )::Int
-    return iszero(_packed_directed_vertex_bit(vertex) & touched_vertices) ?
-           0 : packed.splitter_keys[vertex]
+    return if iszero(_packed_directed_vertex_bit(vertex) & touched_vertices)
+        0
+    else
+        packed.splitter_keys[vertex]
+    end
 end
 
 function _packed_directed_workspace_refine_splitter!(
@@ -198,7 +199,8 @@ function _packed_directed_workspace_refine_splitter!(
             vertex = workspace.order[index]
             key = _packed_directed_cached_key(packed, vertex, touched_vertices)
             position = index - 1
-            while position >= 1 && key < _packed_directed_cached_key(
+            while position >= 1 &&
+                  key < _packed_directed_cached_key(
                 packed, workspace.order[position], touched_vertices
             )
                 workspace.order[position + 1] = workspace.order[position]
