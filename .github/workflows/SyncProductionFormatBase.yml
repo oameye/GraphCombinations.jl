@@ -1,0 +1,34 @@
+name: Sync production formatter base
+
+on:
+  push:
+    branches:
+      - production-kc-oneword-levelwise
+    paths:
+      - .github/workflows/SyncProductionFormatBase.yml
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: production-kc-oneword-levelwise
+          fetch-depth: 0
+      - name: Match inherited research tree to formatter-only base
+        shell: bash
+        run: |
+          git fetch origin production-levelwise-format-base
+          git checkout origin/production-levelwise-format-base -- research
+          git diff --check
+      - name: Commit formatter-base alignment
+        shell: bash
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add research
+          git commit -m "chore: align production branch with formatter base"
+          git push origin HEAD:production-kc-oneword-levelwise
