@@ -1,0 +1,46 @@
+name: Apply hybrid diagnostic patch
+
+on:
+  push:
+    branches:
+      - research-packed-hybrid-stabilizer-selector
+    paths:
+      - .github/workflows/ApplyHybridDiagPatch.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: research-packed-hybrid-stabilizer-selector
+          fetch-depth: 0
+      - name: Fix empty residual signatures
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path("research/packed_hybrid_selector_diagnostics.jl")
+          text = path.read_text()
+          replacements = [
+              ("    unresolved_vertices = sum(nonsingleton)\n", "    unresolved_vertices = sum(nonsingleton; init=0)\n"),
+              ("    excess_vertices = sum(count - 1 for count in nonsingleton)\n", "    excess_vertices = sum((count - 1 for count in nonsingleton); init=0)\n"),
+              ("    log_factor = sum(loggamma(count + 1) for count in nonsingleton)\n", "    symmetry_score = sum((count * count for count in nonsingleton); init=0)\n"),
+              ("        log_factor,\n", "        symmetry_score,\n"),
+          ]
+          for old, new in replacements:
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"expected one replacement, found {count}: {old!r}")
+              text = text.replace(old, new, 1)
+          path.write_text(text)
+          PY
+      - name: Commit patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add research/packed_hybrid_selector_diagnostics.jl
+          git commit -m "research: handle discrete post-root signatures"
+          git push origin HEAD:research-packed-hybrid-stabilizer-selector
