@@ -78,28 +78,20 @@ jobs:
               @inbounds for chosen_vertex in 1:n
           '''
 
-          old_branch = '''        if _packed_directed_root_candidate_explored(packed, chosen_vertex)
-                  packed.root_orbit_skips += 1
-                  continue
-              end
-
-              packed.root_current_vertex = chosen_vertex
+          insertion = '''        packed.root_current_vertex = chosen_vertex
+              packed.root_branch_order = 0
           '''
-          new_branch = '''        if _packed_directed_root_candidate_explored(packed, chosen_vertex)
-                  packed.root_orbit_skips += 1
-                  continue
-              end
-
-              _packed_directed_seed_chosen_root_twins!(
+          replacement = '''        _packed_directed_seed_chosen_root_twins!(
                   packed, graph, chosen_vertex, target_mask
               )
               packed.root_current_vertex = chosen_vertex
+              packed.root_branch_order = 0
           '''
 
           for old, new, label in (
               (old_function, new_function, "root twin helper"),
               (old_seed, new_seed, "eager root twin seed"),
-              (old_branch, new_branch, "lazy root twin seed"),
+              (insertion, replacement, "lazy root twin insertion"),
           ):
               count = text.count(old)
               if count != 1:
