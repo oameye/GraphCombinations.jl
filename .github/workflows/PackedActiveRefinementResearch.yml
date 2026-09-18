@@ -9,6 +9,10 @@ on:
       - research/packed_active_refinement_benchmark.jl
       - .github/workflows/PackedActiveRefinementResearch.yml
 
+permissions:
+  actions: write
+  contents: read
+
 jobs:
   compare:
     runs-on: ubuntu-latest
@@ -108,5 +112,5 @@ jobs:
                   regressions.append((name, tr))
 
           if regressions:
-              print("\n>10% research timing regressions:", regressions)
+              raise SystemExit(f">10% research timing regressions: {regressions}")
           PY
