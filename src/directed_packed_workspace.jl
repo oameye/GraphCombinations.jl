@@ -102,30 +102,47 @@ function _packed_directed_workspace_refine_splitter!(
 )::UInt64
     workspace = packed.workspace
     n = graph.num_vertices
+    @inbounds for color in 1:n
+        workspace.cell_counts[color] = 0
+    end
+
     num_colors = 0
     @inbounds for vertex in 1:n
-        num_colors = max(num_colors, workspace.color_stack[vertex, depth])
+        color = workspace.color_stack[vertex, depth]
+        workspace.cell_counts[color] += 1
+        num_colors = max(num_colors, color)
+        packed.splitter_keys[vertex] =
+            _packed_directed_splitter_key(packed, vertex, splitter_mask, n)
+    end
+
+    next_offset = 1
+    @inbounds for color in 1:num_colors
+        workspace.signatures[color] = next_offset
+        workspace.signatures[n + color] = next_offset
+        next_offset += workspace.cell_counts[color]
+    end
+    @inbounds for vertex in 1:n
+        color = workspace.color_stack[vertex, depth]
+        position = workspace.signatures[n + color]
+        workspace.order[position] = vertex
+        workspace.signatures[n + color] = position + 1
     end
 
     next_color = 0
     split_members = UInt64(0)
     @inbounds for color in 1:num_colors
-        count = 0
+        start = workspace.signatures[color]
+        stop = start + workspace.cell_counts[color] - 1
         cell_mask = UInt64(0)
-        for vertex in 1:n
-            workspace.color_stack[vertex, depth] == color || continue
-            count += 1
-            workspace.order[count] = vertex
-            cell_mask |= _packed_directed_vertex_bit(vertex)
-            packed.splitter_keys[vertex] =
-                _packed_directed_splitter_key(packed, vertex, splitter_mask, n)
+        for index in start:stop
+            cell_mask |= _packed_directed_vertex_bit(workspace.order[index])
         end
 
-        for index in 2:count
+        for index in (start + 1):stop
             vertex = workspace.order[index]
             key = packed.splitter_keys[vertex]
             position = index - 1
-            while position >= 1 && key < packed.splitter_keys[workspace.order[position]]
+            while position >= start && key < packed.splitter_keys[workspace.order[position]]
                 workspace.order[position + 1] = workspace.order[position]
                 position -= 1
             end
@@ -134,10 +151,10 @@ function _packed_directed_workspace_refine_splitter!(
 
         previous_key = -1
         num_fragments = 0
-        for index in 1:count
+        for index in start:stop
             vertex = workspace.order[index]
             key = packed.splitter_keys[vertex]
-            if index == 1 || key != previous_key
+            if index == start || key != previous_key
                 next_color += 1
                 num_fragments += 1
                 previous_key = key
