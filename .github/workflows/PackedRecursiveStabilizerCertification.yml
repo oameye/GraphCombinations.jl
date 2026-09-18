@@ -1,0 +1,33 @@
+name: Packed recursive stabilizer certification
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - research-packed-recursive-stabilizer-orbits
+    paths:
+      - research/packed_recursive_stabilizer_orbits.jl
+      - research/packed_recursive_stabilizer_certification.jl
+      - .github/workflows/PackedRecursiveStabilizerCertification.yml
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: lts
+          arch: x64
+
+      - uses: julia-actions/cache@v3
+
+      - name: Instantiate package
+        run: julia --project --color=yes -e 'using Pkg; Pkg.instantiate()'
+
+      - name: Run exhaustive and deterministic differential certification
+        run: julia --project --color=yes research/packed_recursive_stabilizer_certification.jl
