@@ -1,0 +1,43 @@
+name: Packed trace-ordered stabilizer research
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - research-packed-trace-ordered-stabilizers
+    paths:
+      - research/packed_trace_ordered_stabilizers.jl
+      - research/packed_trace_ordered_stabilizer_benchmark.jl
+      - .github/workflows/PackedTraceOrderedStabilizerResearch.yml
+
+permissions:
+  contents: read
+
+# Keep correctness assertions ahead of every timing result.
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: lts
+          arch: x64
+
+      - uses: julia-actions/cache@v3
+
+      - name: Instantiate benchmark environment
+        run: |
+          cd benchmarks
+          julia --project --color=yes -e '
+            using Pkg
+            Pkg.develop(PackageSpec(path=joinpath(pwd(), "..")))
+            Pkg.instantiate()'
+
+      - name: Run trace-order attribution
+        run: |
+          set -o pipefail
+          cd benchmarks
+          julia --project --color=yes ../research/packed_trace_ordered_stabilizer_benchmark.jl \
+            | tee ../trace-ordered-stabilizer-results.txt
