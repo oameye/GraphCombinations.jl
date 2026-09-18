@@ -1,0 +1,42 @@
+name: Apply recursive core patch
+
+on:
+  push:
+    branches:
+      - research-packed-recursive-stabilizer-orbits
+    paths:
+      - .github/workflows/ApplyRecursiveCorePatch.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: research-packed-recursive-stabilizer-orbits
+          fetch-depth: 0
+
+      - name: Remove benchmark dependency from core
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path("research/packed_recursive_stabilizer_orbits.jl")
+          text = path.read_text()
+          old = "using BenchmarkTools\nimport GraphCombinations as GC\n"
+          new = "import GraphCombinations as GC\n"
+          count = text.count(old)
+          if count != 1:
+              raise SystemExit(f"expected exactly one core import block, found {count}")
+          path.write_text(text.replace(old, new, 1))
+          PY
+
+      - name: Commit patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add research/packed_recursive_stabilizer_orbits.jl
+          git commit -m "research: decouple recursive core from BenchmarkTools"
+          git push origin HEAD:research-packed-recursive-stabilizer-orbits
