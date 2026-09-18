@@ -35,16 +35,7 @@ end
 @testset "packed active-cell refinement preserves larger exact semantics" begin
     fixtures = (
         (
-            [
-                1 => 2,
-                2 => 3,
-                3 => 4,
-                4 => 5,
-                5 => 6,
-                6 => 1,
-                1 => 4,
-                2 => 5,
-            ],
+            [1 => 2, 2 => 3, 3 => 4, 4 => 5, 5 => 6, 6 => 1, 1 => 4, 2 => 5],
             Int[1, 1, 1, 1, 1, 1],
         ),
         (
@@ -63,17 +54,7 @@ end
             Int[1, 1, 1, 1, 2],
         ),
         (
-            [
-                1 => 1,
-                1 => 2,
-                2 => 3,
-                3 => 1,
-                4 => 2,
-                4 => 3,
-                5 => 4,
-                6 => 4,
-                6 => 5,
-            ],
+            [1 => 1, 1 => 2, 2 => 3, 3 => 1, 4 => 2, 4 => 3, 5 => 4, 6 => 4, 6 => 5],
             Int[1, 1, 1, 2, 2, 2],
         ),
     )
@@ -94,8 +75,8 @@ end
         @test canonical_automorphism_order(packed_buffer) ==
             canonical_automorphism_order(general_buffer)
         @test all(
-            canonical_rank(packed_buffer, vertex) == canonical_rank(general_buffer, vertex) for
-            vertex in 1:n
+            canonical_rank(packed_buffer, vertex) == canonical_rank(general_buffer, vertex)
+            for vertex in 1:n
         )
         @test packed_buffer.canonical_to_old[1:n] == general_buffer.canonical_to_old[1:n]
         @test packed_workspace.active_splitter_steps > 0
