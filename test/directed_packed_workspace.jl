@@ -97,10 +97,7 @@ end
             canonical_rank(packed_buffer, vertex) == canonical_rank(general_buffer, vertex) for
             vertex in 1:n
         )
-        @test all(
-            canonical_vertex(packed_buffer, rank) == canonical_vertex(general_buffer, rank) for
-            rank in 1:n
-        )
+        @test packed_buffer.canonical_to_old[1:n] == general_buffer.canonical_to_old[1:n]
         @test packed_workspace.active_splitter_steps > 0
         saw_split |= packed_workspace.active_cell_splits > 0
     end
