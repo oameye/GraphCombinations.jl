@@ -7,6 +7,7 @@ on:
       - research-packed-depth2-stabilizer-orbits
     paths:
       - research/packed_depth2_stabilizer_orbits.jl
+      - research/packed_depth2_stabilizer_product_fixtures.jl
       - .github/workflows/PackedDepth2StabilizerResearch.yml
 
 permissions:
@@ -37,5 +38,5 @@ jobs:
         run: |
           set -o pipefail
           cd benchmarks
-          julia --project --color=yes ../research/packed_depth2_stabilizer_orbits.jl \
+          julia --project --color=yes ../research/packed_depth2_stabilizer_product_fixtures.jl \
             | tee ../depth2-stabilizer-results.txt
