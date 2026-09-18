@@ -1,0 +1,44 @@
+name: Apply root orbit format patch
+
+on:
+  push:
+    branches:
+      - research-packed-root-orbit-pruning
+    paths:
+      - .github/workflows/ApplyRootOrbitFormatPatch.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: research-packed-root-orbit-pruning
+          fetch-depth: 0
+
+      - name: Apply formatter-exact replacement
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path("src/directed_packed_workspace.jl")
+          text = path.read_text()
+          old = '''        _packed_directed_seed_chosen_root_twins!(
+              packed, graph, chosen_vertex, target_mask
+          )'''
+          new = '''        _packed_directed_seed_chosen_root_twins!(packed, graph, chosen_vertex, target_mask)'''
+          count = text.count(old)
+          if count != 1:
+              raise SystemExit(f"expected exactly one formatter replacement, found {count}")
+          path.write_text(text.replace(old, new, 1))
+          PY
+
+      - name: Commit formatter patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/directed_packed_workspace.jl
+          git commit -m "style: format lazy root twin call"
+          git push origin HEAD:research-packed-root-orbit-pruning
