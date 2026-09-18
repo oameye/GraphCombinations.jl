@@ -1,13 +1,27 @@
 # --- Packed one-word candidate for small simple directed graphs ---
 
+const _PACKED_TARGET_SMALLEST = UInt8(1)
+const _PACKED_TARGET_FIRST = UInt8(2)
+const _PACKED_TARGET_CONNECTIVITY = UInt8(3)
+
+@inline function _packed_directed_target_policy(policy::Symbol)::UInt8
+    policy === :smallest && return _PACKED_TARGET_SMALLEST
+    policy === :first && return _PACKED_TARGET_FIRST
+    policy === :connectivity && return _PACKED_TARGET_CONNECTIVITY
+    throw(ArgumentError("target_policy must be :smallest, :first, or :connectivity."))
+end
+
 """
-    PackedDirectedCanonicalizationWorkspace(capacity)
+    PackedDirectedCanonicalizationWorkspace(capacity; target_policy=:smallest)
 
 Research/production-candidate storage for exact directed canonicalization. It reuses the certified
 `DirectedCanonicalizationWorkspace` search state and adds packed outgoing/incoming adjacency rows,
 packed color-cell masks, and reusable active-splitter scratch. Graphs with at most 64 vertices and
 edge multiplicities in `0:1` use the packed `UInt64` refinement kernel; all other graphs fall back
 exactly to the existing general directed workspace.
+
+`target_policy` is a research selector for individualization order. It changes search order only;
+canonical image, witness, and automorphism semantics remain identical.
 """
 mutable struct PackedDirectedCanonicalizationWorkspace
     workspace::DirectedCanonicalizationWorkspace
@@ -17,11 +31,14 @@ mutable struct PackedDirectedCanonicalizationWorkspace
     active_masks::Vector{UInt64}
     next_active_masks::Vector{UInt64}
     splitter_keys::Vector{Int}
+    target_policy::UInt8
     active_splitter_steps::Int
     active_cell_splits::Int
 end
 
-function PackedDirectedCanonicalizationWorkspace(capacity::Integer)
+function PackedDirectedCanonicalizationWorkspace(
+    capacity::Integer; target_policy::Symbol=:smallest
+)
     n = Int(capacity)
     n >= 0 || throw(ArgumentError("capacity must be non-negative."))
     word_capacity = min(n, 64)
@@ -33,6 +50,7 @@ function PackedDirectedCanonicalizationWorkspace(capacity::Integer)
         zeros(UInt64, word_capacity),
         zeros(UInt64, word_capacity),
         Vector{Int}(undef, word_capacity),
+        _packed_directed_target_policy(target_policy),
         0,
         0,
     )
@@ -271,6 +289,67 @@ function _packed_directed_workspace_refine!(
     return nothing
 end
 
+@inline function _packed_directed_first_target_color(
+    packed::PackedDirectedCanonicalizationWorkspace, n::Int
+)::Int
+    @inbounds for color in 1:n
+        count_ones(packed.cell_masks[color]) > 1 && return color
+    end
+    return 0
+end
+
+function _packed_directed_connectivity_target_color(
+    packed::PackedDirectedCanonicalizationWorkspace, n::Int
+)::Int
+    target_color = 0
+    target_score = -1
+    target_size = typemax(Int)
+
+    @inbounds for color in 1:n
+        cell_mask = packed.cell_masks[color]
+        cell_size = count_ones(cell_mask)
+        cell_size > 1 || continue
+        vertex = trailing_zeros(cell_mask) + 1
+
+        score = 0
+        for other_color in 1:n
+            other_mask = packed.cell_masks[other_color]
+            other_size = count_ones(other_mask)
+            iszero(other_size) && continue
+
+            out_count = count_ones(packed.out_rows[vertex] & other_mask)
+            in_count = count_ones(packed.in_rows[vertex] & other_mask)
+            if 0 < out_count < other_size
+                score += min(out_count, other_size - out_count)
+            end
+            if 0 < in_count < other_size
+                score += min(in_count, other_size - in_count)
+            end
+        end
+
+        if score > target_score ||
+           (score == target_score && cell_size < target_size) ||
+           (score == target_score && cell_size == target_size && color < target_color)
+            target_color = color
+            target_score = score
+            target_size = cell_size
+        end
+    end
+    return target_color
+end
+
+@inline function _packed_directed_target_color!(
+    packed::PackedDirectedCanonicalizationWorkspace, graph::DirectedGCGraph, depth::Int
+)::Int
+    policy = packed.target_policy
+    if policy == _PACKED_TARGET_SMALLEST
+        return _directed_workspace_target_color!(packed.workspace, graph, depth)
+    elseif policy == _PACKED_TARGET_FIRST
+        return _packed_directed_first_target_color(packed, graph.num_vertices)
+    end
+    return _packed_directed_connectivity_target_color(packed, graph.num_vertices)
+end
+
 function _search_packed_directed_partition_workspace!(
     packed::PackedDirectedCanonicalizationWorkspace,
     graph::DirectedGCGraph,
@@ -280,7 +359,7 @@ function _search_packed_directed_partition_workspace!(
     workspace = packed.workspace
     workspace.search_nodes += 1
     _packed_directed_workspace_refine!(packed, graph, depth)
-    target_color = _directed_workspace_target_color!(workspace, graph, depth)
+    target_color = _packed_directed_target_color!(packed, graph, depth)
     if iszero(target_color)
         _record_directed_workspace_leaf!(workspace, graph, depth, multiplicity)
         return nothing
