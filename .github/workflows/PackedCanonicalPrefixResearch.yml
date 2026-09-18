@@ -1,0 +1,128 @@
+name: Packed canonical prefix pruning research
+
+on:
+  push:
+    branches:
+      - research-packed-canonical-prefix-pruning
+    paths:
+      - src/**
+      - test/**
+      - research/packed_canonical_prefix_benchmark.jl
+      - .github/workflows/PackedCanonicalPrefixResearch.yml
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout candidate
+        uses: actions/checkout@v7
+        with:
+          path: candidate
+
+      - name: Checkout exact #181 baseline
+        uses: actions/checkout@v7
+        with:
+          ref: de4c85fbf3f833110b9c1dea70e30a6a99c8a8cd
+          path: baseline
+
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: lts
+          arch: x64
+
+      - uses: julia-actions/cache@v3
+
+      - name: Instantiate baseline benchmark environment
+        run: |
+          cd baseline/benchmarks
+          julia --project --color=yes -e '
+            using Pkg
+            Pkg.develop(PackageSpec(path=joinpath(pwd(), "..")))
+            Pkg.instantiate()'
+
+      - name: Benchmark #181 baseline
+        run: |
+          set -o pipefail
+          cd baseline/benchmarks
+          GC_VARIANT=baseline julia --project --color=yes \
+            ../../candidate/research/packed_canonical_prefix_benchmark.jl \
+            | tee ../../baseline-results.txt
+
+      - name: Instantiate candidate benchmark environment
+        run: |
+          cd candidate/benchmarks
+          julia --project --color=yes -e '
+            using Pkg
+            Pkg.develop(PackageSpec(path=joinpath(pwd(), "..")))
+            Pkg.instantiate()'
+
+      - name: Benchmark canonical-prefix candidate
+        run: |
+          set -o pipefail
+          cd candidate/benchmarks
+          GC_VARIANT=candidate julia --project --color=yes \
+            ../research/packed_canonical_prefix_benchmark.jl \
+            | tee ../../candidate-results.txt
+
+      - name: Compare candidate to #181
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def read(path):
+              rows = {}
+              for line in Path(path).read_text().splitlines():
+                  if not line.startswith("RESULT|"):
+                      continue
+                  fields = line.split("|")
+                  rows[fields[2]] = {
+                      "n": int(fields[3]),
+                      "time": float(fields[4]),
+                      "memory": int(fields[5]),
+                      "allocs": int(fields[6]),
+                      "nodes": int(fields[7]),
+                      "leaves": int(fields[8]),
+                      "rounds": int(fields[9]),
+                      "active_steps": int(fields[10]),
+                      "active_splits": int(fields[11]),
+                      "prefix_checks": int(fields[12]),
+                      "prefix_prunes": int(fields[13]),
+                  }
+              return rows
+
+          baseline = read("baseline-results.txt")
+          candidate = read("candidate-results.txt")
+          assert baseline.keys() == candidate.keys()
+
+          print("\npacked canonical-prefix comparison")
+          print("fixture | time ratio | memory | nodes base->candidate | leaves base->candidate | rounds base->candidate | checks/prunes")
+          print("--- | ---: | ---: | ---: | ---: | ---: | ---:")
+          regressions = []
+          allocation_regressions = []
+          total_prunes = 0
+          for name in baseline:
+              b = baseline[name]
+              c = candidate[name]
+              tr = c["time"] / b["time"]
+              print(
+                  f"{name} | {tr:.3f}x | {c['memory']} B | "
+                  f"{b['nodes']}->{c['nodes']} | {b['leaves']}->{c['leaves']} | "
+                  f"{b['rounds']}->{c['rounds']} | {c['prefix_checks']}/{c['prefix_prunes']}"
+              )
+              total_prunes += max(c["prefix_prunes"], 0)
+              if c["memory"] > b["memory"] or c["allocs"] > b["allocs"]:
+                  allocation_regressions.append(name)
+              if tr > 1.10:
+                  regressions.append((name, tr))
+
+          if allocation_regressions:
+              raise SystemExit(f"allocation regressions: {allocation_regressions}")
+          if total_prunes == 0:
+              raise SystemExit("canonical lower bound did not prune any benchmark branch")
+          if regressions:
+              raise SystemExit(f">10% research timing regressions: {regressions}")
+          PY
