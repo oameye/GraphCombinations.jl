@@ -144,10 +144,7 @@ function bench_repeated_directed_cycles(count::Int, size::Int)
     for component in 0:(count - 1)
         offset = component * size
         for local_vertex in 1:size
-            push!(
-                edges,
-                (offset + local_vertex) => (offset + mod1(local_vertex + 1, size)),
-            )
+            push!(edges, (offset + local_vertex) => (offset + mod1(local_vertex + 1, size)))
         end
     end
     return GC.DirectedGCGraph(edges, n), ones(Int, n)
@@ -200,10 +197,7 @@ function minimum_dfs_ns(
 end
 
 function run_workspace_benchmark(
-    name::String,
-    graph::GC.DirectedGCGraph,
-    colors::Vector{Int};
-    repetitions::Int=40,
+    name::String, graph::GC.DirectedGCGraph, colors::Vector{Int}; repetitions::Int=40
 )::Nothing
     n = graph.num_vertices
     level_buffer = GC.DirectedCanonicalizationBuffer(n)
@@ -226,9 +220,7 @@ function run_workspace_benchmark(
     iszero(level_alloc) || error("levelwise allocated $level_alloc bytes for $name")
     iszero(dfs_alloc) || error("recursive allocated $dfs_alloc bytes for $name")
 
-    level_ns = minimum_levelwise_ns(
-        level_buffer, level, graph, colors, repetitions
-    )
+    level_ns = minimum_levelwise_ns(level_buffer, level, graph, colors, repetitions)
     dfs_ns = minimum_dfs_ns(dfs_buffer, dfs, graph, colors, repetitions)
 
     println(
@@ -263,9 +255,7 @@ function run_workspace_benchmark(
 end
 
 function run_fixture(
-    name::String,
-    fixture::Tuple{GC.DirectedGCGraph,Vector{Int}};
-    repetitions::Int=40,
+    name::String, fixture::Tuple{GC.DirectedGCGraph,Vector{Int}}; repetitions::Int=40
 )::Nothing
     graph, colors = fixture
     run_workspace_benchmark(name, graph, colors; repetitions)

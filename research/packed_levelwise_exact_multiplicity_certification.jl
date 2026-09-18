@@ -2,21 +2,10 @@ include(joinpath(@__DIR__, "packed_levelwise_exact_multiplicity.jl"))
 include(joinpath(@__DIR__, "packed_recursive_stabilizer_orbits.jl"))
 
 const MULT_N3_PERMUTATIONS = (
-    [1, 2, 3],
-    [1, 3, 2],
-    [2, 1, 3],
-    [2, 3, 1],
-    [3, 1, 2],
-    [3, 2, 1],
+    [1, 2, 3], [1, 3, 2], [2, 1, 3], [2, 3, 1], [3, 1, 2], [3, 2, 1]
 )
 
-const MULT_N3_COLORINGS = (
-    [1, 1, 1],
-    [1, 1, 2],
-    [1, 2, 1],
-    [1, 2, 2],
-    [1, 2, 3],
-)
+const MULT_N3_COLORINGS = ([1, 1, 1], [1, 1, 2], [1, 2, 1], [1, 2, 2], [1, 2, 3])
 
 function multiplicity_graph_from_mask(n::Int, mask::UInt64)
     edges = Pair{Int,Int}[]
@@ -53,8 +42,7 @@ function multiplicity_same_image(
 end
 
 function multiplicity_witness_reconstructs(
-    buffer::GC.DirectedCanonicalizationBuffer,
-    graph::GC.DirectedGCGraph,
+    buffer::GC.DirectedCanonicalizationBuffer, graph::GC.DirectedGCGraph
 )::Bool
     n = graph.num_vertices
     @inbounds for canonical_source in 1:n
@@ -83,18 +71,21 @@ function certify_exact_multiplicity_n3()
         for colors_tuple in MULT_N3_COLORINGS
             colors = collect(colors_tuple)
             exact_buffer, _, _ = levelwise_trace_exact_buffer(graph, colors)
-            trace_buffer, _, _ = levelwise_trace_experimental_canonical_buffer(graph, colors)
-            multiplicity_same_image(exact_buffer, trace_buffer, n) ||
-                error("weighted quotient changed trace-defined image: mask=$mask colors=$colors")
-            multiplicity_witness_reconstructs(exact_buffer, graph) ||
-                error("weighted witness does not reconstruct image: mask=$mask colors=$colors")
+            trace_buffer, _, _ = levelwise_trace_experimental_canonical_buffer(
+                graph, colors
+            )
+            multiplicity_same_image(exact_buffer, trace_buffer, n) || error(
+                "weighted quotient changed trace-defined image: mask=$mask colors=$colors",
+            )
+            multiplicity_witness_reconstructs(exact_buffer, graph) || error(
+                "weighted witness does not reconstruct image: mask=$mask colors=$colors"
+            )
 
             reference = GC.canonicalize_directed(graph, colors)
             reference_order = GC.canonical_automorphism_order(reference)
-            exact_buffer.automorphism_order == reference_order ||
-                error(
-                    "automorphism order mismatch: mask=$mask colors=$colors exact=$(exact_buffer.automorphism_order) reference=$reference_order"
-                )
+            exact_buffer.automorphism_order == reference_order || error(
+                "automorphism order mismatch: mask=$mask colors=$colors exact=$(exact_buffer.automorphism_order) reference=$reference_order",
+            )
             nontrivial_orders += reference_order > 1
             maximum_order = max(maximum_order, reference_order)
             base_cases += 1
@@ -106,14 +97,12 @@ function certify_exact_multiplicity_n3()
                 relabeled_buffer, _, _ = levelwise_trace_exact_buffer(
                     relabeled_graph, relabeled_colors
                 )
-                multiplicity_same_image(exact_buffer, relabeled_buffer, n) ||
-                    error(
-                        "weighted canonical image changed under relabeling: mask=$mask colors=$colors map=$mapping"
-                    )
-                relabeled_buffer.automorphism_order == reference_order ||
-                    error(
-                        "weighted order changed under relabeling: mask=$mask colors=$colors map=$mapping"
-                    )
+                multiplicity_same_image(exact_buffer, relabeled_buffer, n) || error(
+                    "weighted canonical image changed under relabeling: mask=$mask colors=$colors map=$mapping",
+                )
+                relabeled_buffer.automorphism_order == reference_order || error(
+                    "weighted order changed under relabeling: mask=$mask colors=$colors map=$mapping",
+                )
                 multiplicity_witness_reconstructs(relabeled_buffer, relabeled_graph) ||
                     error("relabeled weighted witness does not reconstruct image")
                 relabel_cases += 1

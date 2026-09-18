@@ -9,21 +9,10 @@ include(joinpath(@__DIR__, "packed_levelwise_workspace.jl"))
 end
 
 const WORKSPACE_N3_PERMUTATIONS = (
-    [1, 2, 3],
-    [1, 3, 2],
-    [2, 1, 3],
-    [2, 3, 1],
-    [3, 1, 2],
-    [3, 2, 1],
+    [1, 2, 3], [1, 3, 2], [2, 1, 3], [2, 3, 1], [3, 1, 2], [3, 2, 1]
 )
 
-const WORKSPACE_N3_COLORINGS = (
-    [1, 1, 1],
-    [1, 1, 2],
-    [1, 2, 1],
-    [1, 2, 2],
-    [1, 2, 3],
-)
+const WORKSPACE_N3_COLORINGS = ([1, 1, 1], [1, 1, 2], [1, 2, 1], [1, 2, 2], [1, 2, 3])
 
 function workspace_graph_from_mask(n::Int, mask::UInt64)
     edges = Pair{Int,Int}[]
@@ -60,8 +49,7 @@ function workspace_same_image(
 end
 
 function workspace_witness_reconstructs(
-    buffer::GC.DirectedCanonicalizationBuffer,
-    graph::GC.DirectedGCGraph,
+    buffer::GC.DirectedCanonicalizationBuffer, graph::GC.DirectedGCGraph
 )::Bool
     n = graph.num_vertices
     @inbounds for canonical_source in 1:n
@@ -89,8 +77,9 @@ function certify_workspace_n3()
         graph = workspace_graph_from_mask(n, mask)
         for colors_tuple in WORKSPACE_N3_COLORINGS
             colors = collect(colors_tuple)
-            reference, reference_stats, reference_experimental =
-                LevelwiseReference.levelwise_trace_exact_buffer(graph, colors)
+            reference, reference_stats, reference_experimental = LevelwiseReference.levelwise_trace_exact_buffer(
+                graph, colors
+            )
             LevelwiseCandidate.canonicalize_levelwise_workspace!(
                 buffer, workspace, graph, colors
             )
@@ -162,13 +151,15 @@ end
 function certify_workspace_product(name::String, sizes::Tuple{Vararg{Int}})
     graph, colors = workspace_interleaved_anchored_cycles(sizes)
     n = graph.num_vertices
-    reference, reference_stats, reference_experimental =
-        LevelwiseReference.levelwise_trace_exact_buffer(graph, colors)
+    reference, reference_stats, reference_experimental = LevelwiseReference.levelwise_trace_exact_buffer(
+        graph, colors
+    )
     workspace = LevelwiseCandidate.PackedLevelwiseWorkspace(n; frontier_capacity=4096)
     buffer = GC.DirectedCanonicalizationBuffer(n)
     LevelwiseCandidate.canonicalize_levelwise_workspace!(buffer, workspace, graph, colors)
 
-    workspace_same_image(reference, buffer, n) || error("workspace image mismatch for $name")
+    workspace_same_image(reference, buffer, n) ||
+        error("workspace image mismatch for $name")
     buffer.automorphism_order == reference.automorphism_order ||
         error("workspace order mismatch for $name")
     workspace.generated_nodes == reference_stats.generated_nodes ||
@@ -181,7 +172,8 @@ function certify_workspace_product(name::String, sizes::Tuple{Vararg{Int}})
     allocated = @allocated LevelwiseCandidate.canonicalize_levelwise_workspace!(
         buffer, workspace, graph, colors
     )
-    iszero(allocated) || error("prepared levelwise path allocated $allocated bytes for $name")
+    iszero(allocated) ||
+        error("prepared levelwise path allocated $allocated bytes for $name")
 
     println(
         "LEVELWISE-WORKSPACE|",

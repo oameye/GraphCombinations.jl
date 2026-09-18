@@ -75,7 +75,9 @@ function assert_easy_equal(
     return nothing
 end
 
-function benchmark_easy_fixture(name::String, graph::GC.DirectedGCGraph, colors::Vector{Int})
+function benchmark_easy_fixture(
+    name::String, graph::GC.DirectedGCGraph, colors::Vector{Int}
+)
     n = graph.num_vertices
     base_workspace = GC.PackedDirectedCanonicalizationWorkspace(n)
     base_buffer = GC.DirectedCanonicalizationBuffer(n)
