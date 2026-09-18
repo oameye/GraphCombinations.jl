@@ -27,6 +27,17 @@ function bench_complete(n::Int)
     return bench_bidirected(n, edges), ones(Int, n)
 end
 
+bench_empty(n::Int) = (GC.DirectedGCGraph(Pair{Int,Int}[], n), ones(Int, n))
+
+function bench_complete_bipartite(left_size::Int, right_size::Int)
+    n = left_size + right_size
+    edges = Pair{Int,Int}[]
+    for left in 1:left_size, right in (left_size + 1):n
+        push!(edges, left => right)
+    end
+    return bench_bidirected(n, edges), ones(Int, n)
+end
+
 function bench_cycle(n::Int)
     edges = Pair{Int,Int}[]
     for vertex in 1:(n - 1)
@@ -94,6 +105,39 @@ function bench_hypercube(dimension::Int)
     return bench_bidirected(n, edges), ones(Int, n)
 end
 
+function bench_paley13()
+    p = 13
+    residues = Set((1, 3, 4, 9, 10, 12))
+    edges = Pair{Int,Int}[]
+    for zero_left in 0:(p - 1), zero_right in (zero_left + 1):(p - 1)
+        difference = mod(zero_right - zero_left, p)
+        difference in residues && push!(edges, (zero_left + 1) => (zero_right + 1))
+    end
+    return bench_bidirected(p, edges), ones(Int, p)
+end
+
+function bench_shrikhande()
+    size = 4
+    n = size * size
+    vertex(x, y) = mod(x, size) * size + mod(y, size) + 1
+    connection = ((1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, -1))
+    seen = Set{Tuple{Int,Int}}()
+    edges = Pair{Int,Int}[]
+    for x in 0:(size - 1), y in 0:(size - 1)
+        source = vertex(x, y)
+        for (dx, dy) in connection
+            target = vertex(x + dx, y + dy)
+            left, right = minmax(source, target)
+            left == right && continue
+            key = (left, right)
+            key in seen && continue
+            push!(seen, key)
+            push!(edges, left => right)
+        end
+    end
+    return bench_bidirected(n, edges), ones(Int, n)
+end
+
 function bench_repeated_directed_cycles(count::Int, size::Int)
     n = count * size
     edges = Pair{Int,Int}[]
@@ -105,6 +149,16 @@ function bench_repeated_directed_cycles(count::Int, size::Int)
                 (offset + local_vertex) => (offset + mod1(local_vertex + 1, size)),
             )
         end
+    end
+    return GC.DirectedGCGraph(edges, n), ones(Int, n)
+end
+
+function bench_deterministic_asymmetric(n::Int)
+    edges = Pair{Int,Int}[]
+    for source in 1:n, target in 1:n
+        source == target && continue
+        value = mod(37source + 53target + 7source * target + 11source^2 + 3target^2, 97)
+        value < 18 && push!(edges, source => target)
     end
     return GC.DirectedGCGraph(edges, n), ones(Int, n)
 end
@@ -149,12 +203,13 @@ function run_workspace_benchmark(
     name::String,
     graph::GC.DirectedGCGraph,
     colors::Vector{Int};
-    repetitions::Int=20,
+    repetitions::Int=40,
 )::Nothing
     n = graph.num_vertices
     level_buffer = GC.DirectedCanonicalizationBuffer(n)
     dfs_buffer = GC.DirectedCanonicalizationBuffer(n)
-    level = WorkspaceCandidate.PackedLevelwiseWorkspace(n; frontier_capacity=4096)
+    frontier_capacity = max(4096, 16 * max(n, 1)^2)
+    level = WorkspaceCandidate.PackedLevelwiseWorkspace(n; frontier_capacity)
     dfs = WorkspaceDFS.RecursiveStabilizerWorkspace(n)
 
     WorkspaceCandidate.canonicalize_levelwise_workspace!(level_buffer, level, graph, colors)
@@ -168,6 +223,9 @@ function run_workspace_benchmark(
     dfs_alloc = @allocated WorkspaceDFS.canonicalize_recursive_stabilizers!(
         dfs_buffer, dfs, graph, colors
     )
+    iszero(level_alloc) || error("levelwise allocated $level_alloc bytes for $name")
+    iszero(dfs_alloc) || error("recursive allocated $dfs_alloc bytes for $name")
+
     level_ns = minimum_levelwise_ns(
         level_buffer, level, graph, colors, repetitions
     )
@@ -183,39 +241,46 @@ function run_workspace_benchmark(
         "|dfs_ns=",
         dfs_ns,
         "|ratio=",
-        level_ns / dfs_ns,
+        round(level_ns / dfs_ns; digits=3),
         "|level_alloc=",
         level_alloc,
         "|dfs_alloc=",
         dfs_alloc,
         "|level_generated=",
         level.generated_nodes,
+        "|level_retained=",
+        level.retained_nodes,
         "|level_paths=",
         level.experimental_paths,
+        "|level_quotient_discards=",
+        level.quotient_discards,
         "|dfs_nodes=",
         dfs.packed.workspace.search_nodes,
+        "|dfs_leaves=",
+        dfs.packed.workspace.search_leaves,
     )
     return nothing
 end
 
-let graph, colors = bench_complete(9)
-    run_workspace_benchmark("complete-9", graph, colors)
+function run_fixture(
+    name::String,
+    fixture::Tuple{GC.DirectedGCGraph,Vector{Int}};
+    repetitions::Int=40,
+)::Nothing
+    graph, colors = fixture
+    run_workspace_benchmark(name, graph, colors; repetitions)
+    return nothing
 end
-let graph, colors = bench_cycle(31)
-    run_workspace_benchmark("cycle-31", graph, colors; repetitions=10)
-end
-let graph, colors = bench_petersen()
-    run_workspace_benchmark("petersen", graph, colors)
-end
-let graph, colors = bench_triangular(6)
-    run_workspace_benchmark("triangular-6", graph, colors)
-end
-let graph, colors = bench_rook(4)
-    run_workspace_benchmark("rook-4", graph, colors)
-end
-let graph, colors = bench_hypercube(5)
-    run_workspace_benchmark("hypercube-5", graph, colors; repetitions=10)
-end
-let graph, colors = bench_repeated_directed_cycles(4, 7)
-    run_workspace_benchmark("repeated-directed-c7x4", graph, colors; repetitions=10)
-end
+
+run_fixture("complete-9", bench_complete(9))
+run_fixture("empty-9", bench_empty(9))
+run_fixture("k6-6", bench_complete_bipartite(6, 6))
+run_fixture("cycle-31", bench_cycle(31); repetitions=20)
+run_fixture("petersen", bench_petersen())
+run_fixture("triangular-6", bench_triangular(6))
+run_fixture("rook-4", bench_rook(4))
+run_fixture("hypercube-5", bench_hypercube(5); repetitions=20)
+run_fixture("paley-13", bench_paley13())
+run_fixture("shrikhande", bench_shrikhande())
+run_fixture("repeated-directed-c7x4", bench_repeated_directed_cycles(4, 7); repetitions=20)
+run_fixture("asymmetric-24", bench_deterministic_asymmetric(24); repetitions=20)
