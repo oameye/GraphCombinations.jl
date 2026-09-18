@@ -468,9 +468,7 @@ function _search_packed_directed_root_workspace!(
             continue
         end
 
-        _packed_directed_seed_chosen_root_twins!(
-            packed, graph, chosen_vertex, target_mask
-        )
+        _packed_directed_seed_chosen_root_twins!(packed, graph, chosen_vertex, target_mask)
         packed.root_current_vertex = chosen_vertex
         packed.root_branch_order = 0
         packed.root_explored_mask |= _packed_directed_vertex_bit(chosen_vertex)
