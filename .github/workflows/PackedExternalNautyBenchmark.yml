@@ -7,6 +7,7 @@ on:
       - research-packed-external-nauty-benchmark
     paths:
       - research/packed_external_nauty_benchmark.jl
+      - research/packed_external_nauty_v073_driver.jl
       - .github/workflows/PackedExternalNautyBenchmark.yml
 
 permissions:
@@ -20,14 +21,14 @@ jobs:
       - uses: julia-actions/setup-julia@v3
         with:
           version: 'lts'
-      - name: Run exact external benchmark in isolated environment
+      - name: Benchmark against released NautyGraphs 0.7.3
         run: |
           julia --color=yes -e '
             using Pkg
             Pkg.activate(; temp=true)
             Pkg.develop(path=".")
-            Pkg.add("NautyGraphs")
+            Pkg.add(PackageSpec(name="NautyGraphs", version="0.7.3"))
             Pkg.add("Graphs")
             Pkg.status()
-            include("research/packed_external_nauty_benchmark.jl")
+            include("research/packed_external_nauty_v073_driver.jl")
           '
