@@ -1,0 +1,142 @@
+name: Packed root orbit pruning research
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - research-packed-root-orbit-pruning
+    paths:
+      - src/**
+      - test/**
+      - research/packed_root_orbit_benchmark.jl
+      - .github/workflows/PackedRootOrbitResearch.yml
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout candidate
+        uses: actions/checkout@v7
+        with:
+          path: candidate
+
+      - name: Checkout exact #181 baseline
+        uses: actions/checkout@v7
+        with:
+          ref: de4c85fbf3f833110b9c1dea70e30a6a99c8a8cd
+          path: baseline
+
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: lts
+          arch: x64
+
+      - uses: julia-actions/cache@v3
+
+      - name: Instantiate baseline benchmark environment
+        run: |
+          cd baseline/benchmarks
+          julia --project --color=yes -e '
+            using Pkg
+            Pkg.develop(PackageSpec(path=joinpath(pwd(), "..")))
+            Pkg.instantiate()'
+
+      - name: Benchmark #181 baseline
+        run: |
+          set -o pipefail
+          cd baseline/benchmarks
+          GC_VARIANT=baseline julia --project --color=yes \
+            ../../candidate/research/packed_root_orbit_benchmark.jl \
+            | tee ../../baseline-results.txt
+
+      - name: Instantiate candidate benchmark environment
+        run: |
+          cd candidate/benchmarks
+          julia --project --color=yes -e '
+            using Pkg
+            Pkg.develop(PackageSpec(path=joinpath(pwd(), "..")))
+            Pkg.instantiate()'
+
+      - name: Benchmark root-orbit candidate
+        run: |
+          set -o pipefail
+          cd candidate/benchmarks
+          GC_VARIANT=candidate julia --project --color=yes \
+            ../research/packed_root_orbit_benchmark.jl \
+            | tee ../../candidate-results.txt
+
+      - name: Compare exact semantics and attribution to #181
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def read(path):
+              semantics = {}
+              rows = {}
+              for line in Path(path).read_text().splitlines():
+                  if line.startswith("SEMANTIC|"):
+                      f = line.split("|")
+                      semantics[f[2]] = (f[3], f[4], int(f[5]))
+                  elif line.startswith("RESULT|"):
+                      f = line.split("|")
+                      rows[f[2]] = {
+                          "time": float(f[4]),
+                          "memory": int(f[5]),
+                          "allocs": int(f[6]),
+                          "nodes": int(f[7]),
+                          "leaves": int(f[8]),
+                          "rounds": int(f[9]),
+                          "steps": int(f[10]),
+                          "splits": int(f[11]),
+                          "skips": int(f[12]),
+                          "merges": int(f[13]),
+                          "automorphisms": int(f[14]),
+                      }
+              return semantics, rows
+
+          baseline_semantics, baseline = read("baseline-results.txt")
+          candidate_semantics, candidate = read("candidate-results.txt")
+          assert baseline.keys() == candidate.keys()
+          assert baseline_semantics.keys() == candidate_semantics.keys() == baseline.keys()
+
+          semantic_mismatches = [
+              name
+              for name in baseline_semantics
+              if baseline_semantics[name] != candidate_semantics[name]
+          ]
+          if semantic_mismatches:
+              raise SystemExit(f"exact semantic mismatches vs #181: {semantic_mismatches}")
+
+          print("fixture | time ratio | nodes | leaves | rounds | skips/merges/auts | memory")
+          print("--- | ---: | ---: | ---: | ---: | ---: | ---:")
+          regressions = []
+          allocation_regressions = []
+          total_skips = 0
+          total_node_reduction = 0
+          for name in baseline:
+              b = baseline[name]
+              c = candidate[name]
+              ratio = c["time"] / b["time"]
+              print(
+                  f"{name} | {ratio:.3f}x | {b['nodes']}->{c['nodes']} | "
+                  f"{b['leaves']}->{c['leaves']} | {b['rounds']}->{c['rounds']} | "
+                  f"{c['skips']}/{c['merges']}/{c['automorphisms']} | {c['memory']} B"
+              )
+              total_skips += max(c["skips"], 0)
+              total_node_reduction += b["nodes"] - c["nodes"]
+              if c["memory"] > b["memory"] or c["allocs"] > b["allocs"]:
+                  allocation_regressions.append(name)
+              if ratio > 1.10:
+                  regressions.append((name, ratio))
+
+          if allocation_regressions:
+              raise SystemExit(f"allocation regressions: {allocation_regressions}")
+          if total_skips == 0 or total_node_reduction <= 0:
+              raise SystemExit("root-orbit pruning did not reduce the attribution search trees")
+          if regressions:
+              raise SystemExit(f">10% timing regressions: {regressions}")
+          PY
