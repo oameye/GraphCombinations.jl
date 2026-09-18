@@ -71,7 +71,9 @@ function two_permutation_regular(permutation::Vector{Int})
     return GC.DirectedGCGraph(edges, n), ones(Int, n)
 end
 
-metric(workspace, name::Symbol) = hasproperty(workspace, name) ? getproperty(workspace, name) : -1
+function metric(workspace, name::Symbol)
+    return hasproperty(workspace, name) ? getproperty(workspace, name) : -1
+end
 
 function benchmark_fixture(name::String, graph::GC.DirectedGCGraph, colors::Vector{Int})
     n = graph.num_vertices
