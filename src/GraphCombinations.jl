@@ -70,10 +70,7 @@ function canonicalize_directed_simple!(
     length(vertex_colors) >= n ||
         throw(ArgumentError("vertex_colors must cover every active vertex."))
     return canonicalize_directed_simple!(
-        buffer,
-        workspace,
-        _directed_graph_view(graph),
-        @view(vertex_colors[1:n]),
+        buffer, workspace, _directed_graph_view(graph), @view(vertex_colors[1:n])
     )
 end
 

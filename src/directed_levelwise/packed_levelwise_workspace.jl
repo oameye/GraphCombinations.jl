@@ -1,5 +1,3 @@
-include(joinpath(@__DIR__, "packed_incremental_refinement_trace.jl"))
-
 mutable struct PackedLevelwiseWorkspace
     traced::IncrementalRefinementTraceWorkspace
     path_packed::GC.PackedDirectedCanonicalizationWorkspace
@@ -88,10 +86,7 @@ function reset_levelwise_stats!(candidate::PackedLevelwiseWorkspace)::Nothing
 end
 
 function levelwise_target_color!(
-    candidate::PackedLevelwiseWorkspace,
-    colors::Vector{Int},
-    node::Int,
-    n::Int,
+    candidate::PackedLevelwiseWorkspace, colors::Vector{Int}, node::Int, n::Int
 )::Int
     @inbounds for color in 1:n
         candidate.cell_counts[color] = 0
@@ -173,16 +168,14 @@ function levelwise_prepare_child_trace!(
 end
 
 function levelwise_store_traced_child!(
-    candidate::PackedLevelwiseWorkspace,
-    node::Int,
-    multiplicity::Int,
-    n::Int,
+    candidate::PackedLevelwiseWorkspace, node::Int, multiplicity::Int, n::Int
 )::Nothing
     node <= candidate.frontier_capacity || error("levelwise frontier capacity exhausted")
     workspace = candidate.traced.packed.workspace
     @inbounds for vertex in 1:n
-        candidate.next_colors[levelwise_slot(candidate, node, vertex)] =
-            workspace.color_stack[vertex, 1]
+        candidate.next_colors[levelwise_slot(candidate, node, vertex)] = workspace.color_stack[
+            vertex, 1
+        ]
     end
     @inbounds candidate.next_multiplicities[node] = multiplicity
     return nothing
@@ -194,8 +187,9 @@ function levelwise_store_root!(
     n = graph.num_vertices
     workspace = candidate.traced.packed.workspace
     @inbounds for vertex in 1:n
-        candidate.current_colors[levelwise_slot(candidate, 1, vertex)] =
-            workspace.color_stack[vertex, 1]
+        candidate.current_colors[levelwise_slot(candidate, 1, vertex)] = workspace.color_stack[
+            vertex, 1
+        ]
     end
     candidate.current_multiplicities[1] = 1
     return nothing
@@ -287,23 +281,21 @@ function levelwise_image_hash(
 end
 
 function levelwise_same_retained_image(
-    candidate::PackedLevelwiseWorkspace,
-    graph::GC.DirectedGCGraph,
-    retained::Int,
+    candidate::PackedLevelwiseWorkspace, graph::GC.DirectedGCGraph, retained::Int
 )::Bool
     n = graph.num_vertices
     @inbounds for canonical_source in 1:n
-        retained_source = candidate.retained_inverses[
-            levelwise_slot(candidate, retained, canonical_source)
-        ]
+        retained_source = candidate.retained_inverses[levelwise_slot(
+            candidate, retained, canonical_source
+        )]
         scratch_source = candidate.scratch_inverse[canonical_source]
         for canonical_target in 1:n
-            retained_target = candidate.retained_inverses[
-                levelwise_slot(candidate, retained, canonical_target)
-            ]
+            retained_target = candidate.retained_inverses[levelwise_slot(
+                candidate, retained, canonical_target
+            )]
             scratch_target = candidate.scratch_inverse[canonical_target]
             graph.multiplicities[GC._directed_slot(retained_source, retained_target, n)] ==
-                graph.multiplicities[GC._directed_slot(scratch_source, scratch_target, n)] ||
+            graph.multiplicities[GC._directed_slot(scratch_source, scratch_target, n)] ||
                 return false
         end
     end
@@ -321,12 +313,12 @@ function levelwise_partition_transport(
     # graph automorphism.  This check proves that the same automorphism also
     # transports the retained frontier partition onto the candidate partition.
     @inbounds for canonical_vertex in 1:n
-        left_vertex = candidate.retained_inverses[
-            levelwise_slot(candidate, retained, canonical_vertex)
-        ]
+        left_vertex = candidate.retained_inverses[levelwise_slot(
+            candidate, retained, canonical_vertex
+        )]
         right_vertex = candidate.scratch_inverse[canonical_vertex]
         colors[levelwise_slot(candidate, retained, left_vertex)] ==
-            colors[levelwise_slot(candidate, node, right_vertex)] || return false
+        colors[levelwise_slot(candidate, node, right_vertex)] || return false
     end
     return true
 end
@@ -340,8 +332,9 @@ function levelwise_copy_partition!(
 )::Nothing
     destination == source && return nothing
     @inbounds for vertex in 1:n
-        colors[levelwise_slot(candidate, destination, vertex)] =
-            colors[levelwise_slot(candidate, source, vertex)]
+        colors[levelwise_slot(candidate, destination, vertex)] = colors[levelwise_slot(
+            candidate, source, vertex
+        )]
     end
     return nothing
 end
@@ -350,17 +343,13 @@ function levelwise_store_retained_inverse!(
     candidate::PackedLevelwiseWorkspace, retained::Int, n::Int
 )::Nothing
     @inbounds for canonical_vertex in 1:n
-        candidate.retained_inverses[
-            levelwise_slot(candidate, retained, canonical_vertex)
-        ] = candidate.scratch_inverse[canonical_vertex]
+        candidate.retained_inverses[levelwise_slot(candidate, retained, canonical_vertex)] = candidate.scratch_inverse[canonical_vertex]
     end
     return nothing
 end
 
 function levelwise_quotient_next_frontier!(
-    candidate::PackedLevelwiseWorkspace,
-    graph::GC.DirectedGCGraph,
-    next_count::Int,
+    candidate::PackedLevelwiseWorkspace, graph::GC.DirectedGCGraph, next_count::Int
 )::Int
     n = graph.num_vertices
     retained_count = 0
@@ -392,12 +381,9 @@ function levelwise_quotient_next_frontier!(
         end
 
         retained_count += 1
-        levelwise_copy_partition!(
-            candidate, candidate.next_colors, retained_count, node, n
-        )
+        levelwise_copy_partition!(candidate, candidate.next_colors, retained_count, node, n)
         if retained_count != node
-            candidate.next_multiplicities[retained_count] =
-                candidate.next_multiplicities[node]
+            candidate.next_multiplicities[retained_count] = candidate.next_multiplicities[node]
         end
         levelwise_store_retained_inverse!(candidate, retained_count, n)
         candidate.retained_hashes[retained_count] = image_hash
@@ -406,10 +392,7 @@ function levelwise_quotient_next_frontier!(
 end
 
 function levelwise_discrete_inverse!(
-    candidate::PackedLevelwiseWorkspace,
-    colors::Vector{Int},
-    node::Int,
-    n::Int,
+    candidate::PackedLevelwiseWorkspace, colors::Vector{Int}, node::Int, n::Int
 )::Nothing
     @inbounds for vertex in 1:n
         canonical_vertex = colors[levelwise_slot(candidate, node, vertex)]
@@ -418,9 +401,7 @@ function levelwise_discrete_inverse!(
     return nothing
 end
 
-function levelwise_inverse_lex_less(
-    left::Vector{Int}, right::Vector{Int}, n::Int
-)::Bool
+function levelwise_inverse_lex_less(left::Vector{Int}, right::Vector{Int}, n::Int)::Bool
     @inbounds for index in 1:n
         left[index] == right[index] && continue
         return left[index] < right[index]
@@ -428,9 +409,7 @@ function levelwise_inverse_lex_less(
     return false
 end
 
-function levelwise_copy_best_inverse!(
-    candidate::PackedLevelwiseWorkspace, n::Int
-)::Nothing
+function levelwise_copy_best_inverse!(candidate::PackedLevelwiseWorkspace, n::Int)::Nothing
     @inbounds for canonical_vertex in 1:n
         candidate.best_inverse[canonical_vertex] = candidate.scratch_inverse[canonical_vertex]
     end
@@ -449,9 +428,7 @@ function levelwise_finalize!(
     candidate.leaves = current_count
 
     @inbounds for node in 1:current_count
-        levelwise_discrete_inverse!(
-            candidate, candidate.current_colors, node, n
-        )
+        levelwise_discrete_inverse!(candidate, candidate.current_colors, node, n)
         multiplicity = candidate.current_multiplicities[node]
         if !has_best
             levelwise_copy_best_inverse!(candidate, n)
@@ -467,9 +444,7 @@ function levelwise_finalize!(
             levelwise_copy_best_inverse!(candidate, n)
             automorphism_order = multiplicity
         elseif iszero(comparison)
-            automorphism_order = Base.Checked.checked_add(
-                automorphism_order, multiplicity
-            )
+            automorphism_order = Base.Checked.checked_add(automorphism_order, multiplicity)
             if levelwise_inverse_lex_less(
                 candidate.scratch_inverse, candidate.best_inverse, n
             )
@@ -479,9 +454,7 @@ function levelwise_finalize!(
     end
 
     has_best || error("levelwise search produced no canonical leaf")
-    GC._write_directed_buffer!(
-        buffer, graph, candidate.best_inverse, automorphism_order
-    )
+    GC._write_directed_buffer!(buffer, graph, candidate.best_inverse, automorphism_order)
     return buffer
 end
 
@@ -510,9 +483,7 @@ function canonicalize_levelwise_workspace!(
     while true
         candidate.levels += 1
         candidate.maximum_frontier = max(candidate.maximum_frontier, current_count)
-        root_target = levelwise_target_color!(
-            candidate, candidate.current_colors, 1, n
-        )
+        root_target = levelwise_target_color!(candidate, candidate.current_colors, 1, n)
         if iszero(root_target)
             return levelwise_finalize!(buffer, candidate, graph, current_count)
         end
@@ -528,9 +499,8 @@ function canonicalize_levelwise_workspace!(
             iszero(target_color) && error("mixed discrete/non-discrete trace frontier")
 
             for chosen_vertex in 1:n
-                candidate.current_colors[
-                    levelwise_slot(candidate, node, chosen_vertex)
-                ] == target_color || continue
+                candidate.current_colors[levelwise_slot(candidate, node, chosen_vertex)] ==
+                target_color || continue
 
                 levelwise_prepare_child_trace!(
                     candidate,
@@ -541,8 +511,7 @@ function canonicalize_levelwise_workspace!(
                     chosen_vertex,
                 )
                 candidate.generated_nodes += 1
-                comparison = has_best_trace ?
-                    levelwise_compare_trace_to_best(candidate) : 1
+                comparison = has_best_trace ? levelwise_compare_trace_to_best(candidate) : 1
 
                 if comparison > 0
                     candidate.discarded_by_trace += next_count
@@ -550,20 +519,14 @@ function canonicalize_levelwise_workspace!(
                     levelwise_copy_best_trace!(candidate)
                     has_best_trace = true
                     levelwise_store_traced_child!(
-                        candidate,
-                        next_count,
-                        candidate.current_multiplicities[node],
-                        n,
+                        candidate, next_count, candidate.current_multiplicities[node], n
                     )
                 elseif iszero(comparison)
                     next_count += 1
                     next_count <= candidate.frontier_capacity ||
                         error("levelwise frontier capacity exhausted")
                     levelwise_store_traced_child!(
-                        candidate,
-                        next_count,
-                        candidate.current_multiplicities[node],
-                        n,
+                        candidate, next_count, candidate.current_multiplicities[node], n
                     )
                 else
                     candidate.discarded_by_trace += 1
@@ -573,9 +536,7 @@ function canonicalize_levelwise_workspace!(
 
         iszero(next_count) && error("levelwise trace search produced an empty frontier")
         if !iszero(levelwise_target_color!(candidate, candidate.next_colors, 1, n))
-            next_count = levelwise_quotient_next_frontier!(
-                candidate, graph, next_count
-            )
+            next_count = levelwise_quotient_next_frontier!(candidate, graph, next_count)
         end
         candidate.retained_nodes += next_count
 

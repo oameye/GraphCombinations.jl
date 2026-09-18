@@ -1,21 +1,8 @@
 include(joinpath(@__DIR__, "packed_incremental_refinement_trace.jl"))
 
-const N3_PERMUTATIONS = (
-    [1, 2, 3],
-    [1, 3, 2],
-    [2, 1, 3],
-    [2, 3, 1],
-    [3, 1, 2],
-    [3, 2, 1],
-)
+const N3_PERMUTATIONS = ([1, 2, 3], [1, 3, 2], [2, 1, 3], [2, 3, 1], [3, 1, 2], [3, 2, 1])
 
-const N3_COLORINGS = (
-    [1, 1, 1],
-    [1, 1, 2],
-    [1, 2, 1],
-    [1, 2, 2],
-    [1, 2, 3],
-)
+const N3_COLORINGS = ([1, 1, 1], [1, 1, 2], [1, 2, 1], [1, 2, 2], [1, 2, 3])
 
 function graph_from_mask(n::Int, mask::UInt64)
     edges = Pair{Int,Int}[]
@@ -44,14 +31,12 @@ function assert_same_trace(
     right::IncrementalRefinementTraceWorkspace,
     label::String,
 )::Nothing
-    left.trace_length == right.trace_length ||
-        error("trace length mismatch: $label")
+    left.trace_length == right.trace_length || error("trace length mismatch: $label")
     @inbounds for index in 1:left.trace_length
         left.trace[index] == right.trace[index] ||
             error("trace mismatch at event coordinate $index: $label")
     end
-    left.split_events == right.split_events ||
-        error("split-event mismatch: $label")
+    left.split_events == right.split_events || error("split-event mismatch: $label")
     return nothing
 end
 
@@ -74,7 +59,8 @@ function assert_root_refinement_matches_reference!(
 
     traced_workspace = traced.packed.workspace
     @inbounds for vertex in 1:n
-        traced_workspace.color_stack[vertex, 1] == reference_workspace.color_stack[vertex, 1] ||
+        traced_workspace.color_stack[vertex, 1] ==
+        reference_workspace.color_stack[vertex, 1] ||
             error("root refined partition mismatch at vertex $vertex: $label")
     end
     return nothing
@@ -121,14 +107,17 @@ function certify_n3_root_and_child_trace_invariance()
                 mapped_colors = relabel_colors(colors, mapping)
 
                 refine_root_trace!(relabeled, relabeled_graph, mapped_colors)
-                length(base_root_trace) == relabeled.trace_length ||
-                    error("root trace length mismatch mask=$mask colors=$colors map=$mapping")
+                length(base_root_trace) == relabeled.trace_length || error(
+                    "root trace length mismatch mask=$mask colors=$colors map=$mapping"
+                )
                 @inbounds for index in eachindex(base_root_trace)
-                    base_root_trace[index] == relabeled.trace[index] ||
-                        error("root trace mismatch mask=$mask colors=$colors map=$mapping index=$index")
+                    base_root_trace[index] == relabeled.trace[index] || error(
+                        "root trace mismatch mask=$mask colors=$colors map=$mapping index=$index",
+                    )
                 end
-                base_root_splits == relabeled.split_events ||
-                    error("root split count mismatch mask=$mask colors=$colors map=$mapping")
+                base_root_splits == relabeled.split_events || error(
+                    "root split count mismatch mask=$mask colors=$colors map=$mapping"
+                )
                 root_cases += 1
 
                 for chosen in targets
