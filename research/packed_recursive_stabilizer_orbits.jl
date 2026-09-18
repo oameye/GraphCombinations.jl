@@ -14,6 +14,9 @@ mutable struct RecursiveStabilizerWorkspace
     orbit_skips::Vector{Int}
     orbit_merges::Vector{Int}
     automorphisms::Vector{Int}
+    total_orbit_skips::Int
+    total_orbit_merges::Int
+    total_automorphisms::Int
 end
 
 function RecursiveStabilizerWorkspace(capacity::Integer)
@@ -36,6 +39,9 @@ function RecursiveStabilizerWorkspace(capacity::Integer)
         zeros(Int, depth_capacity),
         zeros(Int, depth_capacity),
         zeros(Int, depth_capacity),
+        0,
+        0,
+        0,
     )
 end
 
@@ -66,6 +72,7 @@ function recursive_orbit_union!(
     left_root == right_root && return nothing
     @inbounds candidate.orbit_parent[recursive_slot(candidate, depth, right_root)] = left_root
     candidate.orbit_merges[depth] += 1
+    candidate.total_orbit_merges += 1
     return nothing
 end
 
@@ -227,6 +234,7 @@ function recursive_record_automorphism!(
         recursive_orbit_union!(candidate, depth, best_vertex, child_vertex)
     end
     candidate.automorphisms[depth] += 1
+    candidate.total_automorphisms += 1
     return nothing
 end
 
@@ -278,6 +286,7 @@ function recursive_search!(
         iszero(target_mask & recursive_bit(chosen_vertex)) && continue
         if recursive_candidate_explored(candidate, depth, chosen_vertex)
             candidate.orbit_skips[depth] += 1
+            candidate.total_orbit_skips += 1
             continue
         end
 
@@ -345,6 +354,9 @@ function canonicalize_recursive_stabilizers!(
     fill!(candidate.orbit_skips, 0)
     fill!(candidate.orbit_merges, 0)
     fill!(candidate.automorphisms, 0)
+    candidate.total_orbit_skips = 0
+    candidate.total_orbit_merges = 0
+    candidate.total_automorphisms = 0
 
     GC._directed_workspace_initialize_colors!(workspace, n)
     automorphism_order = recursive_search!(candidate, graph, 1)
