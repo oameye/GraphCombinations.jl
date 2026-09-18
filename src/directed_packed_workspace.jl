@@ -275,85 +275,48 @@ function _packed_directed_workspace_refine!(
     return num_colors
 end
 
-function _packed_directed_prepare_canonical_lower_bound!(
-    packed::PackedDirectedCanonicalizationWorkspace, num_colors::Int
-)::Nothing
-    workspace = packed.workspace
-    canonical_position = 0
-
-    @inbounds for color in 1:num_colors
-        cell_mask = packed.cell_masks[color]
-        members = cell_mask
-        common_out = typemax(UInt64)
-        diagonal_lower = 1
-        offdiagonal_lower = 1
-
-        while !iszero(members)
-            vertex = trailing_zeros(members) + 1
-            bit = _packed_directed_vertex_bit(vertex)
-            row = packed.out_rows[vertex]
-            common_out &= row
-            diagonal_lower &= !iszero(row & bit)
-            offdiagonal_lower &= iszero((cell_mask & ~bit) & ~row)
-            members &= members - UInt64(1)
-        end
-
-        packed.active_masks[color] = common_out
-        packed.splitter_keys[color] = diagonal_lower | (offdiagonal_lower << 1)
-        cell_size = count_ones(cell_mask)
-        for _ in 1:cell_size
-            canonical_position += 1
-            workspace.order[canonical_position] = color
-        end
-    end
-    return nothing
-end
-
-@inline function _packed_directed_canonical_lower_value(
-    packed::PackedDirectedCanonicalizationWorkspace,
-    source_color::Int,
-    target_color::Int,
-    source_position::Int,
-    target_position::Int,
-)::Int
-    if source_color == target_color
-        lower_bits = packed.splitter_keys[source_color]
-        return if source_position == target_position
-            (lower_bits & 1)
-        else
-            ((lower_bits >> 1) & 1)
-        end
-    end
-    target_mask = packed.cell_masks[target_color]
-    return iszero(target_mask & ~packed.active_masks[source_color]) ? 1 : 0
-end
-
 function _packed_directed_canonical_prefix_prunable!(
     packed::PackedDirectedCanonicalizationWorkspace, graph::DirectedGCGraph, num_colors::Int
 )::Bool
     workspace = packed.workspace
     workspace.has_best || return false
     packed.canonical_prefix_checks += 1
-    _packed_directed_prepare_canonical_lower_bound!(packed, num_colors)
 
-    n = graph.num_vertices
-    @inbounds for new_source in 1:n
-        source_color = workspace.order[new_source]
-        best_source = workspace.best_inverse_mapping[new_source]
-        best_row = packed.out_rows[best_source]
-        for new_target in 1:n
-            target_color = workspace.order[new_target]
-            lower_value = _packed_directed_canonical_lower_value(
-                packed, source_color, target_color, new_source, new_target
-            )
-            best_target = workspace.best_inverse_mapping[new_target]
-            best_value = iszero(best_row & _packed_directed_vertex_bit(best_target)) ? 0 : 1
-            lower_value == best_value && continue
-            if lower_value > best_value
-                packed.canonical_prefix_prunes += 1
-                return true
+    source_position = 0
+    @inbounds for source_color in 1:num_colors
+        source_mask = packed.cell_masks[source_color]
+        source_size = count_ones(source_mask)
+        representative = trailing_zeros(source_mask) + 1
+        representative_row = packed.out_rows[representative]
+
+        for _ in 1:source_size
+            source_position += 1
+            best_source = workspace.best_inverse_mapping[source_position]
+            best_row = packed.out_rows[best_source]
+            target_position = 0
+
+            for target_color in 1:num_colors
+                target_mask = packed.cell_masks[target_color]
+                target_size = count_ones(target_mask)
+                edge_count = count_ones(representative_row & target_mask)
+                zero_count = target_size - edge_count
+
+                for _ in 1:zero_count
+                    target_position += 1
+                    best_target = workspace.best_inverse_mapping[target_position]
+                    if !iszero(best_row & _packed_directed_vertex_bit(best_target))
+                        return false
+                    end
+                end
+                for _ in 1:edge_count
+                    target_position += 1
+                    best_target = workspace.best_inverse_mapping[target_position]
+                    if iszero(best_row & _packed_directed_vertex_bit(best_target))
+                        packed.canonical_prefix_prunes += 1
+                        return true
+                    end
+                end
             end
-            return false
         end
     end
     return false
