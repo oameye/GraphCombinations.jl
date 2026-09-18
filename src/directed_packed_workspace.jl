@@ -87,15 +87,13 @@ function _packed_directed_workspace_build_cell_masks!(
 )::Int
     workspace = packed.workspace
     n = graph.num_vertices
-    num_colors = 0
-    @inbounds for vertex in 1:n
-        num_colors = max(num_colors, workspace.color_stack[vertex, depth])
-    end
-    @inbounds for color in 1:num_colors
+    @inbounds for color in 1:n
         packed.cell_masks[color] = 0
     end
+    num_colors = 0
     @inbounds for vertex in 1:n
         color = workspace.color_stack[vertex, depth]
+        num_colors = max(num_colors, color)
         packed.cell_masks[color] |= _packed_directed_vertex_bit(vertex)
     end
     return num_colors
@@ -246,6 +244,9 @@ function _packed_directed_workspace_refine_splitter!(
     end
     @inbounds for color in 1:next_color
         packed.cell_masks[color] = packed.next_active_masks[color]
+    end
+    @inbounds for color in (next_color + 1):n
+        packed.cell_masks[color] = 0
     end
     return split_members, next_color
 end
