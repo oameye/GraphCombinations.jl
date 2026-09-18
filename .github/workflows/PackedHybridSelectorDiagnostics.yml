@@ -1,0 +1,28 @@
+name: Packed hybrid selector diagnostics
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - research-packed-hybrid-stabilizer-selector
+    paths:
+      - research/packed_hybrid_selector_diagnostics.jl
+      - .github/workflows/PackedHybridSelectorDiagnostics.yml
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: lts
+          arch: x64
+      - uses: julia-actions/cache@v3
+      - name: Instantiate package
+        run: julia --project --color=yes -e 'using Pkg; Pkg.instantiate()'
+      - name: Print post-root structural signatures
+        run: julia --project --color=yes research/packed_hybrid_selector_diagnostics.jl
