@@ -8,6 +8,7 @@ on:
     paths:
       - research/packed_incremental_refinement_trace.jl
       - research/packed_incremental_refinement_trace_certification.jl
+      - research/packed_incremental_refinement_trace_discrimination.jl
       - .github/workflows/PackedIncrementalRefinementTraceResearch.yml
 
 permissions:
@@ -31,3 +32,6 @@ jobs:
 
       - name: Certify exact refinement-event trace invariance
         run: julia --project --color=yes research/packed_incremental_refinement_trace_certification.jl
+
+      - name: Measure rooted-orbit discrimination
+        run: julia --project --color=yes research/packed_incremental_refinement_trace_discrimination.jl
