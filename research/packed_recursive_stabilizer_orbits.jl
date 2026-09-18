@@ -1,4 +1,3 @@
-using BenchmarkTools
 import GraphCombinations as GC
 
 mutable struct RecursiveStabilizerWorkspace
