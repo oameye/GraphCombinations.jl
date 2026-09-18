@@ -22,17 +22,26 @@ jobs:
       - name: Apply formatter-exact replacement
         run: |
           python - <<'PY'
+          import re
           from pathlib import Path
+
           path = Path("src/directed_packed_workspace.jl")
           text = path.read_text()
-          old = '''        _packed_directed_seed_chosen_root_twins!(
-              packed, graph, chosen_vertex, target_mask
-          )'''
-          new = '''        _packed_directed_seed_chosen_root_twins!(packed, graph, chosen_vertex, target_mask)'''
-          count = text.count(old)
-          if count != 1:
-              raise SystemExit(f"expected exactly one formatter replacement, found {count}")
-          path.write_text(text.replace(old, new, 1))
+          pattern = re.compile(
+              r"_packed_directed_seed_chosen_root_twins!\(\s*"
+              r"packed,\s*graph,\s*chosen_vertex,\s*target_mask\s*\)"
+          )
+          matches = list(pattern.finditer(text))
+          if len(matches) != 1:
+              raise SystemExit(
+                  f"expected exactly one lazy-root call, found {len(matches)}"
+              )
+          text = pattern.sub(
+              "_packed_directed_seed_chosen_root_twins!(packed, graph, chosen_vertex, target_mask)",
+              text,
+              count=1,
+          )
+          path.write_text(text)
           PY
 
       - name: Commit formatter patch
