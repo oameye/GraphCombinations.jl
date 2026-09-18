@@ -1,0 +1,47 @@
+name: Apply trace ordering fix
+
+on:
+  push:
+    branches:
+      - research-packed-trace-ordered-stabilizers
+    paths:
+      - .github/workflows/ApplyTraceOrderingFix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: research-packed-trace-ordered-stabilizers
+          fetch-depth: 0
+
+      - name: Fix insertion comparison
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path("research/packed_trace_ordered_stabilizers.jl")
+          text = path.read_text()
+          marker = "function trace_prepare_candidate_order!(\n"
+          helper = '''@inline function trace_candidate_values_precede(\n    candidate::TraceOrderedRecursiveWorkspace,\n    depth::Int,\n    left_cells::Int,\n    left_hash::UInt64,\n    left_vertex::Int,\n    right_position::Int,\n)::Bool\n    right_slot = trace_candidate_slot(candidate, depth, right_position)\n    right_cells = candidate.candidate_refined_cells[right_slot]\n    left_cells != right_cells && return left_cells > right_cells\n\n    right_hash = candidate.candidate_trace_hash[right_slot]\n    left_hash != right_hash && return left_hash < right_hash\n\n    return left_vertex < candidate.candidate_order[right_slot]\nend\n\n'''
+          if text.count(marker) != 1:
+              raise SystemExit("trace_prepare marker not unique")
+          text = text.replace(marker, helper + marker, 1)
+          old = "while position >= 1 && trace_candidate_precedes(candidate, depth, index, position)"
+          new = "while position >= 1 && trace_candidate_values_precede(\n            candidate, depth, refined_cells, trace_hash, vertex, position\n        )"
+          if text.count(old) != 1:
+              raise SystemExit("insertion comparison not unique")
+          text = text.replace(old, new, 1)
+          path.write_text(text)
+          PY
+
+      - name: Commit patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add research/packed_trace_ordered_stabilizers.jl
+          git commit -m "research: fix trace insertion ordering"
+          git push origin HEAD:research-packed-trace-ordered-stabilizers
