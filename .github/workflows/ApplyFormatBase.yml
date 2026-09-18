@@ -1,0 +1,40 @@
+name: Apply formatter-only production base
+
+on:
+  push:
+    branches:
+      - production-levelwise-format-base
+    paths:
+      - .github/workflows/ApplyFormatBase.yml
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: production-levelwise-format-base
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: '1'
+      - name: Normalize inherited research formatter debt
+        run: |
+          julia --color=yes -e '
+            using Pkg
+            Pkg.activate(; temp=true)
+            Pkg.add("JuliaFormatter")
+            using JuliaFormatter
+            format(".")
+          '
+      - name: Commit formatter-only base
+        shell: bash
+        run: |
+          git diff --check
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m "style: normalize incremental-child research stack"
+          git push origin HEAD:production-levelwise-format-base
