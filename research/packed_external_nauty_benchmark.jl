@@ -1,5 +1,5 @@
 import GraphCombinations as GC
-using NautyGraphs
+import NautyGraphs
 using Graphs
 
 module ExternalLevelwise
@@ -200,25 +200,28 @@ function run_external_benchmark(name::String, fixture; repetitions::Int=40)
     dfs_buffer.automorphism_order == level_buffer.automorphism_order ||
         error("GC exact-order disagreement for $name")
 
-    dense = to_nauty(NautyDiGraph, graph, colors)
-    sparse = to_nauty(SpNautyDiGraph, graph, colors)
-    dense_buffer = NautyBuffer(dense)
-    sparse_buffer = NautyBuffer(sparse)
+    dense = to_nauty(NautyGraphs.NautyDiGraph, graph, colors)
+    sparse = to_nauty(NautyGraphs.SpNautyDiGraph, graph, colors)
+    dense_buffer = NautyGraphs.NautyBuffer(dense)
+    sparse_buffer = NautyGraphs.NautyBuffer(sparse)
 
-    _, dense_exact_group = nauty(dense; exact_order=true, buffer=dense_buffer)
-    _, sparse_exact_group = nauty(sparse; exact_order=true, buffer=sparse_buffer)
-    BigInt(dfs_buffer.automorphism_order) == order(dense_exact_group) ||
+    _, dense_exact_group = NautyGraphs.nauty(
+        dense; exact_order=true, buffer=dense_buffer
+    )
+    _, sparse_exact_group = NautyGraphs.nauty(
+        sparse; exact_order=true, buffer=sparse_buffer
+    )
+    BigInt(dfs_buffer.automorphism_order) == NautyGraphs.order(dense_exact_group) ||
         error("dense Nauty exact-order disagreement for $name")
-    BigInt(dfs_buffer.automorphism_order) == order(sparse_exact_group) ||
+    BigInt(dfs_buffer.automorphism_order) == NautyGraphs.order(sparse_exact_group) ||
         error("sparse Nauty exact-order disagreement for $name")
 
-    # Warm all code paths before allocation/time attribution.
     ExternalDFS.canonicalize_recursive_stabilizers!(dfs_buffer, dfs_workspace, graph, colors)
     ExternalLevelwise.canonicalize_levelwise_workspace!(level_buffer, level_workspace, graph, colors)
-    nauty(dense; exact_order=true, buffer=dense_buffer)
-    nauty(sparse; exact_order=true, buffer=sparse_buffer)
-    nauty(dense; buffer=dense_buffer)
-    nauty(sparse; buffer=sparse_buffer)
+    NautyGraphs.nauty(dense; exact_order=true, buffer=dense_buffer)
+    NautyGraphs.nauty(sparse; exact_order=true, buffer=sparse_buffer)
+    NautyGraphs.nauty(dense; buffer=dense_buffer)
+    NautyGraphs.nauty(sparse; buffer=sparse_buffer)
 
     dfs_alloc = @allocated ExternalDFS.canonicalize_recursive_stabilizers!(
         dfs_buffer, dfs_workspace, graph, colors
@@ -226,10 +229,14 @@ function run_external_benchmark(name::String, fixture; repetitions::Int=40)
     level_alloc = @allocated ExternalLevelwise.canonicalize_levelwise_workspace!(
         level_buffer, level_workspace, graph, colors
     )
-    dense_exact_alloc = @allocated nauty(dense; exact_order=true, buffer=dense_buffer)
-    sparse_exact_alloc = @allocated nauty(sparse; exact_order=true, buffer=sparse_buffer)
-    dense_default_alloc = @allocated nauty(dense; buffer=dense_buffer)
-    sparse_default_alloc = @allocated nauty(sparse; buffer=sparse_buffer)
+    dense_exact_alloc = @allocated NautyGraphs.nauty(
+        dense; exact_order=true, buffer=dense_buffer
+    )
+    sparse_exact_alloc = @allocated NautyGraphs.nauty(
+        sparse; exact_order=true, buffer=sparse_buffer
+    )
+    dense_default_alloc = @allocated NautyGraphs.nauty(dense; buffer=dense_buffer)
+    sparse_default_alloc = @allocated NautyGraphs.nauty(sparse; buffer=sparse_buffer)
 
     dfs_ns = minimum_call_ns(repetitions) do
         ExternalDFS.canonicalize_recursive_stabilizers!(
@@ -242,16 +249,16 @@ function run_external_benchmark(name::String, fixture; repetitions::Int=40)
         )
     end
     dense_exact_ns = minimum_call_ns(repetitions) do
-        nauty(dense; exact_order=true, buffer=dense_buffer)
+        NautyGraphs.nauty(dense; exact_order=true, buffer=dense_buffer)
     end
     sparse_exact_ns = minimum_call_ns(repetitions) do
-        nauty(sparse; exact_order=true, buffer=sparse_buffer)
+        NautyGraphs.nauty(sparse; exact_order=true, buffer=sparse_buffer)
     end
     dense_default_ns = minimum_call_ns(repetitions) do
-        nauty(dense; buffer=dense_buffer)
+        NautyGraphs.nauty(dense; buffer=dense_buffer)
     end
     sparse_default_ns = minimum_call_ns(repetitions) do
-        nauty(sparse; buffer=sparse_buffer)
+        NautyGraphs.nauty(sparse; buffer=sparse_buffer)
     end
 
     best_gc = min(dfs_ns, level_ns)
