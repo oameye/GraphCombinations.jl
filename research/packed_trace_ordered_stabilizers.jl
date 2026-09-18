@@ -106,6 +106,24 @@ end
     return candidate.candidate_order[left_slot] < candidate.candidate_order[right_slot]
 end
 
+@inline function trace_candidate_values_precede(
+    candidate::TraceOrderedRecursiveWorkspace,
+    depth::Int,
+    left_cells::Int,
+    left_hash::UInt64,
+    left_vertex::Int,
+    right_position::Int,
+)::Bool
+    right_slot = trace_candidate_slot(candidate, depth, right_position)
+    right_cells = candidate.candidate_refined_cells[right_slot]
+    left_cells != right_cells && return left_cells > right_cells
+
+    right_hash = candidate.candidate_trace_hash[right_slot]
+    left_hash != right_hash && return left_hash < right_hash
+
+    return left_vertex < candidate.candidate_order[right_slot]
+end
+
 function trace_prepare_candidate_order!(
     candidate::TraceOrderedRecursiveWorkspace,
     graph::GC.DirectedGCGraph,
@@ -155,7 +173,9 @@ function trace_prepare_candidate_order!(
         refined_cells = candidate.candidate_refined_cells[slot]
         trace_hash = candidate.candidate_trace_hash[slot]
         position = index - 1
-        while position >= 1 && trace_candidate_precedes(candidate, depth, index, position)
+        while position >= 1 && trace_candidate_values_precede(
+            candidate, depth, refined_cells, trace_hash, vertex, position
+        )
             from_slot = trace_candidate_slot(candidate, depth, position)
             to_slot = trace_candidate_slot(candidate, depth, position + 1)
             candidate.candidate_order[to_slot] = candidate.candidate_order[from_slot]
