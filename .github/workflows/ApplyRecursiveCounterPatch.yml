@@ -1,0 +1,84 @@
+name: Apply recursive attribution counter patch
+
+on:
+  push:
+    branches:
+      - research-packed-recursive-stabilizer-orbits
+    paths:
+      - .github/workflows/ApplyRecursiveCounterPatch.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: research-packed-recursive-stabilizer-orbits
+          fetch-depth: 0
+
+      - name: Add monotone attribution counters
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          core = Path("research/packed_recursive_stabilizer_orbits.jl")
+          text = core.read_text()
+          replacements = [
+              (
+                  "    orbit_skips::Vector{Int}\n    orbit_merges::Vector{Int}\n    automorphisms::Vector{Int}\nend",
+                  "    orbit_skips::Vector{Int}\n    orbit_merges::Vector{Int}\n    automorphisms::Vector{Int}\n    total_orbit_skips::Int\n    total_orbit_merges::Int\n    total_automorphisms::Int\nend",
+              ),
+              (
+                  "        zeros(Int, depth_capacity),\n        zeros(Int, depth_capacity),\n        zeros(Int, depth_capacity),\n    )",
+                  "        zeros(Int, depth_capacity),\n        zeros(Int, depth_capacity),\n        zeros(Int, depth_capacity),\n        0,\n        0,\n        0,\n    )",
+              ),
+              (
+                  "    candidate.orbit_merges[depth] += 1\n    return nothing",
+                  "    candidate.orbit_merges[depth] += 1\n    candidate.total_orbit_merges += 1\n    return nothing",
+              ),
+              (
+                  "    candidate.automorphisms[depth] += 1\n    return nothing",
+                  "    candidate.automorphisms[depth] += 1\n    candidate.total_automorphisms += 1\n    return nothing",
+              ),
+              (
+                  "            candidate.orbit_skips[depth] += 1\n            continue",
+                  "            candidate.orbit_skips[depth] += 1\n            candidate.total_orbit_skips += 1\n            continue",
+              ),
+              (
+                  "    fill!(candidate.automorphisms, 0)\n\n    GC._directed_workspace_initialize_colors!(workspace, n)",
+                  "    fill!(candidate.automorphisms, 0)\n    candidate.total_orbit_skips = 0\n    candidate.total_orbit_merges = 0\n    candidate.total_automorphisms = 0\n\n    GC._directed_workspace_initialize_colors!(workspace, n)",
+              ),
+          ]
+          for old, new in replacements:
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"core replacement count {count} for {old[:50]!r}")
+              text = text.replace(old, new, 1)
+          core.write_text(text)
+
+          bench = Path("research/packed_recursive_stabilizer_benchmark.jl")
+          text = bench.read_text()
+          replacements = [
+              (
+                  "        recursive_total(recursive.orbit_skips, n),\n        \"|\",\n        recursive_total(recursive.orbit_merges, n),\n        \"|\",\n        recursive_total(recursive.automorphisms, n),",
+                  "        recursive.total_orbit_skips,\n        \"|\",\n        recursive.total_orbit_merges,\n        \"|\",\n        recursive.total_automorphisms,",
+              ),
+          ]
+          for old, new in replacements:
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"benchmark replacement count {count}")
+              text = text.replace(old, new, 1)
+          bench.write_text(text)
+          PY
+
+      - name: Commit counter patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add research/packed_recursive_stabilizer_orbits.jl research/packed_recursive_stabilizer_benchmark.jl
+          git commit -m "research: add monotone recursive orbit counters"
+          git push origin HEAD:research-packed-recursive-stabilizer-orbits
