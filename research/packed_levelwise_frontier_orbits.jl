@@ -61,7 +61,9 @@ function frontier_store_path_inverse!(
 )::Nothing
     base = candidate.base
     @inbounds for canonical_vertex in 1:n
-        base.retained_inverses[levelwise_slot(base, node, canonical_vertex)] = base.scratch_inverse[canonical_vertex]
+        base.retained_inverses[
+            levelwise_slot(base, node, canonical_vertex)
+        ] = base.scratch_inverse[canonical_vertex]
     end
     candidate.path_ready[node] = true
     return nothing
@@ -72,9 +74,9 @@ function frontier_build_generator!(
 )::Nothing
     base = candidate.base
     @inbounds for canonical_vertex in 1:n
-        left_vertex = base.retained_inverses[levelwise_slot(
-            base, retained, canonical_vertex
-        )]
+        left_vertex = base.retained_inverses[
+            levelwise_slot(base, retained, canonical_vertex)
+        ]
         right_vertex = base.scratch_inverse[canonical_vertex]
         candidate.permutation[left_vertex] = right_vertex
     end
@@ -92,19 +94,23 @@ function frontier_partition_transport_by_generator(
     permutation = candidate.permutation
     @inbounds for vertex in 1:n
         colors[levelwise_slot(base, left, vertex)] ==
-        colors[levelwise_slot(base, right, permutation[vertex])] || return false
+            colors[levelwise_slot(base, right, permutation[vertex])] || return false
     end
     return true
 end
 
 function frontier_apply_generator!(
-    candidate::PackedLevelwiseOrbitWorkspace, colors::Vector{Int}, count::Int, n::Int
+    candidate::PackedLevelwiseOrbitWorkspace,
+    colors::Vector{Int},
+    count::Int,
+    n::Int,
 )::Nothing
     candidate.generators += 1
     @inbounds for left in 1:count
         for right in 1:count
-            frontier_partition_transport_by_generator(candidate, colors, left, right, n) ||
-                continue
+            frontier_partition_transport_by_generator(
+                candidate, colors, left, right, n
+            ) || continue
             frontier_union_min!(candidate, left, right)
             break
         end
@@ -113,7 +119,9 @@ function frontier_apply_generator!(
 end
 
 function levelwise_quotient_next_frontier_orbits!(
-    candidate::PackedLevelwiseOrbitWorkspace, graph::GC.DirectedGCGraph, next_count::Int
+    candidate::PackedLevelwiseOrbitWorkspace,
+    graph::GC.DirectedGCGraph,
+    next_count::Int,
 )::Int
     base = candidate.base
     n = graph.num_vertices
@@ -139,8 +147,9 @@ function levelwise_quotient_next_frontier_orbits!(
             base.retained_hashes[retained] == image_hash || continue
             levelwise_same_retained_image(base, graph, retained) || continue
             base.exact_image_matches += 1
-            levelwise_partition_transport(base, base.next_colors, retained, node, n) ||
-                continue
+            levelwise_partition_transport(
+                base, base.next_colors, retained, node, n
+            ) || continue
             matched = retained
             frontier_build_generator!(candidate, retained, n)
             frontier_apply_generator!(candidate, base.next_colors, next_count, n)
@@ -165,7 +174,9 @@ function levelwise_quotient_next_frontier_orbits!(
     @inbounds for node in 1:next_count
         frontier_find!(candidate, node) == node || continue
         retained_count += 1
-        levelwise_copy_partition!(base, base.next_colors, retained_count, node, n)
+        levelwise_copy_partition!(
+            base, base.next_colors, retained_count, node, n
+        )
         base.next_multiplicities[retained_count] = candidate.orbit_weight[node]
     end
     base.quotient_discards += next_count - retained_count
@@ -211,18 +222,27 @@ function canonicalize_levelwise_frontier_orbits!(
         base.best_trace_length = 0
 
         @inbounds for node in 1:current_count
-            target_color = levelwise_target_color!(base, base.current_colors, node, n)
+            target_color = levelwise_target_color!(
+                base, base.current_colors, node, n
+            )
             iszero(target_color) && error("mixed discrete/non-discrete trace frontier")
 
             for chosen_vertex in 1:n
-                base.current_colors[levelwise_slot(base, node, chosen_vertex)] ==
-                target_color || continue
+                base.current_colors[
+                    levelwise_slot(base, node, chosen_vertex)
+                ] == target_color || continue
 
                 levelwise_prepare_child_trace!(
-                    base, graph, base.current_colors, node, target_color, chosen_vertex
+                    base,
+                    graph,
+                    base.current_colors,
+                    node,
+                    target_color,
+                    chosen_vertex,
                 )
                 base.generated_nodes += 1
-                comparison = has_best_trace ? levelwise_compare_trace_to_best(base) : 1
+                comparison = has_best_trace ?
+                    levelwise_compare_trace_to_best(base) : 1
 
                 if comparison > 0
                     base.discarded_by_trace += next_count
@@ -230,14 +250,20 @@ function canonicalize_levelwise_frontier_orbits!(
                     levelwise_copy_best_trace!(base)
                     has_best_trace = true
                     levelwise_store_traced_child!(
-                        base, next_count, base.current_multiplicities[node], n
+                        base,
+                        next_count,
+                        base.current_multiplicities[node],
+                        n,
                     )
                 elseif iszero(comparison)
                     next_count += 1
                     next_count <= base.frontier_capacity ||
                         error("levelwise frontier capacity exhausted")
                     levelwise_store_traced_child!(
-                        base, next_count, base.current_multiplicities[node], n
+                        base,
+                        next_count,
+                        base.current_multiplicities[node],
+                        n,
                     )
                 else
                     base.discarded_by_trace += 1

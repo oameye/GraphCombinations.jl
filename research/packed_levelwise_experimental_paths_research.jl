@@ -1,7 +1,13 @@
 include(joinpath(@__DIR__, "packed_levelwise_experimental_paths.jl"))
 include(joinpath(@__DIR__, "packed_recursive_stabilizer_orbits.jl"))
 
-const EXP_N3_COLORINGS = ([1, 1, 1], [1, 1, 2], [1, 2, 1], [1, 2, 2], [1, 2, 3])
+const EXP_N3_COLORINGS = (
+    [1, 1, 1],
+    [1, 1, 2],
+    [1, 2, 1],
+    [1, 2, 2],
+    [1, 2, 3],
+)
 
 function exp_graph_from_mask(n::Int, mask::UInt64)
     edges = Pair{Int,Int}[]
@@ -38,9 +44,8 @@ function certify_experimental_n3()
             colors = collect(colors_tuple)
             reference, _ = levelwise_trace_canonical_buffer(graph, colors)
             candidate, _, _ = levelwise_trace_experimental_canonical_buffer(graph, colors)
-            same_buffer_image(reference, candidate, n) || error(
-                "experimental quotient changed trace-defined canonical image: mask=$mask colors=$colors",
-            )
+            same_buffer_image(reference, candidate, n) ||
+                error("experimental quotient changed trace-defined canonical image: mask=$mask colors=$colors")
             cases += 1
         end
     end
@@ -87,9 +92,8 @@ function measure_experimental_fixture(name::String, sizes::Tuple{Vararg{Int}})
     canonicalize_recursive_stabilizers!(recursive_buffer, recursive, graph, colors)
 
     plain_buffer, plain = levelwise_trace_canonical_buffer(graph, colors)
-    experimental_buffer, experimental_search, experimental = levelwise_trace_experimental_canonical_buffer(
-        graph, colors
-    )
+    experimental_buffer, experimental_search, experimental =
+        levelwise_trace_experimental_canonical_buffer(graph, colors)
     same_buffer_image(plain_buffer, experimental_buffer, n) ||
         error("experimental quotient changed trace-defined canonical image for $name")
 

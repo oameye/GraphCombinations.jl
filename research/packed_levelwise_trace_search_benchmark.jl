@@ -59,7 +59,7 @@ function benchmark_levelwise_fixture(name::String, sizes::Tuple{Vararg{Int}})
         relabeled_graph, relabeled_colors
     )
     @view(levelwise_buffer.canonical_multiplicities[1:(n * n)]) ==
-    @view(relabeled_buffer.canonical_multiplicities[1:(n * n)]) ||
+        @view(relabeled_buffer.canonical_multiplicities[1:(n * n)]) ||
         error("levelwise canonical image changed under relabeling for $name")
 
     println(

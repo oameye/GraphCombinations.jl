@@ -61,7 +61,8 @@ function weighted_quotient_frontier_by_experimental_paths(
 end
 
 function levelwise_trace_exact_inverse_order(
-    graph::GC.DirectedGCGraph, initial_colors::AbstractVector{<:Integer}
+    graph::GC.DirectedGCGraph,
+    initial_colors::AbstractVector{<:Integer},
 )::Tuple{Vector{Int},Int,LevelwiseTraceSearchStats,ExperimentalPathStats}
     n = graph.num_vertices
     colors = collect(Int, initial_colors)
@@ -108,13 +109,10 @@ function levelwise_trace_exact_inverse_order(
 
         for node in frontier
             target_color = target_color_from_partition(node.colors)
-            iszero(target_color) &&
-                error("mixed discrete/non-discrete maximal trace frontier")
+            iszero(target_color) && error("mixed discrete/non-discrete maximal trace frontier")
             @inbounds for chosen_vertex in 1:n
                 node.colors[chosen_vertex] == target_color || continue
-                raw_child = individualize_partition(
-                    node.colors, target_color, chosen_vertex
-                )
+                raw_child = individualize_partition(node.colors, target_color, chosen_vertex)
                 child_colors, child_trace = refine_partition_with_trace!(
                     traced, graph, raw_child
                 )
@@ -126,9 +124,15 @@ function levelwise_trace_exact_inverse_order(
                     empty!(next_frontier)
                     best_trace = child_trace
                     has_best_trace = true
-                    push!(next_frontier, WeightedTraceNode(child_colors, node.multiplicity))
+                    push!(
+                        next_frontier,
+                        WeightedTraceNode(child_colors, node.multiplicity),
+                    )
                 elseif iszero(comparison)
-                    push!(next_frontier, WeightedTraceNode(child_colors, node.multiplicity))
+                    push!(
+                        next_frontier,
+                        WeightedTraceNode(child_colors, node.multiplicity),
+                    )
                 else
                     stats.discarded_by_trace += 1
                 end
@@ -147,7 +151,8 @@ function levelwise_trace_exact_inverse_order(
 end
 
 function levelwise_trace_exact_buffer(
-    graph::GC.DirectedGCGraph, initial_colors::AbstractVector{<:Integer}
+    graph::GC.DirectedGCGraph,
+    initial_colors::AbstractVector{<:Integer},
 )::Tuple{GC.DirectedCanonicalizationBuffer,LevelwiseTraceSearchStats,ExperimentalPathStats}
     inverse, automorphism_order, stats, experimental = levelwise_trace_exact_inverse_order(
         graph, initial_colors
@@ -163,9 +168,9 @@ function levelwise_trace_exact_buffer(
         old_source = inverse[canonical_source]
         for canonical_target in 1:n
             old_target = inverse[canonical_target]
-            buffer.canonical_multiplicities[GC._directed_slot(canonical_source, canonical_target, n)] = graph.multiplicities[GC._directed_slot(
-                old_source, old_target, n
-            )]
+            buffer.canonical_multiplicities[GC._directed_slot(
+                canonical_source, canonical_target, n
+            )] = graph.multiplicities[GC._directed_slot(old_source, old_target, n)]
         end
     end
     buffer.automorphism_order = automorphism_order

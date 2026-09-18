@@ -90,8 +90,9 @@ function benchmark_recursive_fixture(
     base_trial = @benchmark GC.canonicalize_directed_packed!(
         $base_buffer, $base_workspace, $graph, $colors
     ) samples = 160 seconds = 1 evals = 1
-    depth2_trial = @benchmark canonicalize_depth2!($depth2_buffer, $depth2, $graph, $colors) samples =
-        160 seconds = 1 evals = 1
+    depth2_trial = @benchmark canonicalize_depth2!(
+        $depth2_buffer, $depth2, $graph, $colors
+    ) samples = 160 seconds = 1 evals = 1
     recursive_trial = @benchmark canonicalize_recursive_stabilizers!(
         $recursive_buffer, $recursive, $graph, $colors
     ) samples = 160 seconds = 1 evals = 1
@@ -136,10 +137,7 @@ recursive_fixtures = (
     ("two-cycles-7x13", recursive_colored_cycle_product((7, 13))...),
     ("three-cycles-5x7x11", recursive_colored_cycle_product((5, 7, 11))...),
     ("three-cycles-7x11x13", recursive_colored_cycle_product((7, 11, 13))...),
-    (
-        "anchored-three-cycles-7x11x13",
-        recursive_colored_cycle_product((7, 11, 13); anchor=true)...,
-    ),
+    ("anchored-three-cycles-7x11x13", recursive_colored_cycle_product((7, 11, 13); anchor=true)...),
     ("four-cycles-5x7x11x13", recursive_colored_cycle_product((5, 7, 11, 13))...),
     (
         "three-circulants-7x11x13",
@@ -147,9 +145,9 @@ recursive_fixtures = (
     ),
     (
         "four-circulants-5x7x11x13",
-        recursive_colored_circulant_product((
-            (5, (1, 2)), (7, (1, 3)), (11, (1, 4)), (13, (1, 5))
-        ))...,
+        recursive_colored_circulant_product(
+            ((5, (1, 2)), (7, (1, 3)), (11, (1, 4)), (13, (1, 5)))
+        )...,
     ),
 )
 

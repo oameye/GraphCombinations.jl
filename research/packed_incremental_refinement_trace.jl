@@ -16,7 +16,10 @@ function IncrementalRefinementTraceWorkspace(capacity::Integer)
     # allocation-free for the one-word regime.
     trace_capacity = max(64, 16 * max(n, 1)^2 + 32 * max(n, 1) + 64)
     return IncrementalRefinementTraceWorkspace(
-        GC.PackedDirectedCanonicalizationWorkspace(n), zeros(Int, trace_capacity), 0, 0
+        GC.PackedDirectedCanonicalizationWorkspace(n),
+        zeros(Int, trace_capacity),
+        0,
+        0,
     )
 end
 
@@ -191,7 +194,13 @@ function traced_refine_splitter!(
         end
 
         trace_record_split!(
-            traced, graph, depth, color, cell_mask, touched_vertices, next_color
+            traced,
+            graph,
+            depth,
+            color,
+            cell_mask,
+            touched_vertices,
+            next_color,
         )
 
         count = 0
@@ -241,7 +250,9 @@ function traced_refine_splitter!(
 end
 
 function traced_refine!(
-    traced::IncrementalRefinementTraceWorkspace, graph::GC.DirectedGCGraph, depth::Int
+    traced::IncrementalRefinementTraceWorkspace,
+    graph::GC.DirectedGCGraph,
+    depth::Int,
 )::Nothing
     packed = traced.packed
     workspace = packed.workspace
@@ -266,7 +277,12 @@ function traced_refine!(
         split_members = UInt64(0)
         @inbounds for index in 1:active_count
             split, num_colors = traced_refine_splitter!(
-                traced, graph, depth, packed.active_masks[index], index, num_colors
+                traced,
+                graph,
+                depth,
+                packed.active_masks[index],
+                index,
+                num_colors,
             )
             split_members |= split
         end

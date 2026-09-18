@@ -9,9 +9,11 @@ include(joinpath(@__DIR__, "packed_incremental_child_refinement.jl"))
 end
 
 const INCREMENTAL_N3_PERMUTATIONS = (
-    [1, 2, 3], [1, 3, 2], [2, 1, 3], [2, 3, 1], [3, 1, 2], [3, 2, 1]
+    [1, 2, 3], [1, 3, 2], [2, 1, 3], [2, 3, 1], [3, 1, 2], [3, 2, 1],
 )
-const INCREMENTAL_N3_COLORINGS = ([1, 1, 1], [1, 1, 2], [1, 2, 1], [1, 2, 2], [1, 2, 3])
+const INCREMENTAL_N3_COLORINGS = (
+    [1, 1, 1], [1, 1, 2], [1, 2, 1], [1, 2, 2], [1, 2, 3],
+)
 
 function incremental_graph_from_mask(n::Int, mask::UInt64)
     edges = Pair{Int,Int}[]
@@ -44,7 +46,8 @@ function incremental_same_image(
 end
 
 function incremental_witness_reconstructs(
-    buffer::GC.DirectedCanonicalizationBuffer, graph::GC.DirectedGCGraph
+    buffer::GC.DirectedCanonicalizationBuffer,
+    graph::GC.DirectedGCGraph,
 )::Bool
     n = graph.num_vertices
     @inbounds for canonical_source in 1:n
@@ -106,8 +109,7 @@ function certify_incremental_n3()
                 )
                 incremental_same_image(base_candidate, relabeled_candidate, n) ||
                     error("incremental canonical image changed under relabeling")
-                relabeled_candidate.automorphism_order ==
-                base_candidate.automorphism_order ||
+                relabeled_candidate.automorphism_order == base_candidate.automorphism_order ||
                     error("incremental automorphism order changed under relabeling")
                 incremental_witness_reconstructs(relabeled_candidate, relabeled_graph) ||
                     error("incremental relabeled witness mismatch")
@@ -249,8 +251,7 @@ function benchmark_incremental_fixture(name::String, fixture; repetitions::Int=3
     )
     candidate.automorphism_order == reference.automorphism_order ||
         error("order mismatch for $name")
-    incremental_witness_reconstructs(candidate, graph) ||
-        error("witness mismatch for $name")
+    incremental_witness_reconstructs(candidate, graph) || error("witness mismatch for $name")
 
     candidate_alloc = @allocated IncrementalCandidate.canonicalize_levelwise_incremental!(
         candidate, candidate_workspace, graph, colors
@@ -258,46 +259,32 @@ function benchmark_incremental_fixture(name::String, fixture; repetitions::Int=3
     iszero(candidate_alloc) || error("candidate allocated $candidate_alloc bytes for $name")
 
     reference_ns = incremental_minimum_ns(repetitions) do
-        return IncrementalReference.canonicalize_levelwise_frontier_orbits!(
+        IncrementalReference.canonicalize_levelwise_frontier_orbits!(
             reference, reference_workspace, graph, colors
         )
     end
     candidate_ns = incremental_minimum_ns(repetitions) do
-        return IncrementalCandidate.canonicalize_levelwise_incremental!(
+        IncrementalCandidate.canonicalize_levelwise_incremental!(
             candidate, candidate_workspace, graph, colors
         )
     end
 
     base = candidate_workspace.orbit.base
     println(
-        "INCREMENTAL-BENCH|",
-        name,
-        "|reference_ns=",
-        reference_ns,
-        "|candidate_ns=",
-        candidate_ns,
-        "|ratio=",
-        round(candidate_ns / reference_ns; digits=3),
-        "|reference_generated=",
-        reference_workspace.base.generated_nodes,
-        "|candidate_generated=",
-        base.generated_nodes,
-        "|reference_paths=",
-        reference_workspace.base.experimental_paths,
-        "|candidate_paths=",
-        base.experimental_paths,
-        "|candidate_splitter_steps=",
-        base.traced.packed.active_splitter_steps,
-        "|candidate_cell_splits=",
-        base.traced.packed.active_cell_splits,
-        "|generated=",
-        base.generated_nodes,
-        "|retained=",
-        base.retained_nodes,
-        "|order=",
-        candidate.automorphism_order,
-        "|allocated=",
-        candidate_alloc,
+        "INCREMENTAL-BENCH|", name,
+        "|reference_ns=", reference_ns,
+        "|candidate_ns=", candidate_ns,
+        "|ratio=", round(candidate_ns / reference_ns; digits=3),
+        "|reference_generated=", reference_workspace.base.generated_nodes,
+        "|candidate_generated=", base.generated_nodes,
+        "|reference_paths=", reference_workspace.base.experimental_paths,
+        "|candidate_paths=", base.experimental_paths,
+        "|candidate_splitter_steps=", base.traced.packed.active_splitter_steps,
+        "|candidate_cell_splits=", base.traced.packed.active_cell_splits,
+        "|generated=", base.generated_nodes,
+        "|retained=", base.retained_nodes,
+        "|order=", candidate.automorphism_order,
+        "|allocated=", candidate_alloc,
     )
     return nothing
 end

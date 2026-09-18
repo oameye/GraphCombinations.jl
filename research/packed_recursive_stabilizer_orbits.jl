@@ -70,8 +70,7 @@ function recursive_orbit_union!(
     left_root = recursive_orbit_find(candidate, depth, left)
     right_root = recursive_orbit_find(candidate, depth, right)
     left_root == right_root && return nothing
-    @inbounds candidate.orbit_parent[recursive_slot(candidate, depth, right_root)] =
-        left_root
+    @inbounds candidate.orbit_parent[recursive_slot(candidate, depth, right_root)] = left_root
     candidate.orbit_merges[depth] += 1
     candidate.total_orbit_merges += 1
     return nothing
@@ -161,7 +160,8 @@ function recursive_copy_leaf!(
         workspace.inverse_mapping[canonical_vertex] = vertex
     end
     @inbounds for canonical_vertex in 1:n
-        candidate.best_inverse[recursive_slot(candidate, depth, canonical_vertex)] = workspace.inverse_mapping[canonical_vertex]
+        candidate.best_inverse[recursive_slot(candidate, depth, canonical_vertex)] =
+            workspace.inverse_mapping[canonical_vertex]
     end
     workspace.search_leaves += 1
     candidate.has_best[depth] = true
@@ -176,9 +176,8 @@ function recursive_copy_child_best!(
 )::Nothing
     n = graph.num_vertices
     @inbounds for canonical_vertex in 1:n
-        candidate.best_inverse[recursive_slot(candidate, parent_depth, canonical_vertex)] = candidate.best_inverse[recursive_slot(
-            candidate, child_depth, canonical_vertex
-        )]
+        candidate.best_inverse[recursive_slot(candidate, parent_depth, canonical_vertex)] =
+            candidate.best_inverse[recursive_slot(candidate, child_depth, canonical_vertex)]
     end
     return nothing
 end
@@ -192,19 +191,19 @@ function recursive_compare_child_to_best(
     n = graph.num_vertices
     multiplicities = graph.multiplicities
     @inbounds for canonical_source in 1:n
-        child_source = candidate.best_inverse[recursive_slot(
-            candidate, child_depth, canonical_source
-        )]
-        best_source = candidate.best_inverse[recursive_slot(
-            candidate, parent_depth, canonical_source
-        )]
+        child_source = candidate.best_inverse[
+            recursive_slot(candidate, child_depth, canonical_source)
+        ]
+        best_source = candidate.best_inverse[
+            recursive_slot(candidate, parent_depth, canonical_source)
+        ]
         for canonical_target in 1:n
-            child_target = candidate.best_inverse[recursive_slot(
-                candidate, child_depth, canonical_target
-            )]
-            best_target = candidate.best_inverse[recursive_slot(
-                candidate, parent_depth, canonical_target
-            )]
+            child_target = candidate.best_inverse[
+                recursive_slot(candidate, child_depth, canonical_target)
+            ]
+            best_target = candidate.best_inverse[
+                recursive_slot(candidate, parent_depth, canonical_target)
+            ]
             child_value = multiplicities[GC._directed_slot(child_source, child_target, n)]
             best_value = multiplicities[GC._directed_slot(best_source, best_target, n)]
             child_value == best_value && continue
@@ -223,12 +222,12 @@ function recursive_record_automorphism!(
     n = graph.num_vertices
     target_mask = candidate.target_masks[depth]
     @inbounds for canonical_vertex in 1:n
-        best_vertex = candidate.best_inverse[recursive_slot(
-            candidate, depth, canonical_vertex
-        )]
-        child_vertex = candidate.best_inverse[recursive_slot(
-            candidate, child_depth, canonical_vertex
-        )]
+        best_vertex = candidate.best_inverse[
+            recursive_slot(candidate, depth, canonical_vertex)
+        ]
+        child_vertex = candidate.best_inverse[
+            recursive_slot(candidate, child_depth, canonical_vertex)
+        ]
         iszero(target_mask & recursive_bit(best_vertex)) && continue
         iszero(target_mask & recursive_bit(child_vertex)) &&
             error("stabilizer automorphism left the active target cell")
@@ -278,8 +277,7 @@ function recursive_search!(
         return 1
     end
 
-    depth < candidate.depth_capacity ||
-        error("recursive stabilizer depth capacity exhausted")
+    depth < candidate.depth_capacity || error("recursive stabilizer depth capacity exhausted")
     target_mask = recursive_initialize_node!(candidate, graph, depth, target_color)
     child_depth = depth + 1
     n = graph.num_vertices
@@ -307,7 +305,9 @@ function recursive_search!(
             continue
         end
 
-        comparison = recursive_compare_child_to_best(candidate, graph, depth, child_depth)
+        comparison = recursive_compare_child_to_best(
+            candidate, graph, depth, child_depth
+        )
         if comparison < 0
             recursive_copy_child_best!(candidate, graph, depth, child_depth)
             candidate.best_vertices[depth] = chosen_vertex
@@ -363,9 +363,8 @@ function canonicalize_recursive_stabilizers!(
     candidate.has_best[1] || error("recursive stabilizer search produced no canonical leaf")
 
     @inbounds for canonical_vertex in 1:n
-        workspace.best_inverse_mapping[canonical_vertex] = candidate.best_inverse[recursive_slot(
-            candidate, 1, canonical_vertex
-        )]
+        workspace.best_inverse_mapping[canonical_vertex] =
+            candidate.best_inverse[recursive_slot(candidate, 1, canonical_vertex)]
     end
     workspace.automorphism_order = automorphism_order
     workspace.has_best = true

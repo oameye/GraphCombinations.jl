@@ -9,9 +9,11 @@ include(joinpath(@__DIR__, "packed_levelwise_frontier_orbits.jl"))
 end
 
 const FRONTIER_N3_PERMUTATIONS = (
-    [1, 2, 3], [1, 3, 2], [2, 1, 3], [2, 3, 1], [3, 1, 2], [3, 2, 1]
+    [1, 2, 3], [1, 3, 2], [2, 1, 3], [2, 3, 1], [3, 1, 2], [3, 2, 1],
 )
-const FRONTIER_N3_COLORINGS = ([1, 1, 1], [1, 1, 2], [1, 2, 1], [1, 2, 2], [1, 2, 3])
+const FRONTIER_N3_COLORINGS = (
+    [1, 1, 1], [1, 1, 2], [1, 2, 1], [1, 2, 2], [1, 2, 3],
+)
 
 function frontier_graph_from_mask(n::Int, mask::UInt64)
     edges = Pair{Int,Int}[]
@@ -46,12 +48,8 @@ end
 
 function certify_frontier_n3()
     n = 3
-    reference_workspace = FrontierReference.PackedLevelwiseWorkspace(
-        n; frontier_capacity=256
-    )
-    candidate_workspace = FrontierCandidate.PackedLevelwiseOrbitWorkspace(
-        n; frontier_capacity=256
-    )
+    reference_workspace = FrontierReference.PackedLevelwiseWorkspace(n; frontier_capacity=256)
+    candidate_workspace = FrontierCandidate.PackedLevelwiseOrbitWorkspace(n; frontier_capacity=256)
     reference = GC.DirectedCanonicalizationBuffer(n)
     candidate = GC.DirectedCanonicalizationBuffer(n)
     cases = 0
@@ -222,44 +220,31 @@ function benchmark_frontier_fixture(name::String, fixture; repetitions::Int=30)
     iszero(candidate_alloc) || error("candidate allocated $candidate_alloc bytes for $name")
 
     reference_ns = minimum_ns(repetitions) do
-        return FrontierReference.canonicalize_levelwise_workspace!(
+        FrontierReference.canonicalize_levelwise_workspace!(
             reference, reference_workspace, graph, colors
         )
     end
     candidate_ns = minimum_ns(repetitions) do
-        return FrontierCandidate.canonicalize_levelwise_frontier_orbits!(
+        FrontierCandidate.canonicalize_levelwise_frontier_orbits!(
             candidate, candidate_workspace, graph, colors
         )
     end
 
     base = candidate_workspace.base
     println(
-        "FRONTIER-BENCH|",
-        name,
-        "|reference_ns=",
-        reference_ns,
-        "|candidate_ns=",
-        candidate_ns,
-        "|ratio=",
-        round(candidate_ns / reference_ns; digits=3),
-        "|reference_paths=",
-        reference_workspace.experimental_paths,
-        "|candidate_paths=",
-        base.experimental_paths,
-        "|orbit_path_skips=",
-        candidate_workspace.orbit_path_skips,
-        "|generators=",
-        candidate_workspace.generators,
-        "|generator_unions=",
-        candidate_workspace.generator_unions,
-        "|generated=",
-        base.generated_nodes,
-        "|retained=",
-        base.retained_nodes,
-        "|order=",
-        candidate.automorphism_order,
-        "|allocated=",
-        candidate_alloc,
+        "FRONTIER-BENCH|", name,
+        "|reference_ns=", reference_ns,
+        "|candidate_ns=", candidate_ns,
+        "|ratio=", round(candidate_ns / reference_ns; digits=3),
+        "|reference_paths=", reference_workspace.experimental_paths,
+        "|candidate_paths=", base.experimental_paths,
+        "|orbit_path_skips=", candidate_workspace.orbit_path_skips,
+        "|generators=", candidate_workspace.generators,
+        "|generator_unions=", candidate_workspace.generator_unions,
+        "|generated=", base.generated_nodes,
+        "|retained=", base.retained_nodes,
+        "|order=", candidate.automorphism_order,
+        "|allocated=", candidate_alloc,
     )
     return nothing
 end

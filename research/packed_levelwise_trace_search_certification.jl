@@ -1,10 +1,21 @@
 include(joinpath(@__DIR__, "packed_levelwise_trace_search.jl"))
 
 const LEVELWISE_N3_PERMUTATIONS = (
-    [1, 2, 3], [1, 3, 2], [2, 1, 3], [2, 3, 1], [3, 1, 2], [3, 2, 1]
+    [1, 2, 3],
+    [1, 3, 2],
+    [2, 1, 3],
+    [2, 3, 1],
+    [3, 1, 2],
+    [3, 2, 1],
 )
 
-const LEVELWISE_N3_COLORINGS = ([1, 1, 1], [1, 1, 2], [1, 2, 1], [1, 2, 2], [1, 2, 3])
+const LEVELWISE_N3_COLORINGS = (
+    [1, 1, 1],
+    [1, 1, 2],
+    [1, 2, 1],
+    [1, 2, 2],
+    [1, 2, 3],
+)
 
 function levelwise_graph_from_mask(n::Int, mask::UInt64)
     edges = Pair{Int,Int}[]
@@ -40,8 +51,8 @@ function certify_levelwise_n3()
 
             legacy = GC.canonicalize_directed(graph, colors)
             legacy_graph = GC.canonical_graph(legacy)
-            @view(base_buffer.canonical_multiplicities[1:(n * n)]) ==
-            legacy_graph.multiplicities || (convention_changes += 1)
+            @view(base_buffer.canonical_multiplicities[1:(n * n)]) == legacy_graph.multiplicities ||
+                (convention_changes += 1)
 
             for mapping_tuple in LEVELWISE_N3_PERMUTATIONS
                 mapping = collect(mapping_tuple)
@@ -51,9 +62,10 @@ function certify_levelwise_n3()
                     relabeled_graph, mapped_colors
                 )
                 @view(mapped_buffer.canonical_multiplicities[1:(n * n)]) ==
-                @view(base_buffer.canonical_multiplicities[1:(n * n)]) || error(
-                    "trace-defined canonical form changed under relabeling: mask=$mask colors=$colors map=$mapping",
-                )
+                    @view(base_buffer.canonical_multiplicities[1:(n * n)]) ||
+                    error(
+                        "trace-defined canonical form changed under relabeling: mask=$mask colors=$colors map=$mapping"
+                    )
                 cases += 1
             end
         end

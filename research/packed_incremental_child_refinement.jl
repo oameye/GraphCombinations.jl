@@ -18,7 +18,11 @@ function packed_refine_from_singleton!(
         split_members = UInt64(0)
         @inbounds for index in 1:active_count
             split, num_colors = GC._packed_directed_workspace_refine_splitter!(
-                packed, graph, depth, packed.active_masks[index], num_colors
+                packed,
+                graph,
+                depth,
+                packed.active_masks[index],
+                num_colors,
             )
             split_members |= split
         end
@@ -66,7 +70,12 @@ function traced_refine_from_singleton!(
         split_members = UInt64(0)
         @inbounds for index in 1:active_count
             split, num_colors = traced_refine_splitter!(
-                traced, graph, depth, packed.active_masks[index], index, num_colors
+                traced,
+                graph,
+                depth,
+                packed.active_masks[index],
+                index,
+                num_colors,
             )
             split_members |= split
         end
@@ -132,7 +141,10 @@ function incremental_prepare_child_trace!(
     traced.packed.active_cell_splits = 0
     trace_event_reset!(traced)
     traced_refine_from_singleton!(
-        traced, graph, 1, GC._packed_directed_vertex_bit(chosen_vertex)
+        traced,
+        graph,
+        1,
+        GC._packed_directed_vertex_bit(chosen_vertex),
     )
     return nothing
 end
@@ -170,12 +182,10 @@ function incremental_experimental_inverse!(
                 break
             end
         end
-        iszero(chosen_vertex) &&
-            error("incremental experimental path found no target-cell member")
+        iszero(chosen_vertex) && error("incremental experimental path found no target-cell member")
 
         child_depth = depth + 1
-        child_depth <= n + 1 ||
-            error("incremental experimental path depth capacity exhausted")
+        child_depth <= n + 1 || error("incremental experimental path depth capacity exhausted")
         @inbounds for vertex in 1:n
             color = workspace.color_stack[vertex, depth]
             workspace.color_stack[vertex, child_depth] = if color < target_color
@@ -189,7 +199,10 @@ function incremental_experimental_inverse!(
             end
         end
         packed_refine_from_singleton!(
-            packed, graph, child_depth, GC._packed_directed_vertex_bit(chosen_vertex)
+            packed,
+            graph,
+            child_depth,
+            GC._packed_directed_vertex_bit(chosen_vertex),
         )
         depth = child_depth
     end
@@ -225,8 +238,9 @@ function incremental_quotient_next_frontier!(
             base.retained_hashes[retained] == image_hash || continue
             levelwise_same_retained_image(base, graph, retained) || continue
             base.exact_image_matches += 1
-            levelwise_partition_transport(base, base.next_colors, retained, node, n) ||
-                continue
+            levelwise_partition_transport(
+                base, base.next_colors, retained, node, n
+            ) || continue
             matched = retained
             frontier_build_generator!(orbit, retained, n)
             frontier_apply_generator!(orbit, base.next_colors, next_count, n)
@@ -304,11 +318,17 @@ function canonicalize_levelwise_incremental!(
             iszero(target_color) && error("mixed discrete/non-discrete trace frontier")
 
             for chosen_vertex in 1:n
-                base.current_colors[levelwise_slot(base, node, chosen_vertex)] ==
-                target_color || continue
+                base.current_colors[
+                    levelwise_slot(base, node, chosen_vertex)
+                ] == target_color || continue
 
                 incremental_prepare_child_trace!(
-                    candidate, graph, base.current_colors, node, target_color, chosen_vertex
+                    candidate,
+                    graph,
+                    base.current_colors,
+                    node,
+                    target_color,
+                    chosen_vertex,
                 )
                 base.generated_nodes += 1
                 comparison = has_best_trace ? levelwise_compare_trace_to_best(base) : 1
@@ -319,14 +339,20 @@ function canonicalize_levelwise_incremental!(
                     levelwise_copy_best_trace!(base)
                     has_best_trace = true
                     levelwise_store_traced_child!(
-                        base, next_count, base.current_multiplicities[node], n
+                        base,
+                        next_count,
+                        base.current_multiplicities[node],
+                        n,
                     )
                 elseif iszero(comparison)
                     next_count += 1
                     next_count <= base.frontier_capacity ||
                         error("levelwise frontier capacity exhausted")
                     levelwise_store_traced_child!(
-                        base, next_count, base.current_multiplicities[node], n
+                        base,
+                        next_count,
+                        base.current_multiplicities[node],
+                        n,
                     )
                 else
                     base.discarded_by_trace += 1
@@ -334,8 +360,7 @@ function canonicalize_levelwise_incremental!(
             end
         end
 
-        iszero(next_count) &&
-            error("incremental levelwise search produced an empty frontier")
+        iszero(next_count) && error("incremental levelwise search produced an empty frontier")
         if !iszero(levelwise_target_color!(base, base.next_colors, 1, n))
             next_count = incremental_quotient_next_frontier!(candidate, graph, next_count)
         end
