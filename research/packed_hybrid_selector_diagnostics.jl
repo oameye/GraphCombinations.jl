@@ -152,11 +152,11 @@ function post_root_signature(name::String, graph::GC.DirectedGCGraph, colors::Ve
         counts[workspace.color_stack[vertex, child_depth]] += 1
     end
     nonsingleton = sort!([count for count in counts if count > 1]; rev=true)
-    unresolved_vertices = sum(nonsingleton)
-    excess_vertices = sum(count - 1 for count in nonsingleton)
+    unresolved_vertices = sum(nonsingleton; init=0)
+    excess_vertices = sum((count - 1 for count in nonsingleton); init=0)
     max_cell = isempty(nonsingleton) ? 1 : first(nonsingleton)
     target_size = iszero(child_target) ? 1 : counts[child_target]
-    log_factor = sum(loggamma(count + 1) for count in nonsingleton)
+    symmetry_score = sum((count * count for count in nonsingleton); init=0)
 
     println(
         "SIGNATURE|",
@@ -172,7 +172,7 @@ function post_root_signature(name::String, graph::GC.DirectedGCGraph, colors::Ve
         "|",
         target_size,
         "|",
-        log_factor,
+        symmetry_score,
         "|",
         join(nonsingleton, ","),
     )
