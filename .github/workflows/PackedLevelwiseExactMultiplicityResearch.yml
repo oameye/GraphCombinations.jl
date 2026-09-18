@@ -1,0 +1,33 @@
+name: Packed levelwise exact multiplicity research
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - research-packed-levelwise-exact-multiplicity
+    paths:
+      - research/packed_levelwise_exact_multiplicity.jl
+      - research/packed_levelwise_exact_multiplicity_certification.jl
+      - .github/workflows/PackedLevelwiseExactMultiplicityResearch.yml
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: lts
+          arch: x64
+
+      - uses: julia-actions/cache@v3
+
+      - name: Instantiate package
+        run: julia --project --color=yes -e 'using Pkg; Pkg.instantiate()'
+
+      - name: Certify exact weighted frontier multiplicity
+        run: julia --project --color=yes research/packed_levelwise_exact_multiplicity_certification.jl
