@@ -1,0 +1,86 @@
+name: Packed target-cell policy research
+
+on:
+  push:
+    branches:
+      - research-packed-target-cell-policy
+    paths:
+      - src/**
+      - test/directed_packed_workspace.jl
+      - research/packed_target_cell_benchmark.jl
+      - .github/workflows/PackedTargetCellResearch.yml
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: lts
+          arch: x64
+
+      - uses: julia-actions/cache@v3
+
+      - name: Instantiate benchmark environment
+        run: |
+          cd benchmarks
+          julia --project --color=yes -e '
+            using Pkg
+            Pkg.develop(PackageSpec(path=joinpath(pwd(), "..")))
+            Pkg.instantiate()'
+
+      - name: Benchmark target-cell policies
+        run: |
+          set -o pipefail
+          cd benchmarks
+          julia --project --color=yes ../research/packed_target_cell_benchmark.jl \
+            | tee ../target-policy-results.txt
+
+      - name: Summarize policies
+        run: |
+          python - <<'PY'
+          from collections import defaultdict
+          from pathlib import Path
+
+          rows = defaultdict(dict)
+          for line in Path("target-policy-results.txt").read_text().splitlines():
+              if not line.startswith("RESULT|"):
+                  continue
+              fields = line.split("|")
+              rows[fields[1]][fields[2]] = {
+                  "n": int(fields[3]),
+                  "time": float(fields[4]),
+                  "memory": int(fields[5]),
+                  "allocs": int(fields[6]),
+                  "nodes": int(fields[7]),
+                  "leaves": int(fields[8]),
+                  "rounds": int(fields[9]),
+                  "active_steps": int(fields[10]),
+                  "active_splits": int(fields[11]),
+              }
+
+          print("fixture | first/smallest | connectivity/smallest | nodes smallest/first/connectivity | leaves smallest/first/connectivity")
+          print("--- | ---: | ---: | --- | ---")
+          winners = defaultdict(int)
+          for name, policies in rows.items():
+              assert set(policies) == {"smallest", "first", "connectivity"}
+              base = policies["smallest"]
+              first = policies["first"]
+              connectivity = policies["connectivity"]
+              fr = first["time"] / base["time"]
+              cr = connectivity["time"] / base["time"]
+              winner = min(policies, key=lambda p: policies[p]["time"])
+              winners[winner] += 1
+              print(
+                  f"{name} | {fr:.3f}x | {cr:.3f}x | "
+                  f"{base['nodes']}/{first['nodes']}/{connectivity['nodes']} | "
+                  f"{base['leaves']}/{first['leaves']}/{connectivity['leaves']}"
+              )
+          print("policy wins:", dict(winners))
+          PY
