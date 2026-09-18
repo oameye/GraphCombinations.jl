@@ -68,10 +68,16 @@ function benchmark_fixture(name::String, graph::GC.DirectedGCGraph, colors::Vect
     ) samples = 250 seconds = 1 evals = 1
     estimate = minimum(trial)
     search = workspace.workspace
-    active_steps = hasproperty(workspace, :active_splitter_steps) ?
-        getproperty(workspace, :active_splitter_steps) : -1
-    active_splits = hasproperty(workspace, :active_cell_splits) ?
-        getproperty(workspace, :active_cell_splits) : -1
+    active_steps = if hasproperty(workspace, :active_splitter_steps)
+        getproperty(workspace, :active_splitter_steps)
+    else
+        -1
+    end
+    active_splits = if hasproperty(workspace, :active_cell_splits)
+        getproperty(workspace, :active_cell_splits)
+    else
+        -1
+    end
     variant = get(ENV, "GC_VARIANT", "unknown")
 
     println(
@@ -104,7 +110,7 @@ end
 fixtures = (
     ("cycle-15", directed_cycle(15)...),
     ("bidirectional-cycle-15", bidirectional_cycle(15)...),
-    ("fixed-star-24", fixed_star(24)...),
+    ("fixed-star-12", fixed_star(12)...),
     ("paired-color-cycle-12", paired_color_cycle(6)...),
     ("paired-color-cycle-24", paired_color_cycle(12)...),
     ("circulant-24", circulant(24, (1, 5, 7))...),
