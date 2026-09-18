@@ -90,6 +90,77 @@ if VARIANT == "candidate"
             end
             return false
         end
+
+        @inline function _research_first_target_color(
+            packed::PackedDirectedCanonicalizationWorkspace, num_colors::Int
+        )::Int
+            @inbounds for color in 1:num_colors
+                count_ones(packed.cell_masks[color]) > 1 && return color
+            end
+            return 0
+        end
+
+        function _search_packed_directed_partition_workspace!(
+            packed::PackedDirectedCanonicalizationWorkspace,
+            graph::DirectedGCGraph,
+            depth::Int,
+            multiplicity::Int,
+        )::Nothing
+            workspace = packed.workspace
+            workspace.search_nodes += 1
+            num_colors = _packed_directed_workspace_refine!(packed, graph, depth)
+            target_color = _research_first_target_color(packed, num_colors)
+            if iszero(target_color)
+                _record_directed_workspace_leaf!(workspace, graph, depth, multiplicity)
+                return nothing
+            end
+            _packed_directed_canonical_prefix_prunable!(packed, graph, num_colors) &&
+                return nothing
+
+            n = graph.num_vertices
+            child_depth = depth + 1
+            @inbounds for chosen_vertex in 1:n
+                workspace.color_stack[chosen_vertex, depth] == target_color || continue
+
+                has_earlier_twin = false
+                for earlier_vertex in 1:(chosen_vertex - 1)
+                    workspace.color_stack[earlier_vertex, depth] == target_color || continue
+                    if _directed_workspace_exact_twins(graph, chosen_vertex, earlier_vertex)
+                        has_earlier_twin = true
+                        break
+                    end
+                end
+                has_earlier_twin && continue
+
+                twin_class_size = 1
+                for later_vertex in (chosen_vertex + 1):n
+                    workspace.color_stack[later_vertex, depth] == target_color || continue
+                    if _directed_workspace_exact_twins(graph, chosen_vertex, later_vertex)
+                        twin_class_size += 1
+                    end
+                end
+                child_multiplicity = Base.Checked.checked_mul(
+                    multiplicity, twin_class_size
+                )
+
+                for vertex in 1:n
+                    color = workspace.color_stack[vertex, depth]
+                    workspace.color_stack[vertex, child_depth] = if color < target_color
+                        color
+                    elseif color > target_color
+                        color + 1
+                    elseif vertex == chosen_vertex
+                        target_color
+                    else
+                        target_color + 1
+                    end
+                end
+                _search_packed_directed_partition_workspace!(
+                    packed, graph, child_depth, child_multiplicity
+                )
+            end
+            return nothing
+        end
     end
 end
 
