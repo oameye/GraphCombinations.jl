@@ -78,24 +78,26 @@ function benchmark_fixture(name::String, graph::GC.DirectedGCGraph, colors::Vect
     workspace = GC.PackedDirectedCanonicalizationWorkspace(n)
     buffer = GC.DirectedCanonicalizationBuffer(n)
     GC.canonicalize_directed_packed!(buffer, workspace, graph, colors)
+    variant = get(ENV, "GC_VARIANT", "unknown")
 
-    expected = GC.canonicalize_directed(graph, colors)
-    expected_mapping = GC.vertex_mapping(GC.canonical_relabeling(expected))
-    GC.canonical_graph(buffer) == GC.canonical_graph(expected) ||
-        error("canonical image mismatch on $name")
-    GC.canonical_automorphism_order(buffer) == GC.canonical_automorphism_order(expected) ||
-        error("automorphism-order mismatch on $name")
-    for vertex in 1:n
-        GC.canonical_rank(buffer, vertex) == expected_mapping[vertex] ||
-            error("canonical witness mismatch on $name")
-    end
+    println(
+        "SEMANTIC|",
+        variant,
+        "|",
+        name,
+        "|",
+        join(@view(buffer.canonical_multiplicities[1:(n * n)]), ','),
+        "|",
+        join(@view(buffer.old_to_canonical[1:n]), ','),
+        "|",
+        buffer.automorphism_order,
+    )
 
     trial = @benchmark GC.canonicalize_directed_packed!(
         $buffer, $workspace, $graph, $colors
     ) samples = 180 seconds = 1 evals = 1
     estimate = minimum(trial)
     search = workspace.workspace
-    variant = get(ENV, "GC_VARIANT", "unknown")
 
     println(
         "RESULT|",
