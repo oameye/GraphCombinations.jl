@@ -1,0 +1,38 @@
+name: Apply depth-2 research formatting
+
+on:
+  push:
+    branches:
+      - research-packed-depth2-stabilizer-orbits
+    paths:
+      - .github/workflows/ApplyDepth2ResearchFormat.yml
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: research-packed-depth2-stabilizer-orbits
+          fetch-depth: 0
+
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: '1'
+
+      - name: Format research files
+        run: |
+          julia -e 'using Pkg; Pkg.add(PackageSpec(name="JuliaFormatter"))'
+          julia -e 'using JuliaFormatter; format_file("research/packed_depth2_stabilizer_orbits.jl"); format_file("research/packed_depth2_stabilizer_product_fixtures.jl")'
+
+      - name: Commit formatting
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add research/packed_depth2_stabilizer_orbits.jl research/packed_depth2_stabilizer_product_fixtures.jl
+          git diff --cached --quiet && exit 0
+          git commit -m "style: format depth-2 stabilizer research"
+          git push origin HEAD:research-packed-depth2-stabilizer-orbits
