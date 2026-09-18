@@ -1,0 +1,28 @@
+name: Packed levelwise persistent generator research
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - research-packed-levelwise-persistent-generators
+    paths:
+      - research/packed_levelwise_persistent_generators.jl
+      - research/packed_levelwise_persistent_generators_research.jl
+      - .github/workflows/PackedLevelwisePersistentGeneratorsResearch.yml
+
+permissions:
+  contents: read
+
+jobs:
+  research:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: 'lts'
+      - uses: julia-actions/cache@v3
+      - name: Instantiate package
+        run: julia --project --color=yes -e 'using Pkg; Pkg.instantiate()'
+      - name: Certify and benchmark persistent exact generator feedback
+        run: julia --project --color=yes research/packed_levelwise_persistent_generators_research.jl
