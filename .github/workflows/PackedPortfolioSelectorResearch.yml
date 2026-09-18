@@ -6,6 +6,7 @@ on:
       - research-packed-portfolio-selector
     paths:
       - 'research/packed_portfolio_selector_diagnostics.jl'
+      - 'research/packed_portfolio_trace_prefix.jl'
       - '.github/workflows/PackedPortfolioSelectorResearch.yml'
   workflow_dispatch:
 
@@ -20,5 +21,7 @@ jobs:
       - uses: julia-actions/cache@v3
       - name: Instantiate package
         run: julia --project --color=yes -e 'using Pkg; Pkg.instantiate()'
-      - name: Measure selector diagnostics
+      - name: Measure root/child selector diagnostics
         run: julia --project --color=yes research/packed_portfolio_selector_diagnostics.jl
+      - name: Measure invariant trace-prefix selector
+        run: julia --project --color=yes research/packed_portfolio_trace_prefix.jl
