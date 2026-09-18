@@ -1,0 +1,42 @@
+name: Packed recursive stabilizer easy research
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - research-packed-recursive-stabilizer-orbits
+    paths:
+      - research/packed_recursive_stabilizer_orbits.jl
+      - research/packed_recursive_stabilizer_easy_benchmark.jl
+      - .github/workflows/PackedRecursiveStabilizerEasyResearch.yml
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: lts
+          arch: x64
+
+      - uses: julia-actions/cache@v3
+
+      - name: Instantiate benchmark environment
+        run: |
+          cd benchmarks
+          julia --project --color=yes -e '
+            using Pkg
+            Pkg.develop(PackageSpec(path=joinpath(pwd(), "..")))
+            Pkg.instantiate()'
+
+      - name: Run root-saturated/easy attribution
+        run: |
+          set -o pipefail
+          cd benchmarks
+          julia --project --color=yes ../research/packed_recursive_stabilizer_easy_benchmark.jl \
+            | tee ../recursive-stabilizer-easy-results.txt
