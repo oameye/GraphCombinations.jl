@@ -5,9 +5,9 @@
 
 Research/production-candidate storage for exact directed canonicalization. It reuses the certified
 `DirectedCanonicalizationWorkspace` search state and adds packed outgoing/incoming adjacency rows,
-packed color-cell masks, and reusable active-splitter scratch. Graphs with at most 64 vertices and
-edge multiplicities in `0:1` use the packed `UInt64` refinement kernel; all other graphs fall back
-exactly to the existing general directed workspace.
+packed color-cell masks, reusable active-splitter scratch, and exact canonical-prefix diagnostics.
+Graphs with at most 64 vertices and edge multiplicities in `0:1` use the packed `UInt64`
+refinement kernel; all other graphs fall back exactly to the existing general directed workspace.
 """
 mutable struct PackedDirectedCanonicalizationWorkspace
     workspace::DirectedCanonicalizationWorkspace
@@ -19,6 +19,8 @@ mutable struct PackedDirectedCanonicalizationWorkspace
     splitter_keys::Vector{Int}
     active_splitter_steps::Int
     active_cell_splits::Int
+    canonical_prefix_checks::Int
+    canonical_prefix_prunes::Int
 end
 
 function PackedDirectedCanonicalizationWorkspace(capacity::Integer)
@@ -33,6 +35,8 @@ function PackedDirectedCanonicalizationWorkspace(capacity::Integer)
         zeros(UInt64, word_capacity),
         zeros(UInt64, word_capacity),
         Vector{Int}(undef, word_capacity),
+        0,
+        0,
         0,
         0,
     )
@@ -234,10 +238,10 @@ end
 
 function _packed_directed_workspace_refine!(
     packed::PackedDirectedCanonicalizationWorkspace, graph::DirectedGCGraph, depth::Int
-)::Nothing
+)::Int
     workspace = packed.workspace
     n = graph.num_vertices
-    iszero(n) && return nothing
+    iszero(n) && return 0
 
     num_colors = _packed_directed_workspace_build_cell_masks!(packed, graph, depth)
     active_count = num_colors
@@ -268,7 +272,54 @@ function _packed_directed_workspace_refine!(
             packed.active_masks[index] = packed.next_active_masks[index]
         end
     end
-    return nothing
+    return num_colors
+end
+
+function _packed_directed_canonical_prefix_prunable!(
+    packed::PackedDirectedCanonicalizationWorkspace, graph::DirectedGCGraph, num_colors::Int
+)::Bool
+    workspace = packed.workspace
+    workspace.has_best || return false
+    packed.canonical_prefix_checks += 1
+
+    source_position = 0
+    @inbounds for source_color in 1:num_colors
+        source_mask = packed.cell_masks[source_color]
+        source_size = count_ones(source_mask)
+        representative = trailing_zeros(source_mask) + 1
+        representative_row = packed.out_rows[representative]
+
+        for _ in 1:source_size
+            source_position += 1
+            best_source = workspace.best_inverse_mapping[source_position]
+            best_row = packed.out_rows[best_source]
+            target_position = 0
+
+            for target_color in 1:num_colors
+                target_mask = packed.cell_masks[target_color]
+                target_size = count_ones(target_mask)
+                edge_count = count_ones(representative_row & target_mask)
+                zero_count = target_size - edge_count
+
+                for _ in 1:zero_count
+                    target_position += 1
+                    best_target = workspace.best_inverse_mapping[target_position]
+                    if !iszero(best_row & _packed_directed_vertex_bit(best_target))
+                        return false
+                    end
+                end
+                for _ in 1:edge_count
+                    target_position += 1
+                    best_target = workspace.best_inverse_mapping[target_position]
+                    if iszero(best_row & _packed_directed_vertex_bit(best_target))
+                        packed.canonical_prefix_prunes += 1
+                        return true
+                    end
+                end
+            end
+        end
+    end
+    return false
 end
 
 function _search_packed_directed_partition_workspace!(
@@ -279,12 +330,13 @@ function _search_packed_directed_partition_workspace!(
 )::Nothing
     workspace = packed.workspace
     workspace.search_nodes += 1
-    _packed_directed_workspace_refine!(packed, graph, depth)
+    num_colors = _packed_directed_workspace_refine!(packed, graph, depth)
     target_color = _directed_workspace_target_color!(workspace, graph, depth)
     if iszero(target_color)
         _record_directed_workspace_leaf!(workspace, graph, depth, multiplicity)
         return nothing
     end
+    _packed_directed_canonical_prefix_prunable!(packed, graph, num_colors) && return nothing
 
     n = graph.num_vertices
     child_depth = depth + 1
@@ -347,6 +399,8 @@ function _canonicalize_directed_packed_prepared!(
     _reset_directed_workspace_search!(workspace)
     packed.active_splitter_steps = 0
     packed.active_cell_splits = 0
+    packed.canonical_prefix_checks = 0
+    packed.canonical_prefix_prunes = 0
     _directed_workspace_initialize_colors!(workspace, n)
     _search_packed_directed_partition_workspace!(packed, graph, 1, 1)
     workspace.has_best ||
@@ -374,6 +428,8 @@ function canonicalize_directed_packed!(
     end
     packed.active_splitter_steps = 0
     packed.active_cell_splits = 0
+    packed.canonical_prefix_checks = 0
+    packed.canonical_prefix_prunes = 0
     return canonicalize_directed!(buffer, packed.workspace, graph, vertex_colors)
 end
 
