@@ -1,0 +1,116 @@
+name: Packed active refinement research
+
+on:
+  push:
+    branches:
+      - research-packed-active-cell-refinement
+    paths:
+      - src/**
+      - research/packed_active_refinement_benchmark.jl
+      - .github/workflows/PackedActiveRefinementResearch.yml
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout candidate
+        uses: actions/checkout@v7
+        with:
+          path: candidate
+
+      - name: Checkout frozen #173 baseline
+        uses: actions/checkout@v7
+        with:
+          ref: f8ff5edf0f7b1cec29a4046d19b1d48e597c2859
+          path: baseline
+
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: lts
+          arch: x64
+
+      - uses: julia-actions/cache@v3
+
+      - name: Instantiate baseline benchmark environment
+        run: |
+          cd baseline/benchmarks
+          julia --project --color=yes -e '
+            using Pkg
+            Pkg.develop(PackageSpec(path=joinpath(pwd(), "..")))
+            Pkg.instantiate()'
+
+      - name: Benchmark frozen baseline
+        run: |
+          set -o pipefail
+          cd baseline/benchmarks
+          GC_VARIANT=baseline julia --project --color=yes \
+            ../../candidate/research/packed_active_refinement_benchmark.jl \
+            | tee ../../baseline-results.txt
+
+      - name: Instantiate candidate benchmark environment
+        run: |
+          cd candidate/benchmarks
+          julia --project --color=yes -e '
+            using Pkg
+            Pkg.develop(PackageSpec(path=joinpath(pwd(), "..")))
+            Pkg.instantiate()'
+
+      - name: Benchmark active-refinement candidate
+        run: |
+          set -o pipefail
+          cd candidate/benchmarks
+          GC_VARIANT=candidate julia --project --color=yes \
+            ../research/packed_active_refinement_benchmark.jl \
+            | tee ../../candidate-results.txt
+
+      - name: Compare candidate to baseline
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def read(path):
+              rows = {}
+              for line in Path(path).read_text().splitlines():
+                  if not line.startswith("RESULT|"):
+                      continue
+                  fields = line.split("|")
+                  rows[fields[2]] = {
+                      "n": int(fields[3]),
+                      "time": float(fields[4]),
+                      "memory": int(fields[5]),
+                      "allocs": int(fields[6]),
+                      "nodes": int(fields[7]),
+                      "leaves": int(fields[8]),
+                      "rounds": int(fields[9]),
+                      "active_steps": int(fields[10]),
+                      "active_splits": int(fields[11]),
+                  }
+              return rows
+
+          baseline = read("baseline-results.txt")
+          candidate = read("candidate-results.txt")
+          assert baseline.keys() == candidate.keys()
+
+          print("\npacked active-refinement comparison")
+          print("fixture | time ratio | memory ratio | nodes | leaves | base rounds -> candidate rounds | active steps/splits")
+          print("--- | ---: | ---: | ---: | ---: | ---: | ---:")
+          regressions = []
+          for name in baseline:
+              b = baseline[name]
+              c = candidate[name]
+              tr = c["time"] / b["time"]
+              mr = c["memory"] / b["memory"] if b["memory"] else 1.0
+              print(
+                  f"{name} | {tr:.3f}x | {mr:.3f}x | {c['nodes']} | {c['leaves']} | "
+                  f"{b['rounds']} -> {c['rounds']} | {c['active_steps']}/{c['active_splits']}"
+              )
+              if tr > 1.10:
+                  regressions.append((name, tr))
+
+          if regressions:
+              raise SystemExit(f">10% research timing regressions: {regressions}")
+          PY
