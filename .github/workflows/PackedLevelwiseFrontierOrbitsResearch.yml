@@ -1,0 +1,28 @@
+name: Packed levelwise frontier orbit research
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - research-packed-levelwise-frontier-orbits
+    paths:
+      - research/packed_levelwise_frontier_orbits.jl
+      - research/packed_levelwise_frontier_orbits_research.jl
+      - .github/workflows/PackedLevelwiseFrontierOrbitsResearch.yml
+
+permissions:
+  contents: read
+
+jobs:
+  research:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: 'lts'
+      - uses: julia-actions/cache@v3
+      - name: Instantiate package
+        run: julia --project --color=yes -e 'using Pkg; Pkg.instantiate()'
+      - name: Certify and benchmark exact frontier automorphism feedback
+        run: julia --project --color=yes research/packed_levelwise_frontier_orbits_research.jl
