@@ -27,6 +27,14 @@ function trace_compare(left::AbstractVector{Int}, right::AbstractVector{Int})::I
     return length(left) < length(right) ? -1 : 1
 end
 
+function inverse_lex_less(left::Vector{Int}, right::Vector{Int})::Bool
+    @inbounds for index in eachindex(left, right)
+        left[index] == right[index] && continue
+        return left[index] < right[index]
+    end
+    return false
+end
+
 function stable_partition_from_workspace(
     traced::IncrementalRefinementTraceWorkspace, n::Int
 )::Vector{Int}
@@ -125,7 +133,7 @@ function levelwise_trace_canonical_inverse(
                     graph, candidate_inverse, best_inverse
                 )
                 if comparison < 0 ||
-                   (iszero(comparison) && candidate_inverse < best_inverse)
+                   (iszero(comparison) && inverse_lex_less(candidate_inverse, best_inverse))
                     best_inverse = candidate_inverse
                 end
             end
