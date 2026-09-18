@@ -94,55 +94,113 @@ end
     return out_count * (n + 1) + in_count
 end
 
+@inline function _packed_directed_touched_vertices(
+    packed::PackedDirectedCanonicalizationWorkspace, splitter_mask::UInt64
+)::UInt64
+    touched = UInt64(0)
+    remaining = splitter_mask
+    @inbounds while !iszero(remaining)
+        vertex = trailing_zeros(remaining) + 1
+        touched |= packed.in_rows[vertex] | packed.out_rows[vertex]
+        remaining &= remaining - UInt64(1)
+    end
+    return touched
+end
+
+@inline function _packed_directed_cached_key(
+    packed::PackedDirectedCanonicalizationWorkspace,
+    vertex::Int,
+    touched_vertices::UInt64,
+)::Int
+    return iszero(_packed_directed_vertex_bit(vertex) & touched_vertices) ?
+           0 : packed.splitter_keys[vertex]
+end
+
 function _packed_directed_workspace_refine_splitter!(
     packed::PackedDirectedCanonicalizationWorkspace,
     graph::DirectedGCGraph,
     depth::Int,
     splitter_mask::UInt64,
-)::UInt64
+    num_colors::Int,
+)::Tuple{UInt64,Int}
     workspace = packed.workspace
     n = graph.num_vertices
-    @inbounds for color in 1:n
-        workspace.cell_counts[color] = 0
+    packed.active_splitter_steps += 1
+
+    touched_vertices = _packed_directed_touched_vertices(packed, splitter_mask)
+    iszero(touched_vertices) && return UInt64(0), num_colors
+
+    remaining = touched_vertices
+    @inbounds while !iszero(remaining)
+        vertex = trailing_zeros(remaining) + 1
+        packed.splitter_keys[vertex] = _packed_directed_splitter_key(
+            packed, vertex, splitter_mask, n
+        )
+        remaining &= remaining - UInt64(1)
     end
 
-    num_colors = 0
-    @inbounds for vertex in 1:n
-        color = workspace.color_stack[vertex, depth]
-        workspace.cell_counts[color] += 1
-        num_colors = max(num_colors, color)
-        packed.splitter_keys[vertex] =
-            _packed_directed_splitter_key(packed, vertex, splitter_mask, n)
-    end
-
-    next_offset = 1
-    @inbounds for color in 1:num_colors
-        workspace.signatures[color] = next_offset
-        workspace.signatures[n + color] = next_offset
-        next_offset += workspace.cell_counts[color]
-    end
-    @inbounds for vertex in 1:n
-        color = workspace.color_stack[vertex, depth]
-        position = workspace.signatures[n + color]
-        workspace.order[position] = vertex
-        workspace.signatures[n + color] = position + 1
-    end
-
-    next_color = 0
     split_members = UInt64(0)
     @inbounds for color in 1:num_colors
-        start = workspace.signatures[color]
-        stop = start + workspace.cell_counts[color] - 1
-        cell_mask = UInt64(0)
-        for index in start:stop
-            cell_mask |= _packed_directed_vertex_bit(workspace.order[index])
+        cell_mask = packed.cell_masks[color]
+        touched_cell = cell_mask & touched_vertices
+        iszero(touched_cell) && continue
+
+        first_key = if touched_cell == cell_mask
+            first_vertex = trailing_zeros(touched_cell) + 1
+            packed.splitter_keys[first_vertex]
+        else
+            0
         end
 
-        for index in (start + 1):stop
+        differs = false
+        members = touched_cell
+        while !iszero(members)
+            vertex = trailing_zeros(members) + 1
+            if packed.splitter_keys[vertex] != first_key
+                differs = true
+                break
+            end
+            members &= members - UInt64(1)
+        end
+        differs || continue
+
+        split_members |= cell_mask
+        workspace.signatures[color] = 1
+        packed.active_cell_splits += 1
+    end
+    iszero(split_members) && return UInt64(0), num_colors
+
+    next_color = 0
+    @inbounds for color in 1:num_colors
+        cell_mask = packed.cell_masks[color]
+        if iszero(cell_mask & split_members)
+            next_color += 1
+            packed.next_active_masks[next_color] = cell_mask
+            members = cell_mask
+            while !iszero(members)
+                vertex = trailing_zeros(members) + 1
+                workspace.refined_colors[vertex] = next_color
+                members &= members - UInt64(1)
+            end
+            continue
+        end
+
+        count = 0
+        members = cell_mask
+        while !iszero(members)
+            vertex = trailing_zeros(members) + 1
+            count += 1
+            workspace.order[count] = vertex
+            members &= members - UInt64(1)
+        end
+
+        for index in 2:count
             vertex = workspace.order[index]
-            key = packed.splitter_keys[vertex]
+            key = _packed_directed_cached_key(packed, vertex, touched_vertices)
             position = index - 1
-            while position >= start && key < packed.splitter_keys[workspace.order[position]]
+            while position >= 1 && key < _packed_directed_cached_key(
+                packed, workspace.order[position], touched_vertices
+            )
                 workspace.order[position + 1] = workspace.order[position]
                 position -= 1
             end
@@ -150,28 +208,26 @@ function _packed_directed_workspace_refine_splitter!(
         end
 
         previous_key = -1
-        num_fragments = 0
-        for index in start:stop
+        for index in 1:count
             vertex = workspace.order[index]
-            key = packed.splitter_keys[vertex]
-            if index == start || key != previous_key
+            key = _packed_directed_cached_key(packed, vertex, touched_vertices)
+            if index == 1 || key != previous_key
                 next_color += 1
-                num_fragments += 1
+                packed.next_active_masks[next_color] = 0
                 previous_key = key
             end
             workspace.refined_colors[vertex] = next_color
-        end
-        if num_fragments > 1
-            split_members |= cell_mask
-            packed.active_cell_splits += 1
+            packed.next_active_masks[next_color] |= _packed_directed_vertex_bit(vertex)
         end
     end
 
     @inbounds for vertex in 1:n
         workspace.color_stack[vertex, depth] = workspace.refined_colors[vertex]
     end
-    packed.active_splitter_steps += 1
-    return split_members
+    @inbounds for color in 1:next_color
+        packed.cell_masks[color] = packed.next_active_masks[color]
+    end
+    return split_members, next_color
 end
 
 function _packed_directed_workspace_refine!(
@@ -190,14 +246,14 @@ function _packed_directed_workspace_refine!(
     while active_count > 0
         split_members = UInt64(0)
         @inbounds for index in 1:active_count
-            split_members |= _packed_directed_workspace_refine_splitter!(
-                packed, graph, depth, packed.active_masks[index]
+            split, num_colors = _packed_directed_workspace_refine_splitter!(
+                packed, graph, depth, packed.active_masks[index], num_colors
             )
+            split_members |= split
         end
         workspace.refinement_rounds += 1
         iszero(split_members) && break
 
-        num_colors = _packed_directed_workspace_build_cell_masks!(packed, graph, depth)
         next_count = 0
         @inbounds for color in 1:num_colors
             mask = packed.cell_masks[color]
@@ -314,6 +370,8 @@ function canonicalize_directed_packed!(
     if _prepare_packed_directed_rows!(packed, graph)
         return _canonicalize_directed_packed_prepared!(buffer, packed, graph, vertex_colors)
     end
+    packed.active_splitter_steps = 0
+    packed.active_cell_splits = 0
     return canonicalize_directed!(buffer, packed.workspace, graph, vertex_colors)
 end
 
