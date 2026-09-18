@@ -318,16 +318,18 @@ end
 )::Int
     if source_color == target_color
         lower_bits = packed.splitter_keys[source_color]
-        return source_position == target_position ? (lower_bits & 1) : ((lower_bits >> 1) & 1)
+        return if source_position == target_position
+            (lower_bits & 1)
+        else
+            ((lower_bits >> 1) & 1)
+        end
     end
     target_mask = packed.cell_masks[target_color]
     return iszero(target_mask & ~packed.active_masks[source_color]) ? 1 : 0
 end
 
 function _packed_directed_canonical_prefix_prunable!(
-    packed::PackedDirectedCanonicalizationWorkspace,
-    graph::DirectedGCGraph,
-    num_colors::Int,
+    packed::PackedDirectedCanonicalizationWorkspace, graph::DirectedGCGraph, num_colors::Int
 )::Bool
     workspace = packed.workspace
     workspace.has_best || return false
@@ -366,13 +368,12 @@ function _search_packed_directed_partition_workspace!(
     workspace = packed.workspace
     workspace.search_nodes += 1
     num_colors = _packed_directed_workspace_refine!(packed, graph, depth)
-    _packed_directed_canonical_prefix_prunable!(packed, graph, num_colors) && return nothing
-
     target_color = _directed_workspace_target_color!(workspace, graph, depth)
     if iszero(target_color)
         _record_directed_workspace_leaf!(workspace, graph, depth, multiplicity)
         return nothing
     end
+    _packed_directed_canonical_prefix_prunable!(packed, graph, num_colors) && return nothing
 
     n = graph.num_vertices
     child_depth = depth + 1
