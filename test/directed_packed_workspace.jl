@@ -4,6 +4,8 @@
     general_buffer = DirectedCanonicalizationBuffer(3)
     packed_buffer = DirectedCanonicalizationBuffer(3)
     colorings = (Int[1, 1, 1], Int[1, 1, 2], Int[1, 2, 3])
+    saw_prefix_check = false
+    saw_prefix_prune = false
 
     for mask in 0:(2 ^ 9 - 1)
         edges = Pair{Int,Int}[]
@@ -28,8 +30,12 @@
                 canonical_rank(general_buffer, vertex) for vertex in 1:3
             )
             @test packed_workspace.active_splitter_steps > 0
+            saw_prefix_check |= packed_workspace.canonical_prefix_checks > 0
+            saw_prefix_prune |= packed_workspace.canonical_prefix_prunes > 0
         end
     end
+    @test saw_prefix_check
+    @test saw_prefix_prune
 end
 
 @testset "packed active-cell refinement preserves larger exact semantics" begin
@@ -96,6 +102,8 @@ end
     @test canonical_graph(buffer) == canonical_graph(expected_repeated)
     @test canonical_automorphism_order(buffer) ==
         canonical_automorphism_order(expected_repeated)
+    @test packed_workspace.canonical_prefix_checks == 0
+    @test packed_workspace.canonical_prefix_prunes == 0
 
     large_edges = [vertex => mod1(vertex + 1, 65) for vertex in 1:65]
     large = DirectedGCGraph(large_edges, 65)
@@ -105,6 +113,8 @@ end
     @test canonical_graph(buffer) == canonical_graph(expected_large)
     @test canonical_automorphism_order(buffer) ==
         canonical_automorphism_order(expected_large)
+    @test packed_workspace.canonical_prefix_checks == 0
+    @test packed_workspace.canonical_prefix_prunes == 0
 end
 
 @testset "packed directed graph buffer and allocation contract" begin
