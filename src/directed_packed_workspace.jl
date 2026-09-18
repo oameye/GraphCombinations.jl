@@ -320,7 +320,8 @@ function _packed_directed_record_automorphism!(
     workspace = packed.workspace
     @inbounds for canonical_vertex in 1:n
         best_vertex = workspace.best_inverse_mapping[canonical_vertex]
-        iszero(packed.root_target_mask & _packed_directed_vertex_bit(best_vertex)) && continue
+        iszero(packed.root_target_mask & _packed_directed_vertex_bit(best_vertex)) &&
+            continue
         candidate_vertex = workspace.inverse_mapping[canonical_vertex]
         _packed_directed_orbit_union!(packed, best_vertex, candidate_vertex)
     end
