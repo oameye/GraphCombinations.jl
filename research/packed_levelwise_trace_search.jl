@@ -49,7 +49,8 @@ function refine_partition_with_trace!(
 )::Tuple{Vector{Int},Vector{Int}}
     prepare_traced_partition!(traced, graph, colors)
     traced_refine!(traced, graph, 1)
-    return stable_partition_from_workspace(traced, graph.num_vertices), collect(trace_view(traced))
+    return stable_partition_from_workspace(traced, graph.num_vertices),
+    collect(trace_view(traced))
 end
 
 function target_color_from_partition(colors::Vector{Int})::Int
@@ -97,7 +98,8 @@ function inverse_mapping_from_discrete_partition(colors::Vector{Int})::Vector{In
     inverse = zeros(Int, n)
     @inbounds for vertex in 1:n
         canonical_vertex = colors[vertex]
-        1 <= canonical_vertex <= n || error("discrete partition has invalid canonical label")
+        1 <= canonical_vertex <= n ||
+            error("discrete partition has invalid canonical label")
         iszero(inverse[canonical_vertex]) || error("partition is not discrete")
         inverse[canonical_vertex] = vertex
     end
@@ -106,8 +108,7 @@ function inverse_mapping_from_discrete_partition(colors::Vector{Int})::Vector{In
 end
 
 function levelwise_trace_canonical_inverse(
-    graph::GC.DirectedGCGraph,
-    initial_colors::AbstractVector{<:Integer},
+    graph::GC.DirectedGCGraph, initial_colors::AbstractVector{<:Integer}
 )::Tuple{Vector{Int},LevelwiseTraceSearchStats}
     n = graph.num_vertices
     colors = collect(Int, initial_colors)
@@ -133,7 +134,7 @@ function levelwise_trace_canonical_inverse(
                     graph, candidate_inverse, best_inverse
                 )
                 if comparison < 0 ||
-                   (iszero(comparison) && inverse_lex_less(candidate_inverse, best_inverse))
+                    (iszero(comparison) && inverse_lex_less(candidate_inverse, best_inverse))
                     best_inverse = candidate_inverse
                 end
             end
@@ -146,7 +147,8 @@ function levelwise_trace_canonical_inverse(
 
         for node in frontier
             target_color = target_color_from_partition(node.colors)
-            iszero(target_color) && error("mixed discrete/non-discrete maximal trace frontier")
+            iszero(target_color) &&
+                error("mixed discrete/non-discrete maximal trace frontier")
             @inbounds for chosen_vertex in 1:n
                 node.colors[chosen_vertex] == target_color || continue
                 raw_child = individualize_partition(
@@ -183,8 +185,7 @@ function levelwise_trace_canonical_inverse(
 end
 
 function levelwise_trace_canonical_buffer(
-    graph::GC.DirectedGCGraph,
-    initial_colors::AbstractVector{<:Integer},
+    graph::GC.DirectedGCGraph, initial_colors::AbstractVector{<:Integer}
 )::Tuple{GC.DirectedCanonicalizationBuffer,LevelwiseTraceSearchStats}
     inverse, stats = levelwise_trace_canonical_inverse(graph, initial_colors)
     n = graph.num_vertices
@@ -201,9 +202,9 @@ function levelwise_trace_canonical_buffer(
         old_source = inverse[canonical_source]
         for canonical_target in 1:n
             old_target = inverse[canonical_target]
-            buffer.canonical_multiplicities[GC._directed_slot(
-                canonical_source, canonical_target, n
-            )] = graph.multiplicities[GC._directed_slot(old_source, old_target, n)]
+            buffer.canonical_multiplicities[GC._directed_slot(canonical_source, canonical_target, n)] = graph.multiplicities[GC._directed_slot(
+                old_source, old_target, n
+            )]
         end
     end
     buffer.automorphism_order = 0
