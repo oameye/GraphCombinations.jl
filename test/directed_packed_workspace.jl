@@ -32,6 +32,38 @@
     end
 end
 
+@testset "packed target-cell policies preserve exact canonical semantics" begin
+    general_workspace = DirectedCanonicalizationWorkspace(3)
+    general_buffer = DirectedCanonicalizationBuffer(3)
+    policies = (:smallest, :first, :connectivity)
+    packed_workspaces = map(
+        policy -> PackedDirectedCanonicalizationWorkspace(3; target_policy=policy), policies
+    )
+    packed_buffers = map(_ -> DirectedCanonicalizationBuffer(3), policies)
+    colors = Int[1, 1, 1]
+
+    for mask in 0:(2 ^ 9 - 1)
+        edges = Pair{Int,Int}[]
+        bit = 0
+        for source in 1:3, target in 1:3
+            isodd(mask >> bit) && push!(edges, source => target)
+            bit += 1
+        end
+        graph = DirectedGCGraph(edges, 3)
+        canonicalize_directed!(general_buffer, general_workspace, graph, colors)
+
+        for (workspace, buffer) in zip(packed_workspaces, packed_buffers)
+            canonicalize_directed_packed!(buffer, workspace, graph, colors)
+            @test canonical_graph(buffer) == canonical_graph(general_buffer)
+            @test canonical_automorphism_order(buffer) ==
+                canonical_automorphism_order(general_buffer)
+            @test buffer.canonical_to_old[1:3] == general_buffer.canonical_to_old[1:3]
+        end
+    end
+
+    @test_throws ArgumentError PackedDirectedCanonicalizationWorkspace(3; target_policy=:invalid)
+end
+
 @testset "packed active-cell refinement preserves larger exact semantics" begin
     fixtures = (
         (
