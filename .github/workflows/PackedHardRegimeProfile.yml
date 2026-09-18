@@ -1,0 +1,32 @@
+name: Packed hard-regime profile
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - research-packed-hard-regime-profile
+    paths:
+      - research/packed_hard_regime_profile.jl
+      - .github/workflows/PackedHardRegimeProfile.yml
+
+permissions:
+  contents: read
+
+jobs:
+  profile:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: 'lts'
+      - name: Profile against Nauty search statistics
+        run: |
+          julia --color=yes -e '
+            using Pkg
+            Pkg.activate(; temp=true)
+            Pkg.develop(path=".")
+            Pkg.add(PackageSpec(name="NautyGraphs", version="0.7.3"))
+            Pkg.add("Graphs")
+            include("research/packed_hard_regime_profile.jl")
+          '
