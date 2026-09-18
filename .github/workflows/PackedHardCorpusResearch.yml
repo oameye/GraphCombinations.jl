@@ -1,0 +1,49 @@
+name: Packed hard canonicalization corpus
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - research-packed-hard-corpus
+    paths:
+      - research/packed_hard_corpus.jl
+      - .github/workflows/PackedHardCorpusResearch.yml
+
+permissions:
+  contents: read
+
+jobs:
+  fixture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        fixture:
+          - complete-9
+          - empty-9
+          - k6-6
+          - cycle-31
+          - petersen
+          - triangular-6
+          - rook-4
+          - hypercube-5
+          - paley-13
+          - shrikhande
+          - repeated-directed-c7x4
+          - asymmetric-24
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: lts
+          arch: x64
+
+      - uses: julia-actions/cache@v3
+
+      - name: Instantiate package
+        run: julia --project --color=yes -e 'using Pkg; Pkg.instantiate()'
+
+      - name: Run hard fixture
+        run: julia --project --color=yes research/packed_hard_corpus.jl '${{ matrix.fixture }}'
