@@ -60,14 +60,8 @@ product_fixtures = (
     ("two-cycles-11x17", colored_cycle_product(11, 17)...),
     ("anchored-two-cycles-7x13", colored_cycle_product(7, 13; connected=true)...),
     ("anchored-two-cycles-11x17", colored_cycle_product(11, 17; connected=true)...),
-    (
-        "two-circulants-7x13",
-        colored_circulant_product(7, (1, 3), 13, (1, 4))...,
-    ),
-    (
-        "two-circulants-11x17",
-        colored_circulant_product(11, (1, 3), 17, (1, 5))...,
-    ),
+    ("two-circulants-7x13", colored_circulant_product(7, (1, 3), 13, (1, 4))...),
+    ("two-circulants-11x17", colored_circulant_product(11, (1, 3), 17, (1, 5))...),
 )
 
 println("PRODUCT-STABILIZER-FIXTURES")

@@ -71,9 +71,7 @@ function seed_chosen_twins!(
     return nothing
 end
 
-function candidate_explored(
-    candidate::Depth2StabilizerWorkspace, chosen_vertex::Int
-)::Bool
+function candidate_explored(candidate::Depth2StabilizerWorkspace, chosen_vertex::Int)::Bool
     chosen_root = orbit_find(candidate, chosen_vertex)
     explored = candidate.explored_mask
     @inbounds while !iszero(explored)
@@ -111,7 +109,8 @@ function record_automorphism!(candidate::Depth2StabilizerWorkspace, n::Int)::Not
             GC._packed_directed_orbit_union!(packed, best_vertex, current_vertex)
         end
 
-        if best_vertex == packed.root_current_vertex && current_vertex != packed.root_current_vertex
+        if best_vertex == packed.root_current_vertex &&
+            current_vertex != packed.root_current_vertex
             fixes_root = false
         end
     end
@@ -122,7 +121,7 @@ function record_automorphism!(candidate::Depth2StabilizerWorkspace, n::Int)::Not
             best_vertex = workspace.best_inverse_mapping[canonical_vertex]
             current_vertex = workspace.inverse_mapping[canonical_vertex]
             if !iszero(candidate.target_mask & bit(best_vertex)) &&
-               !iszero(candidate.target_mask & bit(current_vertex))
+                !iszero(candidate.target_mask & bit(current_vertex))
                 orbit_union!(candidate, best_vertex, current_vertex)
             end
         end
@@ -132,16 +131,15 @@ function record_automorphism!(candidate::Depth2StabilizerWorkspace, n::Int)::Not
 end
 
 function record_candidate!(
-    candidate::Depth2StabilizerWorkspace,
-    graph::GC.DirectedGCGraph,
-    multiplicity::Int,
+    candidate::Depth2StabilizerWorkspace, graph::GC.DirectedGCGraph, multiplicity::Int
 )::Nothing
     packed = candidate.packed
     workspace = packed.workspace
     n = graph.num_vertices
 
     if !workspace.has_best
-        iszero(n) || copyto!(workspace.best_inverse_mapping, 1, workspace.inverse_mapping, 1, n)
+        iszero(n) ||
+            copyto!(workspace.best_inverse_mapping, 1, workspace.inverse_mapping, 1, n)
         workspace.automorphism_order = multiplicity
         workspace.has_best = true
         if packed.root_orbit_active
@@ -159,7 +157,8 @@ function record_candidate!(
         graph, workspace.inverse_mapping, workspace.best_inverse_mapping
     )
     if comparison < 0
-        iszero(n) || copyto!(workspace.best_inverse_mapping, 1, workspace.inverse_mapping, 1, n)
+        iszero(n) ||
+            copyto!(workspace.best_inverse_mapping, 1, workspace.inverse_mapping, 1, n)
         workspace.automorphism_order = multiplicity
         if packed.root_orbit_active
             packed.root_best_vertex = packed.root_current_vertex
@@ -206,9 +205,7 @@ function record_leaf!(
 end
 
 function search_root!(
-    candidate::Depth2StabilizerWorkspace,
-    graph::GC.DirectedGCGraph,
-    target_color::Int,
+    candidate::Depth2StabilizerWorkspace, graph::GC.DirectedGCGraph, target_color::Int
 )::Nothing
     packed = candidate.packed
     workspace = packed.workspace
@@ -238,7 +235,9 @@ function search_root!(
             continue
         end
 
-        GC._packed_directed_seed_chosen_root_twins!(packed, graph, chosen_vertex, target_mask)
+        GC._packed_directed_seed_chosen_root_twins!(
+            packed, graph, chosen_vertex, target_mask
+        )
         packed.root_current_vertex = chosen_vertex
         packed.root_branch_order = 0
         packed.root_explored_mask |= bit(chosen_vertex)
@@ -328,7 +327,8 @@ function search_depth2!(
     end
 
     candidate.active = false
-    if packed.root_best_vertex == packed.root_current_vertex && !iszero(candidate.best_vertex)
+    if packed.root_best_vertex == packed.root_current_vertex &&
+        !iszero(candidate.best_vertex)
         local_orbit_size = orbit_size(candidate, candidate.best_vertex)
         packed.root_branch_order = Base.Checked.checked_mul(
             local_orbit_size, candidate.best_stabilizer_order
@@ -413,7 +413,8 @@ function canonicalize_depth2!(
     n = graph.num_vertices
     length(vertex_colors) == n || error("vertex_colors must have one entry per vertex")
     GC._check_directed_workspace_capacity(buffer, workspace, graph)
-    GC._prepare_packed_directed_rows!(packed, graph) || error("research candidate requires simple n <= 64 graph")
+    GC._prepare_packed_directed_rows!(packed, graph) ||
+        error("research candidate requires simple n <= 64 graph")
 
     @inbounds for vertex in 1:n
         workspace.colors[vertex] = Int(vertex_colors[vertex])
