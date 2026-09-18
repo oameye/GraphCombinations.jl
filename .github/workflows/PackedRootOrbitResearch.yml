@@ -1,6 +1,7 @@
 name: Packed root orbit pruning research
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - research-packed-root-orbit-pruning
