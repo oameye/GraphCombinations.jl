@@ -315,12 +315,12 @@ function _packed_directed_orbit_union!(
 end
 
 function _packed_directed_record_automorphism!(
-    packed::PackedDirectedCanonicalizationWorkspace
+    packed::PackedDirectedCanonicalizationWorkspace, n::Int
 )::Nothing
     workspace = packed.workspace
-    n = length(workspace.colors)
     @inbounds for canonical_vertex in 1:n
         best_vertex = workspace.best_inverse_mapping[canonical_vertex]
+        iszero(packed.root_target_mask & _packed_directed_vertex_bit(best_vertex)) && continue
         candidate_vertex = workspace.inverse_mapping[canonical_vertex]
         _packed_directed_orbit_union!(packed, best_vertex, candidate_vertex)
     end
@@ -366,7 +366,7 @@ function _record_packed_directed_candidate!(
             packed.root_branch_order = Base.Checked.checked_add(
                 packed.root_branch_order, multiplicity
             )
-            _packed_directed_record_automorphism!(packed)
+            _packed_directed_record_automorphism!(packed, n)
         end
     end
     return nothing
