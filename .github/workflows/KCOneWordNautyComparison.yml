@@ -28,6 +28,7 @@ jobs:
             Pkg.activate("benchmark-nauty")
             Pkg.develop(path=".")
             Pkg.add(PackageSpec(name="NautyGraphs", version="0.7.3"))
+            Pkg.add("Graphs")
             Pkg.instantiate()
           '
       - name: Compare exact GC candidate with released Nauty
