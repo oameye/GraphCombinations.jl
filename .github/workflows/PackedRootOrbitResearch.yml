@@ -68,35 +68,47 @@ jobs:
             ../research/packed_root_orbit_benchmark.jl \
             | tee ../../candidate-results.txt
 
-      - name: Compare candidate to #181
+      - name: Compare exact semantics and attribution to #181
         run: |
           python - <<'PY'
           from pathlib import Path
 
           def read(path):
+              semantics = {}
               rows = {}
               for line in Path(path).read_text().splitlines():
-                  if not line.startswith("RESULT|"):
-                      continue
-                  f = line.split("|")
-                  rows[f[2]] = {
-                      "time": float(f[4]),
-                      "memory": int(f[5]),
-                      "allocs": int(f[6]),
-                      "nodes": int(f[7]),
-                      "leaves": int(f[8]),
-                      "rounds": int(f[9]),
-                      "steps": int(f[10]),
-                      "splits": int(f[11]),
-                      "skips": int(f[12]),
-                      "merges": int(f[13]),
-                      "automorphisms": int(f[14]),
-                  }
-              return rows
+                  if line.startswith("SEMANTIC|"):
+                      f = line.split("|")
+                      semantics[f[2]] = (f[3], f[4], int(f[5]))
+                  elif line.startswith("RESULT|"):
+                      f = line.split("|")
+                      rows[f[2]] = {
+                          "time": float(f[4]),
+                          "memory": int(f[5]),
+                          "allocs": int(f[6]),
+                          "nodes": int(f[7]),
+                          "leaves": int(f[8]),
+                          "rounds": int(f[9]),
+                          "steps": int(f[10]),
+                          "splits": int(f[11]),
+                          "skips": int(f[12]),
+                          "merges": int(f[13]),
+                          "automorphisms": int(f[14]),
+                      }
+              return semantics, rows
 
-          baseline = read("baseline-results.txt")
-          candidate = read("candidate-results.txt")
+          baseline_semantics, baseline = read("baseline-results.txt")
+          candidate_semantics, candidate = read("candidate-results.txt")
           assert baseline.keys() == candidate.keys()
+          assert baseline_semantics.keys() == candidate_semantics.keys() == baseline.keys()
+
+          semantic_mismatches = [
+              name
+              for name in baseline_semantics
+              if baseline_semantics[name] != candidate_semantics[name]
+          ]
+          if semantic_mismatches:
+              raise SystemExit(f"exact semantic mismatches vs #181: {semantic_mismatches}")
 
           print("fixture | time ratio | nodes | leaves | rounds | skips/merges/auts | memory")
           print("--- | ---: | ---: | ---: | ---: | ---: | ---:")
