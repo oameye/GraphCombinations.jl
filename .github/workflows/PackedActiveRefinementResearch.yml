@@ -41,6 +41,7 @@ jobs:
 
       - name: Benchmark frozen baseline
         run: |
+          set -o pipefail
           cd baseline/benchmarks
           GC_VARIANT=baseline julia --project --color=yes \
             ../../candidate/research/packed_active_refinement_benchmark.jl \
@@ -56,6 +57,7 @@ jobs:
 
       - name: Benchmark active-refinement candidate
         run: |
+          set -o pipefail
           cd candidate/benchmarks
           GC_VARIANT=candidate julia --project --color=yes \
             ../research/packed_active_refinement_benchmark.jl \
@@ -74,7 +76,7 @@ jobs:
                   fields = line.split("|")
                   rows[fields[2]] = {
                       "n": int(fields[3]),
-                      "time": int(fields[4]),
+                      "time": float(fields[4]),
                       "memory": int(fields[5]),
                       "allocs": int(fields[6]),
                       "nodes": int(fields[7]),
