@@ -17,50 +17,6 @@ using DispatchDoctor: @stable
     include("directed_input_buffer.jl")
     include("directed_packed_workspace.jl")
     include("directed_levelwise/DirectedLevelwise.jl")
-
-    const DirectedSimpleCanonicalizationWorkspace =
-        DirectedLevelwise.PackedLevelwiseIncrementalWorkspace
-
-    """
-        canonicalize_directed_simple!(buffer, workspace, graph, vertex_colors)
-
-    Canonicalize a simple colored directed graph with at most 64 vertices using the prepared
-    one-word levelwise kernel. The caller owns `buffer` and `workspace`; repeated warmed calls reuse
-    all search, trace, frontier, and automorphism scratch.
-
-    The result is written into the existing `DirectedCanonicalizationBuffer`, preserving its exact
-    old-to-canonical witness, inverse order, canonical image, and automorphism-order contract.
-    Unsupported graph shapes remain the responsibility of the general `canonicalize_directed!`
-    path.
-    """
-    function canonicalize_directed_simple!(
-        buffer::DirectedCanonicalizationBuffer,
-        workspace::DirectedSimpleCanonicalizationWorkspace,
-        graph::DirectedGCGraph,
-        vertex_colors::AbstractVector{<:Integer},
-    )::DirectedCanonicalizationBuffer
-        return DirectedLevelwise.canonicalize_levelwise_incremental!(
-            buffer, workspace, graph, vertex_colors
-        )
-    end
-
-    function canonicalize_directed_simple!(
-        buffer::DirectedCanonicalizationBuffer,
-        workspace::DirectedSimpleCanonicalizationWorkspace,
-        graph::DirectedGCGraphBuffer,
-        vertex_colors::AbstractVector{<:Integer},
-    )::DirectedCanonicalizationBuffer
-        n = graph.num_vertices
-        length(vertex_colors) >= n ||
-            throw(ArgumentError("vertex_colors must cover every active vertex."))
-        return canonicalize_directed_simple!(
-            buffer,
-            workspace,
-            _directed_graph_view(graph),
-            @view(vertex_colors[1:n]),
-        )
-    end
-
     include("partition_canonicalization.jl")
     include("matrix_canonicalization.jl")
     include("direct_generation.jl")
@@ -76,6 +32,49 @@ using DispatchDoctor: @stable
     include("typed_native_multiplicity_reduction.jl")
     include("typed_native_dispatch.jl")
     include("generation.jl")
+end
+
+const DirectedSimpleCanonicalizationWorkspace =
+    DirectedLevelwise.PackedLevelwiseIncrementalWorkspace
+
+"""
+    canonicalize_directed_simple!(buffer, workspace, graph, vertex_colors)
+
+Canonicalize a simple colored directed graph with at most 64 vertices using the prepared
+one-word levelwise kernel. The caller owns `buffer` and `workspace`; repeated warmed calls reuse
+all search, trace, frontier, and automorphism scratch.
+
+The result is written into the existing `DirectedCanonicalizationBuffer`, preserving its exact
+old-to-canonical witness, inverse order, canonical image, and automorphism-order contract.
+Unsupported graph shapes remain the responsibility of the general `canonicalize_directed!`
+path.
+"""
+function canonicalize_directed_simple!(
+    buffer::DirectedCanonicalizationBuffer,
+    workspace::DirectedSimpleCanonicalizationWorkspace,
+    graph::DirectedGCGraph,
+    vertex_colors::AbstractVector{<:Integer},
+)::DirectedCanonicalizationBuffer
+    return DirectedLevelwise.canonicalize_levelwise_incremental!(
+        buffer, workspace, graph, vertex_colors
+    )
+end
+
+function canonicalize_directed_simple!(
+    buffer::DirectedCanonicalizationBuffer,
+    workspace::DirectedSimpleCanonicalizationWorkspace,
+    graph::DirectedGCGraphBuffer,
+    vertex_colors::AbstractVector{<:Integer},
+)::DirectedCanonicalizationBuffer
+    n = graph.num_vertices
+    length(vertex_colors) >= n ||
+        throw(ArgumentError("vertex_colors must cover every active vertex."))
+    return canonicalize_directed_simple!(
+        buffer,
+        workspace,
+        _directed_graph_view(graph),
+        @view(vertex_colors[1:n]),
+    )
 end
 
 export allgraphs,
