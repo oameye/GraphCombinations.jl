@@ -13,6 +13,7 @@ on:
 permissions:
   contents: read
 
+# Keep correctness assertions ahead of every timing result.
 jobs:
   benchmark:
     runs-on: ubuntu-latest
