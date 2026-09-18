@@ -27,8 +27,84 @@
                 canonical_rank(packed_buffer, vertex) ==
                 canonical_rank(general_buffer, vertex) for vertex in 1:3
             )
+            @test packed_workspace.active_splitter_steps > 0
         end
     end
+end
+
+@testset "packed active-cell refinement preserves larger exact semantics" begin
+    fixtures = (
+        (
+            [
+                1 => 2,
+                2 => 3,
+                3 => 4,
+                4 => 5,
+                5 => 6,
+                6 => 1,
+                1 => 4,
+                2 => 5,
+            ],
+            Int[1, 1, 1, 1, 1, 1],
+        ),
+        (
+            [
+                1 => 2,
+                2 => 1,
+                2 => 3,
+                3 => 2,
+                3 => 4,
+                4 => 3,
+                4 => 1,
+                1 => 4,
+                5 => 1,
+                5 => 3,
+            ],
+            Int[1, 1, 1, 1, 2],
+        ),
+        (
+            [
+                1 => 1,
+                1 => 2,
+                2 => 3,
+                3 => 1,
+                4 => 2,
+                4 => 3,
+                5 => 4,
+                6 => 4,
+                6 => 5,
+            ],
+            Int[1, 1, 1, 2, 2, 2],
+        ),
+    )
+
+    saw_split = false
+    for (edges, colors) in fixtures
+        n = length(colors)
+        graph = DirectedGCGraph(edges, n)
+        general_workspace = DirectedCanonicalizationWorkspace(n)
+        packed_workspace = PackedDirectedCanonicalizationWorkspace(n)
+        general_buffer = DirectedCanonicalizationBuffer(n)
+        packed_buffer = DirectedCanonicalizationBuffer(n)
+
+        canonicalize_directed!(general_buffer, general_workspace, graph, colors)
+        canonicalize_directed_packed!(packed_buffer, packed_workspace, graph, colors)
+
+        @test canonical_graph(packed_buffer) == canonical_graph(general_buffer)
+        @test canonical_automorphism_order(packed_buffer) ==
+            canonical_automorphism_order(general_buffer)
+        @test all(
+            canonical_rank(packed_buffer, vertex) == canonical_rank(general_buffer, vertex) for
+            vertex in 1:n
+        )
+        @test all(
+            canonical_vertex(packed_buffer, rank) == canonical_vertex(general_buffer, rank) for
+            rank in 1:n
+        )
+        @test packed_workspace.active_splitter_steps > 0
+        saw_split |= packed_workspace.active_cell_splits > 0
+    end
+    @test saw_split
 end
 
 @testset "packed directed candidate exact fallback" begin
