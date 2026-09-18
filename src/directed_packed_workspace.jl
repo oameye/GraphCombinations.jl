@@ -5,9 +5,9 @@
 
 Research/production-candidate storage for exact directed canonicalization. It reuses the certified
 `DirectedCanonicalizationWorkspace` search state and adds packed outgoing/incoming adjacency rows,
-packed color-cell masks, and reusable active-splitter scratch. Graphs with at most 64 vertices and
-edge multiplicities in `0:1` use the packed `UInt64` refinement kernel; all other graphs fall back
-exactly to the existing general directed workspace.
+packed color-cell masks, reusable active-splitter scratch, and root-level automorphism-orbit state.
+Graphs with at most 64 vertices and edge multiplicities in `0:1` use the packed `UInt64`
+refinement kernel; all other graphs fall back exactly to the existing general directed workspace.
 """
 mutable struct PackedDirectedCanonicalizationWorkspace
     workspace::DirectedCanonicalizationWorkspace
@@ -17,6 +17,17 @@ mutable struct PackedDirectedCanonicalizationWorkspace
     active_masks::Vector{UInt64}
     next_active_masks::Vector{UInt64}
     splitter_keys::Vector{Int}
+    orbit_parent::Vector{Int}
+    root_target_mask::UInt64
+    root_explored_mask::UInt64
+    root_current_vertex::Int
+    root_best_vertex::Int
+    root_branch_order::Int
+    root_best_stabilizer_order::Int
+    root_orbit_skips::Int
+    root_orbit_merges::Int
+    root_automorphisms::Int
+    root_orbit_active::Bool
     active_splitter_steps::Int
     active_cell_splits::Int
 end
@@ -33,6 +44,17 @@ function PackedDirectedCanonicalizationWorkspace(capacity::Integer)
         zeros(UInt64, word_capacity),
         zeros(UInt64, word_capacity),
         Vector{Int}(undef, word_capacity),
+        Vector{Int}(undef, word_capacity),
+        UInt64(0),
+        UInt64(0),
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        false,
         0,
         0,
     )
@@ -271,6 +293,214 @@ function _packed_directed_workspace_refine!(
     return nothing
 end
 
+@inline function _packed_directed_orbit_find(
+    packed::PackedDirectedCanonicalizationWorkspace, vertex::Int
+)::Int
+    root = vertex
+    @inbounds while packed.orbit_parent[root] != root
+        root = packed.orbit_parent[root]
+    end
+    return root
+end
+
+function _packed_directed_orbit_union!(
+    packed::PackedDirectedCanonicalizationWorkspace, left::Int, right::Int
+)::Nothing
+    left_root = _packed_directed_orbit_find(packed, left)
+    right_root = _packed_directed_orbit_find(packed, right)
+    left_root == right_root && return nothing
+    @inbounds packed.orbit_parent[right_root] = left_root
+    packed.root_orbit_merges += 1
+    return nothing
+end
+
+function _packed_directed_record_automorphism!(
+    packed::PackedDirectedCanonicalizationWorkspace
+)::Nothing
+    workspace = packed.workspace
+    n = length(workspace.colors)
+    @inbounds for canonical_vertex in 1:n
+        best_vertex = workspace.best_inverse_mapping[canonical_vertex]
+        candidate_vertex = workspace.inverse_mapping[canonical_vertex]
+        _packed_directed_orbit_union!(packed, best_vertex, candidate_vertex)
+    end
+    packed.root_automorphisms += 1
+    return nothing
+end
+
+function _record_packed_directed_candidate!(
+    packed::PackedDirectedCanonicalizationWorkspace,
+    graph::DirectedGCGraph,
+    multiplicity::Int,
+)::Nothing
+    workspace = packed.workspace
+    n = graph.num_vertices
+    if !workspace.has_best
+        iszero(n) ||
+            copyto!(workspace.best_inverse_mapping, 1, workspace.inverse_mapping, 1, n)
+        workspace.automorphism_order = multiplicity
+        workspace.has_best = true
+        if packed.root_orbit_active
+            packed.root_best_vertex = packed.root_current_vertex
+            packed.root_branch_order = multiplicity
+        end
+        return nothing
+    end
+
+    comparison = _compare_directed_inverse_mappings(
+        graph, workspace.inverse_mapping, workspace.best_inverse_mapping
+    )
+    if comparison < 0
+        iszero(n) ||
+            copyto!(workspace.best_inverse_mapping, 1, workspace.inverse_mapping, 1, n)
+        workspace.automorphism_order = multiplicity
+        if packed.root_orbit_active
+            packed.root_best_vertex = packed.root_current_vertex
+            packed.root_branch_order = multiplicity
+        end
+    elseif iszero(comparison)
+        workspace.automorphism_order = Base.Checked.checked_add(
+            workspace.automorphism_order, multiplicity
+        )
+        if packed.root_orbit_active
+            packed.root_branch_order = Base.Checked.checked_add(
+                packed.root_branch_order, multiplicity
+            )
+            _packed_directed_record_automorphism!(packed)
+        end
+    end
+    return nothing
+end
+
+function _record_packed_directed_leaf!(
+    packed::PackedDirectedCanonicalizationWorkspace,
+    graph::DirectedGCGraph,
+    depth::Int,
+    multiplicity::Int,
+)::Nothing
+    workspace = packed.workspace
+    n = graph.num_vertices
+    @inbounds for vertex in 1:n
+        canonical_vertex = workspace.color_stack[vertex, depth]
+        workspace.inverse_mapping[canonical_vertex] = vertex
+    end
+    workspace.search_leaves += 1
+    _record_packed_directed_candidate!(packed, graph, multiplicity)
+    return nothing
+end
+
+function _packed_directed_seed_root_twins!(
+    packed::PackedDirectedCanonicalizationWorkspace,
+    graph::DirectedGCGraph,
+    target_mask::UInt64,
+)::Nothing
+    members = target_mask
+    @inbounds while !iszero(members)
+        left = trailing_zeros(members) + 1
+        later = members & ~_packed_directed_vertex_bit(left)
+        while !iszero(later)
+            right = trailing_zeros(later) + 1
+            if _directed_workspace_exact_twins(graph, left, right)
+                _packed_directed_orbit_union!(packed, left, right)
+            end
+            later &= later - UInt64(1)
+        end
+        members &= members - UInt64(1)
+    end
+    return nothing
+end
+
+function _packed_directed_root_candidate_explored(
+    packed::PackedDirectedCanonicalizationWorkspace, chosen_vertex::Int
+)::Bool
+    chosen_root = _packed_directed_orbit_find(packed, chosen_vertex)
+    explored = packed.root_explored_mask
+    @inbounds while !iszero(explored)
+        earlier = trailing_zeros(explored) + 1
+        if _packed_directed_orbit_find(packed, earlier) == chosen_root
+            return true
+        end
+        explored &= explored - UInt64(1)
+    end
+    return false
+end
+
+function _packed_directed_root_orbit_size(
+    packed::PackedDirectedCanonicalizationWorkspace, vertex::Int
+)::Int
+    root = _packed_directed_orbit_find(packed, vertex)
+    count = 0
+    members = packed.root_target_mask
+    @inbounds while !iszero(members)
+        candidate = trailing_zeros(members) + 1
+        count += _packed_directed_orbit_find(packed, candidate) == root
+        members &= members - UInt64(1)
+    end
+    return count
+end
+
+function _search_packed_directed_root_workspace!(
+    packed::PackedDirectedCanonicalizationWorkspace,
+    graph::DirectedGCGraph,
+    target_color::Int,
+)::Nothing
+    workspace = packed.workspace
+    n = graph.num_vertices
+    child_depth = 2
+    target_mask = UInt64(0)
+    @inbounds for vertex in 1:n
+        if workspace.color_stack[vertex, 1] == target_color
+            target_mask |= _packed_directed_vertex_bit(vertex)
+        end
+        packed.orbit_parent[vertex] = vertex
+    end
+
+    packed.root_target_mask = target_mask
+    packed.root_explored_mask = 0
+    packed.root_current_vertex = 0
+    packed.root_best_vertex = 0
+    packed.root_branch_order = 0
+    packed.root_best_stabilizer_order = 0
+    packed.root_orbit_active = true
+    _packed_directed_seed_root_twins!(packed, graph, target_mask)
+
+    @inbounds for chosen_vertex in 1:n
+        iszero(target_mask & _packed_directed_vertex_bit(chosen_vertex)) && continue
+        if _packed_directed_root_candidate_explored(packed, chosen_vertex)
+            packed.root_orbit_skips += 1
+            continue
+        end
+
+        packed.root_current_vertex = chosen_vertex
+        packed.root_branch_order = 0
+        packed.root_explored_mask |= _packed_directed_vertex_bit(chosen_vertex)
+
+        for vertex in 1:n
+            color = workspace.color_stack[vertex, 1]
+            workspace.color_stack[vertex, child_depth] = if color < target_color
+                color
+            elseif color > target_color
+                color + 1
+            elseif vertex == chosen_vertex
+                target_color
+            else
+                target_color + 1
+            end
+        end
+        _search_packed_directed_partition_workspace!(packed, graph, child_depth, 1)
+        if packed.root_best_vertex == chosen_vertex
+            packed.root_best_stabilizer_order = packed.root_branch_order
+        end
+    end
+
+    packed.root_orbit_active = false
+    orbit_size = _packed_directed_root_orbit_size(packed, packed.root_best_vertex)
+    workspace.automorphism_order = Base.Checked.checked_mul(
+        orbit_size, packed.root_best_stabilizer_order
+    )
+    return nothing
+end
+
 function _search_packed_directed_partition_workspace!(
     packed::PackedDirectedCanonicalizationWorkspace,
     graph::DirectedGCGraph,
@@ -282,7 +512,12 @@ function _search_packed_directed_partition_workspace!(
     _packed_directed_workspace_refine!(packed, graph, depth)
     target_color = _directed_workspace_target_color!(workspace, graph, depth)
     if iszero(target_color)
-        _record_directed_workspace_leaf!(workspace, graph, depth, multiplicity)
+        _record_packed_directed_leaf!(packed, graph, depth, multiplicity)
+        return nothing
+    end
+
+    if depth == 1
+        _search_packed_directed_root_workspace!(packed, graph, target_color)
         return nothing
     end
 
@@ -345,6 +580,16 @@ function _canonicalize_directed_packed_prepared!(
     end
 
     _reset_directed_workspace_search!(workspace)
+    packed.root_target_mask = 0
+    packed.root_explored_mask = 0
+    packed.root_current_vertex = 0
+    packed.root_best_vertex = 0
+    packed.root_branch_order = 0
+    packed.root_best_stabilizer_order = 0
+    packed.root_orbit_skips = 0
+    packed.root_orbit_merges = 0
+    packed.root_automorphisms = 0
+    packed.root_orbit_active = false
     packed.active_splitter_steps = 0
     packed.active_cell_splits = 0
     _directed_workspace_initialize_colors!(workspace, n)
@@ -372,6 +617,16 @@ function canonicalize_directed_packed!(
     if _prepare_packed_directed_rows!(packed, graph)
         return _canonicalize_directed_packed_prepared!(buffer, packed, graph, vertex_colors)
     end
+    packed.root_target_mask = 0
+    packed.root_explored_mask = 0
+    packed.root_current_vertex = 0
+    packed.root_best_vertex = 0
+    packed.root_branch_order = 0
+    packed.root_best_stabilizer_order = 0
+    packed.root_orbit_skips = 0
+    packed.root_orbit_merges = 0
+    packed.root_automorphisms = 0
+    packed.root_orbit_active = false
     packed.active_splitter_steps = 0
     packed.active_cell_splits = 0
     return canonicalize_directed!(buffer, packed.workspace, graph, vertex_colors)
