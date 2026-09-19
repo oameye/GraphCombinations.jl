@@ -1,0 +1,28 @@
+name: Directed relation production benchmark
+
+on:
+  push:
+    branches:
+      - production-native-directed-relations
+  workflow_dispatch:
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: '1.13'
+      - uses: julia-actions/cache@v3
+      - name: Instantiate package
+        run: julia --project=. --color=yes -e 'using Pkg; Pkg.instantiate()'
+      - name: Run native relation production benchmark
+        run: |
+          set -o pipefail
+          julia --project=. --color=yes research/production_directed_relation_benchmark.jl \
+            | tee directed-relation-production-benchmark.txt
+      - uses: actions/upload-artifact@v6
+        with:
+          name: directed-relation-production-benchmark
+          path: directed-relation-production-benchmark.txt
