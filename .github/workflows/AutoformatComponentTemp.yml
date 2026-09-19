@@ -1,0 +1,30 @@
+name: component-autoformat-once
+
+on:
+  push:
+    branches:
+      - production-directed-component-decomposition
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.event.head_commit.message != 'style: apply JuliaFormatter'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: production-directed-component-decomposition
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: '1.13'
+      - name: Format and remove temporary workflow
+        run: |
+          julia -e 'using Pkg; Pkg.add(PackageSpec(name="JuliaFormatter", version="2.14.0")); using JuliaFormatter; format(".")'
+          rm .github/workflows/AutoformatComponentTemp.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m 'style: apply JuliaFormatter'
+          git push origin HEAD:production-directed-component-decomposition
