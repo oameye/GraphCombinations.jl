@@ -10,6 +10,10 @@ mutable struct DirectedRecursiveComponentKernel <: AbstractDirectedComponentKern
     workspace::DirectedRecursive.PackedRecursiveStabilizerWorkspace
 end
 
+mutable struct DirectedLevelwiseComponentKernel <: AbstractDirectedComponentKernel
+    workspace::DirectedLevelwise.PackedLevelwiseIncrementalWorkspace
+end
+
 @inline function _canonicalize_directed_component!(
     buffer::DirectedCanonicalizationBuffer,
     kernel::DirectedGeneralComponentKernel,
@@ -30,18 +34,35 @@ end
     )
 end
 
+@inline function _canonicalize_directed_component!(
+    buffer::DirectedCanonicalizationBuffer,
+    kernel::DirectedLevelwiseComponentKernel,
+    graph::DirectedGCGraph,
+    colors::AbstractVector{<:Integer},
+)::DirectedCanonicalizationBuffer
+    return DirectedLevelwise.canonicalize_levelwise_incremental!(
+        buffer, kernel.workspace, graph, colors
+    )
+end
+
 """
-    DirectedComponentCanonicalizationWorkspace(capacity; kernel=:general)
+    DirectedComponentCanonicalizationWorkspace(capacity)
+    DirectedComponentCanonicalizationWorkspace(capacity, Val(:general))
+    DirectedComponentCanonicalizationWorkspace(capacity, Val(:recursive))
+    DirectedComponentCanonicalizationWorkspace(capacity, Val(:levelwise))
 
 Reusable scratch for exact weak-component decomposition of colored directed multigraphs with at
 most `capacity` vertices. Components are canonicalized independently, ordered by their exact
 colored canonical certificates, and recombined into one global witness and automorphism order.
 
-`kernel=:general` accepts the complete directed-multigraph semantics. `kernel=:recursive` uses the
-word-sized recursive stabilizer kernel for simple directed components with at most 64 vertices.
+The default and `Val(:general)` constructors accept the complete directed-multigraph semantics.
+`Val(:recursive)` and `Val(:levelwise)` select the word-sized simple-directed production kernels.
+The policy is carried in the workspace type, so prepared canonicalization remains fully inferred.
 The kernel choice affects performance and the private canonical convention, never exactness.
 """
-mutable struct DirectedComponentCanonicalizationWorkspace{K<:AbstractDirectedComponentKernel}
+mutable struct DirectedComponentCanonicalizationWorkspace{
+    K<:AbstractDirectedComponentKernel
+}
     component_labels::Vector{Int}
     stack::Vector{Int}
     component_vertices::Vector{Int}
@@ -87,27 +108,63 @@ function _directed_component_workspace(
     )
 end
 
-function DirectedComponentCanonicalizationWorkspace(
-    capacity::Integer; kernel::Symbol=:general
-)
+@inline function _checked_component_capacity(capacity::Integer)::Int
     n = Int(capacity)
     n >= 0 || throw(ArgumentError("capacity must be non-negative."))
-    if kernel === :general
-        return _directed_component_workspace(
-            n, DirectedGeneralComponentKernel(DirectedCanonicalizationWorkspace(n))
-        )
-    elseif kernel === :recursive
-        n <= 64 || throw(
-            ArgumentError("recursive component kernel supports capacities up to 64 vertices")
-        )
-        return _directed_component_workspace(
-            n,
-            DirectedRecursiveComponentKernel(
-                DirectedRecursive.PackedRecursiveStabilizerWorkspace(n)
-            ),
-        )
-    end
-    throw(ArgumentError("unknown directed component kernel: $kernel"))
+    return n
+end
+
+function DirectedComponentCanonicalizationWorkspace(capacity::Integer)
+    n = _checked_component_capacity(capacity)
+    return _directed_component_workspace(
+        n, DirectedGeneralComponentKernel(DirectedCanonicalizationWorkspace(n))
+    )
+end
+
+function DirectedComponentCanonicalizationWorkspace(
+    capacity::Integer, ::Val{:general}
+)
+    return DirectedComponentCanonicalizationWorkspace(capacity)
+end
+
+function DirectedComponentCanonicalizationWorkspace(
+    capacity::Integer, ::Val{:recursive}
+)
+    n = _checked_component_capacity(capacity)
+    n <= 64 || throw(
+        ArgumentError("recursive component kernel supports capacities up to 64 vertices")
+    )
+    return _directed_component_workspace(
+        n,
+        DirectedRecursiveComponentKernel(
+            DirectedRecursive.PackedRecursiveStabilizerWorkspace(n)
+        ),
+    )
+end
+
+function DirectedComponentCanonicalizationWorkspace(
+    capacity::Integer, ::Val{:levelwise}
+)
+    n = _checked_component_capacity(capacity)
+    n <= 64 || throw(
+        ArgumentError("levelwise component kernel supports capacities up to 64 vertices")
+    )
+    frontier_capacity = max(4096, 16 * max(n, 1)^2)
+    return _directed_component_workspace(
+        n,
+        DirectedLevelwiseComponentKernel(
+            DirectedLevelwise.PackedLevelwiseIncrementalWorkspace(
+                n; frontier_capacity=frontier_capacity
+            )
+        ),
+    )
+end
+
+function DirectedComponentCanonicalizationWorkspace(
+    capacity::Integer, ::Val{K}
+) where {K}
+    _checked_component_capacity(capacity)
+    return throw(ArgumentError("unknown directed component kernel: $K"))
 end
 
 @inline function _check_directed_component_capacity(
@@ -116,9 +173,8 @@ end
     graph::DirectedGCGraph,
 )::Nothing
     n = graph.num_vertices
-    length(workspace.component_labels) >= n || throw(
-        DimensionMismatch("directed component workspace capacity is too small")
-    )
+    length(workspace.component_labels) >= n ||
+        throw(DimensionMismatch("directed component workspace capacity is too small"))
     length(buffer.old_to_canonical) >= n ||
         throw(DimensionMismatch("directed canonicalization buffer capacity is too small"))
     length(buffer.canonical_to_old) >= n ||
@@ -191,7 +247,9 @@ function _load_directed_component!(
         global_source = workspace.component_vertices[start + local_source - 1]
         for local_target in 1:size
             global_target = workspace.component_vertices[start + local_target - 1]
-            multiplicity = graph.multiplicities[_directed_slot(global_source, global_target, n)]
+            multiplicity = graph.multiplicities[_directed_slot(
+                global_source, global_target, n
+            )]
             workspace.local_graph.multiplicities[_directed_slot(
                 local_source, local_target, size
             )] = multiplicity
@@ -210,8 +268,22 @@ end
 @inline function _check_component_kernel_support(
     ::DirectedRecursiveComponentKernel, size::Int, simple::Bool
 )::Nothing
-    size <= 64 || throw(ArgumentError("recursive component kernel supports at most 64 vertices"))
-    simple || throw(ArgumentError("recursive component kernel requires simple directed components"))
+    size <= 64 ||
+        throw(ArgumentError("recursive component kernel supports at most 64 vertices"))
+    simple || throw(
+        ArgumentError("recursive component kernel requires simple directed components")
+    )
+    return nothing
+end
+
+@inline function _check_component_kernel_support(
+    ::DirectedLevelwiseComponentKernel, size::Int, simple::Bool
+)::Nothing
+    size <= 64 ||
+        throw(ArgumentError("levelwise component kernel supports at most 64 vertices"))
+    simple || throw(
+        ArgumentError("levelwise component kernel requires simple directed components")
+    )
     return nothing
 end
 
@@ -223,15 +295,17 @@ function _store_directed_component_certificate!(
     start = workspace.component_offsets[component]
     size = workspace.component_sizes[component]
     workspace.certificate_multiplicity_offsets[component] = multiplicity_cursor
-    workspace.component_automorphism_orders[component] =
-        canonical_automorphism_order(workspace.local_result)
+    workspace.component_automorphism_orders[component] = canonical_automorphism_order(
+        workspace.local_result
+    )
 
     @inbounds for canonical_vertex in 1:size
         local_vertex = workspace.local_result.canonical_to_old[canonical_vertex]
         global_vertex = workspace.component_vertices[start + local_vertex - 1]
         workspace.canonical_global_vertices[start + canonical_vertex - 1] = global_vertex
-        workspace.certificate_colors[start + canonical_vertex - 1] =
-            workspace.local_colors[local_vertex]
+        workspace.certificate_colors[start + canonical_vertex - 1] = workspace.local_colors[
+            local_vertex
+        ]
     end
     @inbounds for slot in 1:(size * size)
         workspace.certificate_multiplicities[multiplicity_cursor + slot - 1] =
@@ -274,13 +348,13 @@ end
     right_start = workspace.component_offsets[right]
     @inbounds for index in 0:(size - 1)
         workspace.certificate_colors[left_start + index] ==
-            workspace.certificate_colors[right_start + index] || return false
+        workspace.certificate_colors[right_start + index] || return false
     end
     left_multiplicity = workspace.certificate_multiplicity_offsets[left]
     right_multiplicity = workspace.certificate_multiplicity_offsets[right]
     @inbounds for index in 0:(size * size - 1)
         workspace.certificate_multiplicities[left_multiplicity + index] ==
-            workspace.certificate_multiplicities[right_multiplicity + index] || return false
+        workspace.certificate_multiplicities[right_multiplicity + index] || return false
     end
     return true
 end
@@ -362,10 +436,8 @@ function _write_directed_component_result!(
         first_component = workspace.component_order[position]
         final_position = position
         while final_position < workspace.num_components &&
-                  _same_directed_component_certificate(
-            workspace,
-            first_component,
-            workspace.component_order[final_position + 1],
+              _same_directed_component_certificate(
+            workspace, first_component, workspace.component_order[final_position + 1]
         )
             final_position += 1
         end
@@ -379,6 +451,15 @@ function _write_directed_component_result!(
     buffer.automorphism_order = automorphism_order
     buffer.num_vertices = n
     return buffer
+end
+
+@inline function _directed_graph_is_simple(graph::DirectedGCGraph)::Bool
+    n = graph.num_vertices
+    simple = true
+    @inbounds for slot in 1:(n * n)
+        simple &= graph.multiplicities[slot] <= 1
+    end
+    return simple
 end
 
 """
@@ -411,10 +492,7 @@ function canonicalize_directed_components!(
             buffer.num_vertices = 0
             return buffer
         end
-        simple = true
-        @inbounds for slot in 1:(n * n)
-            simple &= graph.multiplicities[slot] <= 1
-        end
+        simple = _directed_graph_is_simple(graph)
         _check_component_kernel_support(workspace.kernel, n, simple)
         return _canonicalize_directed_component!(
             buffer, workspace.kernel, graph, vertex_colors
