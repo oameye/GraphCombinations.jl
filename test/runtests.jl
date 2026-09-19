@@ -110,6 +110,14 @@ else
         include("directed_components.jl")
     end
 
+    @testset "native directed relations" begin
+        include("directed_relations.jl")
+    end
+
+    @testset "packed native directed relations" begin
+        include("directed_relation_packed.jl")
+    end
+
     @testset "Wick reference oracle" begin
         include("reference_oracle.jl")
     end
