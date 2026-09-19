@@ -121,18 +121,14 @@ function DirectedComponentCanonicalizationWorkspace(capacity::Integer)
     )
 end
 
-function DirectedComponentCanonicalizationWorkspace(
-    capacity::Integer, ::Val{:general}
-)
+function DirectedComponentCanonicalizationWorkspace(capacity::Integer, ::Val{:general})
     return DirectedComponentCanonicalizationWorkspace(capacity)
 end
 
-function DirectedComponentCanonicalizationWorkspace(
-    capacity::Integer, ::Val{:recursive}
-)
+function DirectedComponentCanonicalizationWorkspace(capacity::Integer, ::Val{:recursive})
     n = _checked_component_capacity(capacity)
     n <= 64 || throw(
-        ArgumentError("recursive component kernel supports capacities up to 64 vertices")
+        ArgumentError("recursive component kernel supports capacities up to 64 vertices"),
     )
     return _directed_component_workspace(
         n,
@@ -142,12 +138,10 @@ function DirectedComponentCanonicalizationWorkspace(
     )
 end
 
-function DirectedComponentCanonicalizationWorkspace(
-    capacity::Integer, ::Val{:levelwise}
-)
+function DirectedComponentCanonicalizationWorkspace(capacity::Integer, ::Val{:levelwise})
     n = _checked_component_capacity(capacity)
     n <= 64 || throw(
-        ArgumentError("levelwise component kernel supports capacities up to 64 vertices")
+        ArgumentError("levelwise component kernel supports capacities up to 64 vertices"),
     )
     frontier_capacity = max(4096, 16 * max(n, 1)^2)
     return _directed_component_workspace(
@@ -155,14 +149,12 @@ function DirectedComponentCanonicalizationWorkspace(
         DirectedLevelwiseComponentKernel(
             DirectedLevelwise.PackedLevelwiseIncrementalWorkspace(
                 n; frontier_capacity=frontier_capacity
-            )
+            ),
         ),
     )
 end
 
-function DirectedComponentCanonicalizationWorkspace(
-    capacity::Integer, ::Val{K}
-) where {K}
+function DirectedComponentCanonicalizationWorkspace(capacity::Integer, ::Val{K}) where {K}
     _checked_component_capacity(capacity)
     return throw(ArgumentError("unknown directed component kernel: $K"))
 end
@@ -303,13 +295,10 @@ function _store_directed_component_certificate!(
         local_vertex = workspace.local_result.canonical_to_old[canonical_vertex]
         global_vertex = workspace.component_vertices[start + local_vertex - 1]
         workspace.canonical_global_vertices[start + canonical_vertex - 1] = global_vertex
-        workspace.certificate_colors[start + canonical_vertex - 1] = workspace.local_colors[
-            local_vertex
-        ]
+        workspace.certificate_colors[start + canonical_vertex - 1] = workspace.local_colors[local_vertex]
     end
     @inbounds for slot in 1:(size * size)
-        workspace.certificate_multiplicities[multiplicity_cursor + slot - 1] =
-            workspace.local_result.canonical_multiplicities[slot]
+        workspace.certificate_multiplicities[multiplicity_cursor + slot - 1] = workspace.local_result.canonical_multiplicities[slot]
     end
     return multiplicity_cursor + size * size
 end
@@ -421,11 +410,7 @@ function _write_directed_component_result!(
                 canonical_source = canonical_offset + local_source
                 canonical_target = canonical_offset + local_target
                 local_slot = (local_source - 1) * size + local_target
-                buffer.canonical_multiplicities[_directed_slot(
-                    canonical_source, canonical_target, n
-                )] = workspace.certificate_multiplicities[
-                    multiplicity_start + local_slot - 1
-                ]
+                buffer.canonical_multiplicities[_directed_slot(canonical_source, canonical_target, n)] = workspace.certificate_multiplicities[multiplicity_start + local_slot - 1]
             end
         end
         canonical_offset += size
