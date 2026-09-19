@@ -7,7 +7,7 @@ const DirectedRecursiveGC = GraphCombinations.DirectedRecursive
     recursive_buffer = DirectedCanonicalizationBuffer(3)
     colorings = (Int[1, 1, 1], Int[1, 1, 2], Int[1, 2, 3])
 
-    for mask in 0:(2^9 - 1)
+    for mask in 0:(2 ^ 9 - 1)
         edges = Pair{Int,Int}[]
         bit = 0
         for source in 1:3, target in 1:3
@@ -33,10 +33,7 @@ end
 
 @testset "recursive stabilizer exact symmetry fixtures" begin
     fixtures = (
-        (
-            [vertex => mod1(vertex + 1, 8) for vertex in 1:8],
-            ones(Int, 8),
-        ),
+        ([vertex => mod1(vertex + 1, 8) for vertex in 1:8], ones(Int, 8)),
         (
             vcat(
                 [vertex => mod1(vertex + 1, 6) for vertex in 1:6],
@@ -44,22 +41,9 @@ end
             ),
             ones(Int, 6),
         ),
+        ([1 => 2, 2 => 3, 3 => 1, 4 => 5, 5 => 6, 6 => 4], ones(Int, 6)),
         (
-            [
-                1 => 2,
-                2 => 3,
-                3 => 1,
-                4 => 5,
-                5 => 6,
-                6 => 4,
-            ],
-            ones(Int, 6),
-        ),
-        (
-            vcat(
-                [1 => leaf for leaf in 2:7],
-                [leaf => 1 for leaf in 2:7],
-            ),
+            vcat([1 => leaf for leaf in 2:7], [leaf => 1 for leaf in 2:7]),
             Int[1, 2, 2, 2, 2, 2, 2],
         ),
         (
@@ -84,8 +68,7 @@ end
         @test canonical_graph(recursive_buffer) == canonical_graph(general_buffer)
         @test canonical_automorphism_order(recursive_buffer) ==
             canonical_automorphism_order(general_buffer)
-        @test recursive_buffer.canonical_to_old[1:n] ==
-            general_buffer.canonical_to_old[1:n]
+        @test recursive_buffer.canonical_to_old[1:n] == general_buffer.canonical_to_old[1:n]
     end
 end
 
@@ -100,7 +83,9 @@ end
     workspace = DirectedRecursiveGC.PackedRecursiveStabilizerWorkspace(16)
     buffer = DirectedCanonicalizationBuffer(16)
 
-    DirectedRecursiveGC.canonicalize_recursive_stabilizers!(buffer, workspace, graph, colors)
+    DirectedRecursiveGC.canonicalize_recursive_stabilizers!(
+        buffer, workspace, graph, colors
+    )
     allocated = @allocated DirectedRecursiveGC.canonicalize_recursive_stabilizers!(
         buffer, workspace, graph, colors
     )
