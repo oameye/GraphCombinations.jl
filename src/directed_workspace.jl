@@ -45,12 +45,15 @@ function DirectedCanonicalizationWorkspace(capacity::Integer)
 end
 
 """
-    DirectedCanonicalizationBuffer(capacity)
+    DirectedCanonicalizationBuffer(capacity; materialize_canonical=true)
 
 Reusable output storage for `canonicalize_directed!` on graphs with at most `capacity` vertices.
-It retains the active canonical multiplicity image, the old-vertex -> canonical-rank witness, the
-inverse canonical-rank -> old-vertex order, and the exact color-preserving automorphism order
-without constructing a fresh result object graph.
+It always retains the old-vertex -> canonical-rank witness, the inverse canonical-rank ->
+old-vertex order, and the exact color-preserving automorphism order.
+
+By default the buffer also retains the active canonical multiplicity image. Set
+`materialize_canonical=false` when only the witness, inverse, and automorphism order are needed;
+this removes the `capacity^2` image storage and skips the post-search `n^2` image write.
 """
 mutable struct DirectedCanonicalizationBuffer
     canonical_multiplicities::Vector{Int}
@@ -60,11 +63,16 @@ mutable struct DirectedCanonicalizationBuffer
     num_vertices::Int
 end
 
-function DirectedCanonicalizationBuffer(capacity::Integer)
+function DirectedCanonicalizationBuffer(capacity::Integer; materialize_canonical::Bool=true)
     n = Int(capacity)
     n >= 0 || throw(ArgumentError("capacity must be non-negative."))
+    canonical_multiplicities = if materialize_canonical
+        Vector{Int}(undef, n * n)
+    else
+        Int[]
+    end
     return DirectedCanonicalizationBuffer(
-        Vector{Int}(undef, n * n), Vector{Int}(undef, n), Vector{Int}(undef, n), 0, n
+        canonical_multiplicities, Vector{Int}(undef, n), Vector{Int}(undef, n), 0, n
     )
 end
 
@@ -102,7 +110,8 @@ end
         throw(DimensionMismatch("directed canonicalization buffer capacity is too small"))
     length(buffer.canonical_to_old) >= n ||
         throw(DimensionMismatch("directed canonicalization buffer capacity is too small"))
-    length(buffer.canonical_multiplicities) >= n * n ||
+    isempty(buffer.canonical_multiplicities) ||
+        length(buffer.canonical_multiplicities) >= n * n ||
         throw(DimensionMismatch("directed canonicalization buffer capacity is too small"))
     return nothing
 end
@@ -413,13 +422,15 @@ function _write_directed_buffer!(
         old_vertex = best_inverse_mapping[canonical_vertex]
         buffer.old_to_canonical[old_vertex] = canonical_vertex
     end
-    @inbounds for canonical_source in 1:n
-        old_source = best_inverse_mapping[canonical_source]
-        for canonical_target in 1:n
-            old_target = best_inverse_mapping[canonical_target]
-            buffer.canonical_multiplicities[_directed_slot(canonical_source, canonical_target, n)] = graph.multiplicities[_directed_slot(
-                old_source, old_target, n
-            )]
+    if !isempty(buffer.canonical_multiplicities)
+        @inbounds for canonical_source in 1:n
+            old_source = best_inverse_mapping[canonical_source]
+            for canonical_target in 1:n
+                old_target = best_inverse_mapping[canonical_target]
+                buffer.canonical_multiplicities[_directed_slot(canonical_source, canonical_target, n)] = graph.multiplicities[_directed_slot(
+                    old_source, old_target, n
+                )]
+            end
         end
     end
     buffer.automorphism_order = automorphism_order
@@ -433,6 +444,8 @@ end
 Canonicalize `graph` using reusable flat output and search storage. The buffer and workspace may
 have greater capacity than the active graph. Once prepared, refinement, individualization, leaf
 comparison, and witness construction do not create per-search vectors or canonical graph objects.
+If `buffer` was constructed with `materialize_canonical=false`, only the witness, inverse, and
+exact automorphism order are written after search.
 """
 function canonicalize_directed!(
     buffer::DirectedCanonicalizationBuffer,
@@ -502,6 +515,13 @@ end
 
 function canonical_graph(buffer::DirectedCanonicalizationBuffer)::DirectedGCGraph
     n = buffer.num_vertices
+    if n > 0 && isempty(buffer.canonical_multiplicities)
+        throw(
+            ArgumentError(
+                "canonical image was not materialized; construct the buffer with materialize_canonical=true",
+            ),
+        )
+    end
     multiplicities = Vector{Int}(undef, n * n)
     iszero(n) || copyto!(multiplicities, 1, buffer.canonical_multiplicities, 1, n * n)
     return DirectedGCGraph(n, multiplicities)

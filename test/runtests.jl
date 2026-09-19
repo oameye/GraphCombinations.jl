@@ -94,6 +94,10 @@ else
         include("directed_workspace.jl")
     end
 
+    @testset "directed witness-only result" begin
+        include("directed_witness_buffer.jl")
+    end
+
     @testset "packed directed workspace" begin
         include("directed_packed_workspace.jl")
     end

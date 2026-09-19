@@ -1,0 +1,40 @@
+name: Directed witness materialization benchmark
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - production-directed-witness-buffer
+    paths:
+      - src/directed_workspace.jl
+      - src/directed_levelwise/**
+      - src/directed_recursive/**
+      - research/directed_witness_materialization_benchmark.jl
+      - .github/workflows/DirectedWitnessMaterializationBenchmark.yml
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: lts
+          arch: x64
+
+      - uses: julia-actions/cache@v3
+        with:
+          delete-old-caches: false
+
+      - name: Instantiate package
+        run: julia --project=. --color=yes -e 'using Pkg; Pkg.instantiate()'
+
+      - name: Run witness materialization benchmark
+        run: |
+          set -o pipefail
+          julia --project=. --color=yes research/directed_witness_materialization_benchmark.jl \
+            | tee directed-witness-materialization-benchmark.txt
