@@ -29,8 +29,7 @@ end
 end
 
 function _research_component_less(
-    left::ResearchComponentCanonicalization,
-    right::ResearchComponentCanonicalization,
+    left::ResearchComponentCanonicalization, right::ResearchComponentCanonicalization
 )::Bool
     left_size = length(left.canonical_to_global)
     right_size = length(right.canonical_to_global)
@@ -42,8 +41,7 @@ function _research_component_less(
 end
 
 @inline function _research_same_component_type(
-    left::ResearchComponentCanonicalization,
-    right::ResearchComponentCanonicalization,
+    left::ResearchComponentCanonicalization, right::ResearchComponentCanonicalization
 )::Bool
     return length(left.canonical_to_global) == length(right.canonical_to_global) &&
            left.canonical_colors == right.canonical_colors &&
@@ -103,8 +101,7 @@ function _research_extract_component(
         component_colors[local_source] = colors[global_source]
         for local_target in 1:k
             global_target = vertices[local_target]
-            multiplicities[(local_source - 1) * k + local_target] =
-                graph.multiplicities[(global_source - 1) * n + global_target]
+            multiplicities[(local_source - 1) * k + local_target] = graph.multiplicities[(global_source - 1) * n + global_target]
         end
     end
     return GC.DirectedGCGraph(k, multiplicities), component_colors
@@ -166,8 +163,7 @@ function research_component_canonicalize(
         @inbounds for local_source in 1:k, local_target in 1:k
             global_source = offset + local_source
             global_target = offset + local_target
-            canonical_multiplicities[(global_source - 1) * n + global_target] =
-                component.canonical_multiplicities[(local_source - 1) * k + local_target]
+            canonical_multiplicities[(global_source - 1) * n + global_target] = component.canonical_multiplicities[(local_source - 1) * k + local_target]
         end
         offset += k
     end
@@ -175,8 +171,7 @@ function research_component_canonicalize(
     first_index = 1
     while first_index <= length(components)
         last_index = first_index
-        while last_index < length(components) &&
-                  _research_same_component_type(
+        while last_index < length(components) && _research_same_component_type(
             components[first_index], components[last_index + 1]
         )
             last_index += 1
@@ -206,23 +201,29 @@ function _research_relabel_colors(colors::Vector{Int}, mapping::Vector{Int})::Ve
 end
 
 function _research_validate_result(
-    graph::GC.DirectedGCGraph, colors::Vector{Int}, result::ResearchDecomposedCanonicalization
+    graph::GC.DirectedGCGraph,
+    colors::Vector{Int},
+    result::ResearchDecomposedCanonicalization,
 )::Nothing
     n = graph.num_vertices
-    sort(result.old_to_canonical) == collect(1:n) || error("old-to-canonical is not a permutation")
-    sort(result.canonical_to_old) == collect(1:n) || error("canonical-to-old is not a permutation")
+    sort(result.old_to_canonical) == collect(1:n) ||
+        error("old-to-canonical is not a permutation")
+    sort(result.canonical_to_old) == collect(1:n) ||
+        error("canonical-to-old is not a permutation")
     @inbounds for old_vertex in 1:n
         canonical_vertex = result.old_to_canonical[old_vertex]
         result.canonical_to_old[canonical_vertex] == old_vertex ||
             error("witness orientations are inconsistent")
     end
     relabeled = GC._relabel_directed_graph(graph, result.old_to_canonical)
-    relabeled == result.canonical_graph || error("global witness does not reconstruct image")
+    relabeled == result.canonical_graph ||
+        error("global witness does not reconstruct image")
     mapped_colors = similar(colors)
     @inbounds for old_vertex in 1:n
         mapped_colors[result.old_to_canonical[old_vertex]] = colors[old_vertex]
     end
-    mapped_colors == result.canonical_colors || error("global witness does not reconstruct colors")
+    mapped_colors == result.canonical_colors ||
+        error("global witness does not reconstruct colors")
     monolithic = GC.canonicalize_directed(graph, colors)
     GC.canonical_automorphism_order(monolithic) == result.automorphism_order ||
         error("component automorphism order disagrees with monolithic oracle")
@@ -245,7 +246,9 @@ function _research_exhaustive_small()::Int
             reverse_mapping = collect(n:-1:1)
             relabeled_graph = GC._relabel_directed_graph(graph, reverse_mapping)
             relabeled_colors = _research_relabel_colors(colors, reverse_mapping)
-            relabeled_result = research_component_canonicalize(relabeled_graph, relabeled_colors)
+            relabeled_result = research_component_canonicalize(
+                relabeled_graph, relabeled_colors
+            )
             result.canonical_graph == relabeled_result.canonical_graph ||
                 error("component image changed under relabeling")
             result.canonical_colors == relabeled_result.canonical_colors ||
@@ -281,8 +284,7 @@ function _research_mixed_fixture()
         multiplicities[(source - 1) * n + target] = cycle_a.multiplicities[(source - 1) * 3 + target]
     end
     for source in 1:4, target in 1:4
-        multiplicities[((source + 3) - 1) * n + (target + 3)] =
-            cycle_b.multiplicities[(source - 1) * 4 + target]
+        multiplicities[((source + 3) - 1) * n + (target + 3)] = cycle_b.multiplicities[(source - 1) * 4 + target]
     end
     multiplicities[(8 - 1) * n + 8] = 2
     colors = Int[1, 1, 1, 1, 1, 1, 1, 2, 3, 3]
@@ -316,8 +318,11 @@ function _research_benchmark_repeated_cycles(count::Int, size::Int)::Nothing
     graph, colors = _research_repeated_directed_cycles(count, size)
     n = graph.num_vertices
     result = research_component_canonicalize(graph, colors)
-    expected_order = Base.Checked.checked_mul(size^count, _research_checked_factorial(count))
-    result.automorphism_order == expected_order || error("known repeated-cycle order mismatch")
+    expected_order = Base.Checked.checked_mul(
+        size^count, _research_checked_factorial(count)
+    )
+    result.automorphism_order == expected_order ||
+        error("known repeated-cycle order mismatch")
     _research_validate_result(graph, colors, result)
 
     levelwise_workspace = GC.DirectedSimpleCanonicalizationWorkspace(
@@ -361,7 +366,10 @@ function _research_benchmark_repeated_cycles(count::Int, size::Int)::Nothing
         () -> begin
             for index in eachindex(local_graphs)
                 RecursiveGC.canonicalize_recursive_stabilizers!(
-                    local_buffer, local_workspace, local_graphs[index], local_colors[index]
+                    local_buffer,
+                    local_workspace,
+                    local_graphs[index],
+                    local_colors[index],
                 )
             end
         end,
