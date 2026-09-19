@@ -21,8 +21,7 @@ function production_bench_complete(n::Int)
     return production_bench_bidirected(n, edges), ones(Int, n)
 end
 
-production_bench_empty(n::Int) =
-    (GC.DirectedGCGraph(Pair{Int,Int}[], n), ones(Int, n))
+production_bench_empty(n::Int) = (GC.DirectedGCGraph(Pair{Int,Int}[], n), ones(Int, n))
 
 function production_bench_complete_bipartite(left_size::Int, right_size::Int)
     n = left_size + right_size
@@ -139,10 +138,7 @@ function production_bench_repeated_directed_cycles(count::Int, size::Int)
     for component in 0:(count - 1)
         offset = component * size
         for local_vertex in 1:size
-            push!(
-                edges,
-                (offset + local_vertex) => (offset + mod1(local_vertex + 1, size)),
-            )
+            push!(edges, (offset + local_vertex) => (offset + mod1(local_vertex + 1, size)))
         end
     end
     return GC.DirectedGCGraph(edges, n), ones(Int, n)
@@ -191,10 +187,7 @@ function production_minimum_recursive_ns(
 end
 
 function run_production_crossover_benchmark(
-    name::String,
-    graph::GC.DirectedGCGraph,
-    colors::Vector{Int};
-    repetitions::Int=40,
+    name::String, graph::GC.DirectedGCGraph, colors::Vector{Int}; repetitions::Int=40
 )::Nothing
     n = graph.num_vertices
     level_buffer = GC.DirectedCanonicalizationBuffer(n)
@@ -222,8 +215,7 @@ function run_production_crossover_benchmark(
         recursive_buffer, recursive, graph, colors
     )
     iszero(level_alloc) || error("levelwise allocated $level_alloc bytes for $name")
-    iszero(recursive_alloc) ||
-        error("recursive allocated $recursive_alloc bytes for $name")
+    iszero(recursive_alloc) || error("recursive allocated $recursive_alloc bytes for $name")
 
     level_ns = production_minimum_levelwise_ns(
         level_buffer, level, graph, colors, repetitions
@@ -269,9 +261,7 @@ function run_production_crossover_benchmark(
 end
 
 function run_production_fixture(
-    name::String,
-    fixture::Tuple{GC.DirectedGCGraph,Vector{Int}};
-    repetitions::Int=40,
+    name::String, fixture::Tuple{GC.DirectedGCGraph,Vector{Int}}; repetitions::Int=40
 )::Nothing
     graph, colors = fixture
     run_production_crossover_benchmark(name, graph, colors; repetitions)
@@ -289,7 +279,9 @@ run_production_fixture("hypercube-5", production_bench_hypercube(5); repetitions
 run_production_fixture("paley-13", production_bench_paley13())
 run_production_fixture("shrikhande", production_bench_shrikhande())
 run_production_fixture(
-    "repeated-directed-c7x4", production_bench_repeated_directed_cycles(4, 7); repetitions=20
+    "repeated-directed-c7x4",
+    production_bench_repeated_directed_cycles(4, 7);
+    repetitions=20,
 )
 run_production_fixture(
     "asymmetric-24", production_bench_deterministic_asymmetric(24); repetitions=20
