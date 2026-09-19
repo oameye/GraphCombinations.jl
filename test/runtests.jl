@@ -98,6 +98,10 @@ else
         include("directed_packed_workspace.jl")
     end
 
+    @testset "recursive stabilizer directed workspace" begin
+        include("directed_recursive.jl")
+    end
+
     @testset "Wick reference oracle" begin
         include("reference_oracle.jl")
     end
