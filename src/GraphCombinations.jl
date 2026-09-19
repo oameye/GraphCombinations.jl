@@ -18,6 +18,7 @@ using DispatchDoctor: @stable
     include("directed_packed_workspace.jl")
     include("directed_levelwise/DirectedLevelwise.jl")
     include("directed_recursive/DirectedRecursive.jl")
+    include("directed_components.jl")
     include("partition_canonicalization.jl")
     include("matrix_canonicalization.jl")
     include("direct_generation.jl")
@@ -86,12 +87,14 @@ export allgraphs,
     DirectedCanonicalizationResult,
     DirectedCanonicalizationWorkspace,
     DirectedCanonicalizationBuffer,
+    DirectedComponentCanonicalizationWorkspace,
     PackedDirectedCanonicalizationWorkspace,
     DirectedSimpleCanonicalizationWorkspace,
     VertexRelabeling,
     load_directed_graph!,
     canonicalize_directed,
     canonicalize_directed!,
+    canonicalize_directed_components!,
     canonicalize_directed_packed!,
     canonicalize_directed_simple!,
     canonical_graph,
