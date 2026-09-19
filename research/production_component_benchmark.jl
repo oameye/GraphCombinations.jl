@@ -33,7 +33,10 @@ function disjoint_asymmetric_components(count::Int, size::Int)
         for local_source in 1:size, local_target in 1:size
             local_source == local_target && continue
             value = mod(
-                37local_source + 53local_target + 7local_source * local_target + 11local_source^2,
+                37local_source +
+                53local_target +
+                7local_source * local_target +
+                11local_source^2,
                 97,
             )
             value < 24 || continue
@@ -62,20 +65,28 @@ function benchmark_fixture(name::String, graph::GC.DirectedGCGraph, colors::Vect
         n; frontier_capacity=max(4096, 16 * max(n, 1)^2)
     )
     recursive_workspace = RecursiveGC.PackedRecursiveStabilizerWorkspace(n)
-    component_recursive = GC.DirectedComponentCanonicalizationWorkspace(n; kernel=:recursive)
+    component_recursive = GC.DirectedComponentCanonicalizationWorkspace(n, Val(:recursive))
+    component_levelwise = GC.DirectedComponentCanonicalizationWorkspace(n, Val(:levelwise))
     component_general = GC.DirectedComponentCanonicalizationWorkspace(n)
 
     GC.canonicalize_directed_simple!(output, levelwise_workspace, graph, colors)
     levelwise_order = GC.canonical_automorphism_order(output)
-    RecursiveGC.canonicalize_recursive_stabilizers!(output, recursive_workspace, graph, colors)
+    RecursiveGC.canonicalize_recursive_stabilizers!(
+        output, recursive_workspace, graph, colors
+    )
     recursive_order = GC.canonical_automorphism_order(output)
     GC.canonicalize_directed_components!(output, component_recursive, graph, colors)
     component_recursive_order = GC.canonical_automorphism_order(output)
+    GC.canonicalize_directed_components!(output, component_levelwise, graph, colors)
+    component_levelwise_order = GC.canonical_automorphism_order(output)
     GC.canonicalize_directed_components!(output, component_general, graph, colors)
     component_general_order = GC.canonical_automorphism_order(output)
 
-    levelwise_order == recursive_order == component_recursive_order == component_general_order ||
-        error("automorphism-order mismatch on $name")
+    levelwise_order ==
+    recursive_order ==
+    component_recursive_order ==
+    component_levelwise_order ==
+    component_general_order || error("automorphism-order mismatch on $name")
 
     levelwise_alloc = @allocated GC.canonicalize_directed_simple!(
         output, levelwise_workspace, graph, colors
@@ -85,6 +96,9 @@ function benchmark_fixture(name::String, graph::GC.DirectedGCGraph, colors::Vect
     )
     component_recursive_alloc = @allocated GC.canonicalize_directed_components!(
         output, component_recursive, graph, colors
+    )
+    component_levelwise_alloc = @allocated GC.canonicalize_directed_components!(
+        output, component_levelwise, graph, colors
     )
     component_general_alloc = @allocated GC.canonicalize_directed_components!(
         output, component_general, graph, colors
@@ -107,8 +121,15 @@ function benchmark_fixture(name::String, graph::GC.DirectedGCGraph, colors::Vect
         ),
         repetitions,
     )
+    component_levelwise_ns = minimum_ns(
+        () -> GC.canonicalize_directed_components!(
+            output, component_levelwise, graph, colors
+        ),
+        repetitions,
+    )
     component_general_ns = minimum_ns(
-        () -> GC.canonicalize_directed_components!(output, component_general, graph, colors),
+        () ->
+            GC.canonicalize_directed_components!(output, component_general, graph, colors),
         repetitions,
     )
 
@@ -125,11 +146,13 @@ function benchmark_fixture(name::String, graph::GC.DirectedGCGraph, colors::Vect
         recursive_ns,
         "|component_recursive_ns=",
         component_recursive_ns,
+        "|component_levelwise_ns=",
+        component_levelwise_ns,
         "|component_general_ns=",
         component_general_ns,
-        "|levelwise_over_component=",
+        "|levelwise_over_component_recursive=",
         round(levelwise_ns / component_recursive_ns; digits=3),
-        "|recursive_over_component=",
+        "|recursive_over_component_recursive=",
         round(recursive_ns / component_recursive_ns; digits=3),
         "|levelwise_alloc=",
         levelwise_alloc,
@@ -137,6 +160,8 @@ function benchmark_fixture(name::String, graph::GC.DirectedGCGraph, colors::Vect
         recursive_alloc,
         "|component_recursive_alloc=",
         component_recursive_alloc,
+        "|component_levelwise_alloc=",
+        component_levelwise_alloc,
         "|component_general_alloc=",
         component_general_alloc,
     )
