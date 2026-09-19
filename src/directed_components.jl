@@ -69,7 +69,6 @@ mutable struct DirectedComponentCanonicalizationWorkspace{
     component_offsets::Vector{Int}
     component_sizes::Vector{Int}
     component_order::Vector{Int}
-    global_to_local::Vector{Int}
     input_colors::Vector{Int}
     local_colors::Vector{Int}
     local_graph::DirectedGCGraphBuffer
@@ -91,7 +90,6 @@ function _directed_component_workspace(
         Vector{Int}(undef, capacity),
         Vector{Int}(undef, capacity),
         Vector{Int}(undef, capacity + 1),
-        Vector{Int}(undef, capacity),
         Vector{Int}(undef, capacity),
         Vector{Int}(undef, capacity),
         Vector{Int}(undef, capacity),
@@ -232,7 +230,6 @@ function _load_directed_component!(
 
     @inbounds for local_vertex in 1:size
         global_vertex = workspace.component_vertices[start + local_vertex - 1]
-        workspace.global_to_local[global_vertex] = local_vertex
         workspace.local_colors[local_vertex] = Int(colors[global_vertex])
     end
     @inbounds for local_source in 1:size
