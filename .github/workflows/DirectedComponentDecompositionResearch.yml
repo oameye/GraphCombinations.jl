@@ -1,0 +1,28 @@
+name: Directed component decomposition research
+
+on:
+  push:
+    branches:
+      - research-directed-component-decomposition
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: '1.13'
+      - uses: julia-actions/cache@v3
+      - name: Instantiate package
+        run: julia --project=. --color=yes -e 'using Pkg; Pkg.instantiate()'
+      - name: Run component decomposition certification
+        run: |
+          set -o pipefail
+          julia --project=. --color=yes research/directed_component_decomposition.jl \
+            | tee directed-component-decomposition.txt
