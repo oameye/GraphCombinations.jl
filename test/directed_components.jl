@@ -10,9 +10,7 @@ function _component_test_relabel(
     @inbounds for old_source in 1:n, old_target in 1:n
         new_source = old_to_new[old_source]
         new_target = old_to_new[old_target]
-        multiplicities[(new_source - 1) * n + new_target] = graph.multiplicities[
-            (old_source - 1) * n + old_target
-        ]
+        multiplicities[(new_source - 1) * n + new_target] = graph.multiplicities[(old_source - 1) * n + old_target]
     end
     return DirectedGCGraph(n, multiplicities), relabeled_colors
 end
@@ -34,9 +32,7 @@ function _component_test_reconstructed_graph(
     @inbounds for old_source in 1:n, old_target in 1:n
         canonical_source = canonical_rank(buffer, old_source)
         canonical_target = canonical_rank(buffer, old_target)
-        multiplicities[(canonical_source - 1) * n + canonical_target] = graph.multiplicities[
-            (old_source - 1) * n + old_target
-        ]
+        multiplicities[(canonical_source - 1) * n + canonical_target] = graph.multiplicities[(old_source - 1) * n + old_target]
     end
     return DirectedGCGraph(n, multiplicities)
 end
@@ -156,8 +152,12 @@ end
 end
 
 @testset "component kernel support is explicit" begin
-    @test_throws ArgumentError DirectedComponentCanonicalizationWorkspace(65, Val(:recursive))
-    @test_throws ArgumentError DirectedComponentCanonicalizationWorkspace(65, Val(:levelwise))
+    @test_throws ArgumentError DirectedComponentCanonicalizationWorkspace(
+        65, Val(:recursive)
+    )
+    @test_throws ArgumentError DirectedComponentCanonicalizationWorkspace(
+        65, Val(:levelwise)
+    )
     @test_throws ArgumentError DirectedComponentCanonicalizationWorkspace(8, Val(:unknown))
 
     graph = DirectedGCGraph([1 => 2, 1 => 2, 3 => 4], 4)
