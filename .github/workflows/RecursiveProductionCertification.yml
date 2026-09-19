@@ -27,6 +27,8 @@ jobs:
           arch: x64
 
       - uses: julia-actions/cache@v3
+        with:
+          delete-old-caches: false
 
       - name: Instantiate package
         run: julia --project=. --color=yes -e 'using Pkg; Pkg.instantiate()'
