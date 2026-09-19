@@ -1,9 +1,7 @@
 const WitnessRecursiveGC = GraphCombinations.DirectedRecursive
 
 function _test_same_directed_witness(
-    full::DirectedCanonicalizationBuffer,
-    witness::DirectedCanonicalizationBuffer,
-    n::Int,
+    full::DirectedCanonicalizationBuffer, witness::DirectedCanonicalizationBuffer, n::Int
 )::Nothing
     @test canonical_automorphism_order(witness) == canonical_automorphism_order(full)
     @test witness.old_to_canonical[1:n] == full.old_to_canonical[1:n]
@@ -58,19 +56,7 @@ end
 
 @testset "recursive witness-only result mode" begin
     graph = DirectedGCGraph(
-        [
-            1 => 2,
-            2 => 3,
-            3 => 4,
-            4 => 5,
-            5 => 1,
-            1 => 3,
-            2 => 4,
-            3 => 5,
-            4 => 1,
-            5 => 2,
-        ],
-        5,
+        [1 => 2, 2 => 3, 3 => 4, 4 => 5, 5 => 1, 1 => 3, 2 => 4, 3 => 5, 4 => 1, 5 => 2], 5
     )
     colors = ones(Int, 5)
     workspace = WitnessRecursiveGC.PackedRecursiveStabilizerWorkspace(8)
