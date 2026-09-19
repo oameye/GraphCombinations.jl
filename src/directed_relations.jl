@@ -33,6 +33,19 @@ struct DirectedRelationGraph
         end
         return new(n, nr, values)
     end
+
+    function DirectedRelationGraph(
+        num_vertices::Int,
+        num_relations::Int,
+        multiplicities::Vector{Int},
+        ::Val{:borrow},
+    )
+        expected = Base.Checked.checked_mul(num_vertices * num_vertices, num_relations)
+        length(multiplicities) >= expected || throw(
+            DimensionMismatch("borrowed relation storage is smaller than the active graph"),
+        )
+        return new(num_vertices, num_relations, multiplicities)
+    end
 end
 
 @inline function _directed_relation_slot(
@@ -159,9 +172,8 @@ end
 @inline function _directed_relation_graph_view(
     graph::DirectedRelationGraphBuffer
 )::DirectedRelationGraph
-    active = graph.num_relations * graph.num_vertices * graph.num_vertices
     return DirectedRelationGraph(
-        graph.num_vertices, graph.num_relations, @view(graph.multiplicities[1:active])
+        graph.num_vertices, graph.num_relations, graph.multiplicities, Val(:borrow)
     )
 end
 
@@ -729,12 +741,8 @@ function canonicalize_directed_relations!(
     n = graph.num_vertices
     length(vertex_colors) >= n ||
         throw(ArgumentError("vertex_colors must cover every active vertex."))
-    active = graph.num_relations * n * n
-    view_graph = DirectedRelationGraph(
-        n, graph.num_relations, @view(graph.multiplicities[1:active])
-    )
     return canonicalize_directed_relations!(
-        buffer, workspace, view_graph, @view(vertex_colors[1:n])
+        buffer, workspace, _directed_relation_graph_view(graph), @view(vertex_colors[1:n])
     )
 end
 
