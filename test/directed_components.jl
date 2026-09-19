@@ -10,8 +10,9 @@ function _component_test_relabel(
     @inbounds for old_source in 1:n, old_target in 1:n
         new_source = old_to_new[old_source]
         new_target = old_to_new[old_target]
-        multiplicities[(new_source - 1) * n + new_target] =
-            graph.multiplicities[(old_source - 1) * n + old_target]
+        multiplicities[(new_source - 1) * n + new_target] = graph.multiplicities[
+            (old_source - 1) * n + old_target
+        ]
     end
     return DirectedGCGraph(n, multiplicities), relabeled_colors
 end
@@ -19,7 +20,10 @@ end
 function _component_test_canonical_colors(
     buffer::DirectedCanonicalizationBuffer, colors::Vector{Int}
 )::Vector{Int}
-    return [colors[original_vertex(buffer, canonical_vertex)] for canonical_vertex in 1:length(colors)]
+    return [
+        colors[original_vertex(buffer, canonical_vertex)] for
+        canonical_vertex in 1:length(colors)
+    ]
 end
 
 function _component_test_reconstructed_graph(
@@ -30,8 +34,9 @@ function _component_test_reconstructed_graph(
     @inbounds for old_source in 1:n, old_target in 1:n
         canonical_source = canonical_rank(buffer, old_source)
         canonical_target = canonical_rank(buffer, old_target)
-        multiplicities[(canonical_source - 1) * n + canonical_target] =
-            graph.multiplicities[(old_source - 1) * n + old_target]
+        multiplicities[(canonical_source - 1) * n + canonical_target] = graph.multiplicities[
+            (old_source - 1) * n + old_target
+        ]
     end
     return DirectedGCGraph(n, multiplicities)
 end
@@ -48,6 +53,17 @@ function _component_test_repeated_cycles(count::Int, size::Int)::DirectedGCGraph
         end
     end
     return DirectedGCGraph(n, multiplicities)
+end
+
+@testset "component workspace constructors are concrete" begin
+    @test @inferred(DirectedComponentCanonicalizationWorkspace(12)) isa
+        DirectedComponentCanonicalizationWorkspace
+    @test @inferred(DirectedComponentCanonicalizationWorkspace(12, Val(:general))) isa
+        DirectedComponentCanonicalizationWorkspace
+    @test @inferred(DirectedComponentCanonicalizationWorkspace(12, Val(:recursive))) isa
+        DirectedComponentCanonicalizationWorkspace
+    @test @inferred(DirectedComponentCanonicalizationWorkspace(12, Val(:levelwise))) isa
+        DirectedComponentCanonicalizationWorkspace
 end
 
 @testset "exact directed component decomposition" begin
@@ -93,15 +109,21 @@ end
 @testset "repeated components use wreath-product symmetry" begin
     graph = _component_test_repeated_cycles(4, 7)
     colors = ones(Int, graph.num_vertices)
-    workspace = DirectedComponentCanonicalizationWorkspace(32; kernel=:recursive)
+    recursive_workspace = DirectedComponentCanonicalizationWorkspace(32, Val(:recursive))
+    levelwise_workspace = DirectedComponentCanonicalizationWorkspace(32, Val(:levelwise))
     buffer = DirectedCanonicalizationBuffer(32; materialize_canonical=false)
 
-    canonicalize_directed_components!(buffer, workspace, graph, colors)
+    canonicalize_directed_components!(buffer, recursive_workspace, graph, colors)
     @test canonical_automorphism_order(buffer) == 7^4 * factorial(4) == 57_624
     @test sort(buffer.old_to_canonical[1:28]) == collect(1:28)
     @test sort(buffer.canonical_to_old[1:28]) == collect(1:28)
 
-    allocated = @allocated canonicalize_directed_components!(buffer, workspace, graph, colors)
+    canonicalize_directed_components!(buffer, levelwise_workspace, graph, colors)
+    @test canonical_automorphism_order(buffer) == 57_624
+
+    allocated = @allocated canonicalize_directed_components!(
+        buffer, recursive_workspace, graph, colors
+    )
     @test !iszero(Base.JLOptions().code_coverage) || allocated == 0
 end
 
@@ -134,14 +156,19 @@ end
 end
 
 @testset "component kernel support is explicit" begin
-    @test_throws ArgumentError DirectedComponentCanonicalizationWorkspace(65; kernel=:recursive)
-    @test_throws ArgumentError DirectedComponentCanonicalizationWorkspace(8; kernel=:unknown)
+    @test_throws ArgumentError DirectedComponentCanonicalizationWorkspace(65, Val(:recursive))
+    @test_throws ArgumentError DirectedComponentCanonicalizationWorkspace(65, Val(:levelwise))
+    @test_throws ArgumentError DirectedComponentCanonicalizationWorkspace(8, Val(:unknown))
 
     graph = DirectedGCGraph([1 => 2, 1 => 2, 3 => 4], 4)
-    workspace = DirectedComponentCanonicalizationWorkspace(8; kernel=:recursive)
+    recursive_workspace = DirectedComponentCanonicalizationWorkspace(8, Val(:recursive))
+    levelwise_workspace = DirectedComponentCanonicalizationWorkspace(8, Val(:levelwise))
     buffer = DirectedCanonicalizationBuffer(8)
     @test_throws ArgumentError canonicalize_directed_components!(
-        buffer, workspace, graph, ones(Int, 4)
+        buffer, recursive_workspace, graph, ones(Int, 4)
+    )
+    @test_throws ArgumentError canonicalize_directed_components!(
+        buffer, levelwise_workspace, graph, ones(Int, 4)
     )
 end
 
@@ -150,19 +177,21 @@ end
     workspace = DirectedComponentCanonicalizationWorkspace(12)
     buffer = DirectedCanonicalizationBuffer(12; materialize_canonical=false)
     colors = ones(Int, 12)
+    disconnected_edges = [(1, 2), (2, 1), (3, 4), (4, 3)]
+    connected_edges = [(1, 2), (2, 3), (3, 1)]
 
-    load_directed_graph!(graph, [(1, 2), (2, 1), (3, 4), (4, 3)], 4)
+    load_directed_graph!(graph, disconnected_edges, 4)
     canonicalize_directed_components!(buffer, workspace, graph, colors)
     @test buffer.num_vertices == 4
     @test canonical_automorphism_order(buffer) == 8
 
-    load_directed_graph!(graph, [(1, 2), (2, 3), (3, 1)], 3)
+    load_directed_graph!(graph, connected_edges, 3)
     canonicalize_directed_components!(buffer, workspace, graph, colors)
     @test buffer.num_vertices == 3
     @test canonical_automorphism_order(buffer) == 3
 
     allocated = @allocated begin
-        load_directed_graph!(graph, [(1, 2), (2, 1), (3, 4), (4, 3)], 4)
+        load_directed_graph!(graph, disconnected_edges, 4)
         canonicalize_directed_components!(buffer, workspace, graph, colors)
     end
     @test !iszero(Base.JLOptions().code_coverage) || allocated == 0
