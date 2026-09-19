@@ -63,9 +63,7 @@ mutable struct DirectedCanonicalizationBuffer
     num_vertices::Int
 end
 
-function DirectedCanonicalizationBuffer(
-    capacity::Integer; materialize_canonical::Bool=true
-)
+function DirectedCanonicalizationBuffer(capacity::Integer; materialize_canonical::Bool=true)
     n = Int(capacity)
     n >= 0 || throw(ArgumentError("capacity must be non-negative."))
     canonical_multiplicities = if materialize_canonical
@@ -429,9 +427,9 @@ function _write_directed_buffer!(
             old_source = best_inverse_mapping[canonical_source]
             for canonical_target in 1:n
                 old_target = best_inverse_mapping[canonical_target]
-                buffer.canonical_multiplicities[_directed_slot(
-                    canonical_source, canonical_target, n
-                )] = graph.multiplicities[_directed_slot(old_source, old_target, n)]
+                buffer.canonical_multiplicities[_directed_slot(canonical_source, canonical_target, n)] = graph.multiplicities[_directed_slot(
+                    old_source, old_target, n
+                )]
             end
         end
     end
