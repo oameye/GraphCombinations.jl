@@ -417,4 +417,3 @@ println(
 )
 
 _research_benchmark_repeated_cycles(4, 7)
-_research_benchmark_repeated_cycles(8, 7)
