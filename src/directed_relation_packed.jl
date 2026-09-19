@@ -91,24 +91,19 @@ end
 @inline _packed_relation_bit(vertex::Int)::UInt64 = UInt64(1) << (vertex - 1)
 
 @inline function _packed_relation_row_slot(
-    workspace::PackedDirectedRelationCanonicalizationWorkspace,
-    relation::Int,
-    vertex::Int,
+    workspace::PackedDirectedRelationCanonicalizationWorkspace, relation::Int, vertex::Int
 )::Int
     return (relation - 1) * workspace.vertex_capacity + vertex
 end
 
 @inline function _packed_relation_depth_slot(
-    workspace::PackedDirectedRelationCanonicalizationWorkspace,
-    depth::Int,
-    vertex::Int,
+    workspace::PackedDirectedRelationCanonicalizationWorkspace, depth::Int, vertex::Int
 )::Int
     return (depth - 1) * max(workspace.vertex_capacity, 1) + vertex
 end
 
 function _prepare_packed_relation_rows!(
-    workspace::PackedDirectedRelationCanonicalizationWorkspace,
-    graph::DirectedRelationGraph,
+    workspace::PackedDirectedRelationCanonicalizationWorkspace, graph::DirectedRelationGraph
 )::Bool
     n = graph.num_vertices
     nr = graph.num_relations
@@ -247,7 +242,7 @@ end
     right_offset = (right - 1) * stride
     @inbounds for coordinate in 1:signature_length
         workspace.signatures[left_offset + coordinate] ==
-            workspace.signatures[right_offset + coordinate] || return false
+        workspace.signatures[right_offset + coordinate] || return false
     end
     return true
 end
@@ -266,7 +261,8 @@ function _packed_relation_refine_once!(
     previous_vertex = 0
     @inbounds for index in 1:n
         vertex = workspace.order[index]
-        if iszero(previous_vertex) || !_packed_relation_signatures_equal(
+        if iszero(previous_vertex) ||
+            !_packed_relation_signatures_equal(
             workspace, previous_vertex, vertex, signature_length
         )
             next_color += 1
@@ -323,9 +319,7 @@ function _packed_relation_target_color!(
 end
 
 @inline function _packed_relation_orbit_find(
-    workspace::PackedDirectedRelationCanonicalizationWorkspace,
-    depth::Int,
-    vertex::Int,
+    workspace::PackedDirectedRelationCanonicalizationWorkspace, depth::Int, vertex::Int
 )::Int
     root = vertex
     @inbounds while true
@@ -344,9 +338,9 @@ function _packed_relation_orbit_union!(
     left_root = _packed_relation_orbit_find(workspace, depth, left)
     right_root = _packed_relation_orbit_find(workspace, depth, right)
     left_root == right_root && return nothing
-    @inbounds workspace.orbit_parent[
-        _packed_relation_depth_slot(workspace, depth, right_root)
-    ] = left_root
+    @inbounds workspace.orbit_parent[_packed_relation_depth_slot(
+        workspace, depth, right_root
+    )] = left_root
     workspace.orbit_merges[depth] += 1
     workspace.total_orbit_merges += 1
     return nothing
@@ -364,7 +358,8 @@ function _packed_relation_initialize_node!(
         if Int(workspace.color_stack[vertex, depth]) == target_color
             target_mask |= _packed_relation_bit(vertex)
         end
-        workspace.orbit_parent[_packed_relation_depth_slot(workspace, depth, vertex)] = vertex
+        workspace.orbit_parent[_packed_relation_depth_slot(workspace, depth, vertex)] =
+            vertex
     end
     workspace.target_masks[depth] = target_mask
     workspace.explored_masks[depth] = 0
@@ -414,9 +409,7 @@ function _packed_relation_candidate_explored(
 end
 
 function _packed_relation_orbit_size(
-    workspace::PackedDirectedRelationCanonicalizationWorkspace,
-    depth::Int,
-    vertex::Int,
+    workspace::PackedDirectedRelationCanonicalizationWorkspace, depth::Int, vertex::Int
 )::Int
     root = _packed_relation_orbit_find(workspace, depth, vertex)
     count = 0
@@ -437,9 +430,9 @@ function _packed_relation_copy_leaf!(
     n = graph.num_vertices
     @inbounds for vertex in 1:n
         canonical_vertex = Int(workspace.color_stack[vertex, depth])
-        workspace.best_inverse[
-            _packed_relation_depth_slot(workspace, depth, canonical_vertex)
-        ] = vertex
+        workspace.best_inverse[_packed_relation_depth_slot(
+            workspace, depth, canonical_vertex
+        )] = vertex
     end
     workspace.search_leaves += 1
     workspace.has_best[depth] = true
@@ -454,11 +447,9 @@ function _packed_relation_copy_child_best!(
 )::Nothing
     n = graph.num_vertices
     @inbounds for canonical_vertex in 1:n
-        workspace.best_inverse[
-            _packed_relation_depth_slot(workspace, parent_depth, canonical_vertex)
-        ] = workspace.best_inverse[
-            _packed_relation_depth_slot(workspace, child_depth, canonical_vertex)
-        ]
+        workspace.best_inverse[_packed_relation_depth_slot(workspace, parent_depth, canonical_vertex)] = workspace.best_inverse[_packed_relation_depth_slot(
+            workspace, child_depth, canonical_vertex
+        )]
     end
     return nothing
 end
@@ -471,19 +462,19 @@ function _packed_relation_compare_child(
 )::Int
     n = graph.num_vertices
     @inbounds for relation in 1:(graph.num_relations), canonical_source in 1:n
-        child_source = workspace.best_inverse[
-            _packed_relation_depth_slot(workspace, child_depth, canonical_source)
-        ]
-        best_source = workspace.best_inverse[
-            _packed_relation_depth_slot(workspace, parent_depth, canonical_source)
-        ]
+        child_source = workspace.best_inverse[_packed_relation_depth_slot(
+            workspace, child_depth, canonical_source
+        )]
+        best_source = workspace.best_inverse[_packed_relation_depth_slot(
+            workspace, parent_depth, canonical_source
+        )]
         for canonical_target in 1:n
-            child_target = workspace.best_inverse[
-                _packed_relation_depth_slot(workspace, child_depth, canonical_target)
-            ]
-            best_target = workspace.best_inverse[
-                _packed_relation_depth_slot(workspace, parent_depth, canonical_target)
-            ]
+            child_target = workspace.best_inverse[_packed_relation_depth_slot(
+                workspace, child_depth, canonical_target
+            )]
+            best_target = workspace.best_inverse[_packed_relation_depth_slot(
+                workspace, parent_depth, canonical_target
+            )]
             child_value = _directed_relation_multiplicity(
                 graph, relation, child_source, child_target
             )
@@ -506,12 +497,12 @@ function _packed_relation_record_automorphism!(
     n = graph.num_vertices
     target_mask = workspace.target_masks[depth]
     @inbounds for canonical_vertex in 1:n
-        best_vertex = workspace.best_inverse[
-            _packed_relation_depth_slot(workspace, depth, canonical_vertex)
-        ]
-        child_vertex = workspace.best_inverse[
-            _packed_relation_depth_slot(workspace, child_depth, canonical_vertex)
-        ]
+        best_vertex = workspace.best_inverse[_packed_relation_depth_slot(
+            workspace, depth, canonical_vertex
+        )]
+        child_vertex = workspace.best_inverse[_packed_relation_depth_slot(
+            workspace, child_depth, canonical_vertex
+        )]
         iszero(target_mask & _packed_relation_bit(best_vertex)) && continue
         iszero(target_mask & _packed_relation_bit(child_vertex)) &&
             error("relation stabilizer automorphism left the active target cell")
@@ -533,15 +524,17 @@ function _packed_relation_individualize!(
     n = graph.num_vertices
     @inbounds for vertex in 1:n
         color = Int(workspace.color_stack[vertex, depth])
-        workspace.color_stack[vertex, child_depth] = UInt8(if color < target_color
-            color
-        elseif color > target_color
-            color + 1
-        elseif vertex == chosen_vertex
-            target_color
-        else
-            target_color + 1
-        end)
+        workspace.color_stack[vertex, child_depth] = UInt8(
+            if color < target_color
+                color
+            elseif color > target_color
+                color + 1
+            elseif vertex == chosen_vertex
+                target_color
+            else
+                target_color + 1
+            end,
+        )
     end
     return nothing
 end
@@ -585,9 +578,7 @@ function _packed_relation_search!(
             continue
         end
 
-        comparison = _packed_relation_compare_child(
-            workspace, graph, depth, child_depth
-        )
+        comparison = _packed_relation_compare_child(workspace, graph, depth, child_depth)
         if comparison < 0
             _packed_relation_copy_child_best!(workspace, graph, depth, child_depth)
             workspace.best_vertices[depth] = chosen_vertex
@@ -666,9 +657,9 @@ function canonicalize_directed_relations!(
     automorphism_order = _packed_relation_search!(workspace, graph, 1)
     workspace.has_best[1] || error("packed relation search produced no canonical leaf")
     @inbounds for canonical_vertex in 1:n
-        workspace.order[canonical_vertex] = workspace.best_inverse[
-            _packed_relation_depth_slot(workspace, 1, canonical_vertex)
-        ]
+        workspace.order[canonical_vertex] = workspace.best_inverse[_packed_relation_depth_slot(
+            workspace, 1, canonical_vertex
+        )]
     end
     _write_relation_buffer!(buffer, graph, workspace.order, automorphism_order)
     return buffer
@@ -698,9 +689,6 @@ function canonicalize_directed_relations!(
     length(vertex_colors) >= n ||
         throw(ArgumentError("vertex_colors must cover every active vertex."))
     return canonicalize_directed_relations!(
-        buffer,
-        workspace,
-        _directed_relation_graph_view(graph),
-        @view(vertex_colors[1:n]),
+        buffer, workspace, _directed_relation_graph_view(graph), @view(vertex_colors[1:n])
     )
 end

@@ -25,8 +25,9 @@ function _relation_test_relabel(
     @inbounds for relation in 1:nr, old_source in 1:n, old_target in 1:n
         new_source = old_to_new[old_source]
         new_target = old_to_new[old_target]
-        multiplicities[_relation_test_slot(relation, new_source, new_target, n)] =
-            graph.multiplicities[_relation_test_slot(relation, old_source, old_target, n)]
+        multiplicities[_relation_test_slot(relation, new_source, new_target, n)] = graph.multiplicities[_relation_test_slot(
+            relation, old_source, old_target, n
+        )]
     end
     return DirectedRelationGraph(n, nr, multiplicities), relabeled_colors
 end
@@ -38,7 +39,7 @@ function _relation_test_permutations(n::Int)
     function visit(depth::Int)
         if depth > n
             push!(result, copy(current))
-            return
+            return nothing
         end
         for value in 1:n
             used[value] && continue
@@ -61,11 +62,9 @@ function _relation_test_is_automorphism(
     end
     @inbounds for relation in 1:(graph.num_relations), source in 1:n, target in 1:n
         graph.multiplicities[_relation_test_slot(relation, source, target, n)] ==
-            graph.multiplicities[
-                _relation_test_slot(
-                    relation, old_to_new[source], old_to_new[target], n
-                )
-            ] || return false
+        graph.multiplicities[_relation_test_slot(
+            relation, old_to_new[source], old_to_new[target], n
+        )] || return false
     end
     return true
 end
@@ -89,13 +88,13 @@ function _relation_test_canonical_colors(
 end
 
 @testset "native directed relations exhaustive n=2" begin
-    for code in 0:(2^8 - 1), colors in (Int[1, 1], Int[1, 2])
+    for code in 0:(2 ^ 8 - 1), colors in (Int[1, 1], Int[1, 2])
         graph = _relation_test_graph_from_code(2, 2, 2, code)
         workspace = DirectedRelationCanonicalizationWorkspace(2, 2)
         buffer = DirectedRelationCanonicalizationBuffer(2, 2)
-        @test @inferred(canonicalize_directed_relations!(
-            buffer, workspace, graph, colors
-        )) === buffer
+        @test @inferred(
+            canonicalize_directed_relations!(buffer, workspace, graph, colors)
+        ) === buffer
         @test canonical_automorphism_order(buffer) ==
             _relation_test_automorphism_order(graph, colors)
 
@@ -109,7 +108,7 @@ end
 end
 
 @testset "native relation multiplicities" begin
-    for code in 0:(3^4 - 1), colors in (Int[1, 1], Int[1, 2])
+    for code in 0:(3 ^ 4 - 1), colors in (Int[1, 1], Int[1, 2])
         graph = _relation_test_graph_from_code(2, 1, 3, code)
         workspace = DirectedRelationCanonicalizationWorkspace(2, 1)
         buffer = DirectedRelationCanonicalizationBuffer(2, 1)

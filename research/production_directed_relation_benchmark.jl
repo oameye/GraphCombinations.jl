@@ -118,24 +118,24 @@ function benchmark_simple_fixture(
         error("native general/packed witness mismatch")
     canonical_colors(colors, general) == canonical_colors(colors, packed) ||
         error("native general/packed canonical colors mismatch")
-    GC.canonical_automorphism_order(bucket_buffer) == GC.canonical_automorphism_order(packed) ||
-        error("bucket/native automorphism mismatch")
+    GC.canonical_automorphism_order(bucket_buffer) ==
+    GC.canonical_automorphism_order(packed) || error("bucket/native automorphism mismatch")
     GC.canonical_automorphism_order(instance_buffer) ==
-        GC.canonical_automorphism_order(packed) * edge_factor(graph) ||
+    GC.canonical_automorphism_order(packed) * edge_factor(graph) ||
         error("instance-gadget factorial order mismatch")
 
-    general_call = () -> GC.canonicalize_directed_relations!(
-        general, general_workspace, graph, colors
-    )
-    packed_call = () -> GC.canonicalize_directed_relations!(
-        packed, packed_workspace, graph, colors
-    )
-    bucket_call = () -> GC.canonicalize_directed!(
-        bucket_buffer, bucket_workspace, bucket_graph, bucket_colors
-    )
-    instance_call = () -> GC.canonicalize_directed!(
-        instance_buffer, instance_workspace, instance_graph, instance_colors
-    )
+    general_call =
+        () -> GC.canonicalize_directed_relations!(general, general_workspace, graph, colors)
+    packed_call =
+        () -> GC.canonicalize_directed_relations!(packed, packed_workspace, graph, colors)
+    bucket_call =
+        () -> GC.canonicalize_directed!(
+            bucket_buffer, bucket_workspace, bucket_graph, bucket_colors
+        )
+    instance_call =
+        () -> GC.canonicalize_directed!(
+            instance_buffer, instance_workspace, instance_graph, instance_colors
+        )
 
     general_ns = minimum_ns(general_call)
     packed_ns = minimum_ns(packed_call)
@@ -152,10 +152,13 @@ function benchmark_simple_fixture(
     input_colors = copy(colors)
     GC.load_directed_relations!(input, edges, n, nr)
     GC.canonicalize_directed_relations!(packed, packed_workspace, input, input_colors)
-    load_call = () -> begin
-        GC.load_directed_relations!(input, edges, n, nr)
-        GC.canonicalize_directed_relations!(packed, packed_workspace, input, input_colors)
-    end
+    load_call =
+        () -> begin
+            GC.load_directed_relations!(input, edges, n, nr)
+            GC.canonicalize_directed_relations!(
+                packed, packed_workspace, input, input_colors
+            )
+        end
     load_ns = minimum_ns(load_call)
     load_alloc = @allocated load_call()
     iszero(load_alloc) || error("native relation load+packed path allocated")
@@ -222,22 +225,24 @@ function benchmark_multigraph_fixture(
         instance_graph.num_vertices; materialize_canonical=false
     )
 
-    native_call = () -> GC.canonicalize_directed_relations!(
-        native, native_workspace, graph, colors
-    )
-    bucket_call = () -> GC.canonicalize_directed!(
-        bucket_buffer, bucket_workspace, bucket_graph, bucket_colors
-    )
-    instance_call = () -> GC.canonicalize_directed!(
-        instance_buffer, instance_workspace, instance_graph, instance_colors
-    )
+    native_call =
+        () -> GC.canonicalize_directed_relations!(native, native_workspace, graph, colors)
+    bucket_call =
+        () -> GC.canonicalize_directed!(
+            bucket_buffer, bucket_workspace, bucket_graph, bucket_colors
+        )
+    instance_call =
+        () -> GC.canonicalize_directed!(
+            instance_buffer, instance_workspace, instance_graph, instance_colors
+        )
     native_call()
     bucket_call()
     instance_call()
-    GC.canonical_automorphism_order(bucket_buffer) == GC.canonical_automorphism_order(native) ||
+    GC.canonical_automorphism_order(bucket_buffer) ==
+    GC.canonical_automorphism_order(native) ||
         error("bucket/native multigraph automorphism mismatch")
     GC.canonical_automorphism_order(instance_buffer) ==
-        GC.canonical_automorphism_order(native) * edge_factor(graph) ||
+    GC.canonical_automorphism_order(native) * edge_factor(graph) ||
         error("instance-gadget multigraph factorial order mismatch")
 
     native_ns = minimum_ns(native_call)
@@ -292,14 +297,7 @@ benchmark_simple_fixture(
 )
 
 asymmetric_edges = [
-    (1, 1, 2),
-    (1, 2, 4),
-    (1, 4, 3),
-    (2, 1, 3),
-    (2, 3, 5),
-    (2, 5, 2),
-    (3, 2, 5),
-    (3, 4, 1),
+    (1, 1, 2), (1, 2, 4), (1, 4, 3), (2, 1, 3), (2, 3, 5), (2, 5, 2), (3, 2, 5), (3, 4, 1)
 ]
 asymmetric = GC.DirectedRelationGraph(asymmetric_edges, 5, 3)
 benchmark_simple_fixture(

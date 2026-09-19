@@ -7,9 +7,9 @@ function _relation_test_witness_image(
     @inbounds for relation in 1:nr, old_source in 1:n, old_target in 1:n
         canonical_source = canonical_rank(buffer, old_source)
         canonical_target = canonical_rank(buffer, old_target)
-        multiplicities[
-            _relation_test_slot(relation, canonical_source, canonical_target, n)
-        ] = graph.multiplicities[_relation_test_slot(relation, old_source, old_target, n)]
+        multiplicities[_relation_test_slot(relation, canonical_source, canonical_target, n)] = graph.multiplicities[_relation_test_slot(
+            relation, old_source, old_target, n
+        )]
     end
     return DirectedRelationGraph(n, nr, multiplicities)
 end
@@ -19,7 +19,8 @@ function _relation_test_inverse_consistent(
 )::Bool
     n = buffer.num_vertices
     @inbounds for old_vertex in 1:n
-        original_vertex(buffer, canonical_rank(buffer, old_vertex)) == old_vertex || return false
+        original_vertex(buffer, canonical_rank(buffer, old_vertex)) == old_vertex ||
+            return false
     end
     return true
 end
@@ -30,7 +31,7 @@ end
     general = DirectedRelationCanonicalizationBuffer(2, 2)
     packed = DirectedRelationCanonicalizationBuffer(2, 2)
 
-    for code in 0:(2^8 - 1), colors in (Int[1, 1], Int[1, 2])
+    for code in 0:(2 ^ 8 - 1), colors in (Int[1, 1], Int[1, 2])
         graph = _relation_test_graph_from_code(2, 2, 2, code)
         canonicalize_directed_relations!(general, general_workspace, graph, colors)
         @test @inferred(
@@ -52,7 +53,7 @@ end
     packed = DirectedRelationCanonicalizationBuffer(3, 1)
     colorings = (Int[1, 1, 1], Int[1, 1, 2], Int[1, 2, 3])
 
-    for code in 0:(2^9 - 1), colors in colorings
+    for code in 0:(2 ^ 9 - 1), colors in colorings
         graph = _relation_test_graph_from_code(3, 1, 2, code)
         canonicalize_directed_relations!(general, general_workspace, graph, colors)
         canonicalize_directed_relations!(packed, packed_workspace, graph, colors)

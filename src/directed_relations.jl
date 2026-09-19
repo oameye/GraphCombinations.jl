@@ -1,5 +1,10 @@
 # --- Native colored directed relational canonicalization ---
 
+@inline function _directed_relation_storage_size(num_vertices::Int, num_relations::Int)::Int
+    square = Base.Checked.checked_mul(num_vertices, num_vertices)
+    return Base.Checked.checked_mul(square, num_relations)
+end
+
 """
     DirectedRelationGraph(num_vertices, num_relations, multiplicities)
 
@@ -21,26 +26,26 @@ struct DirectedRelationGraph
         nr = Int(num_relations)
         n >= 0 || throw(ArgumentError("num_vertices must be non-negative."))
         nr >= 0 || throw(ArgumentError("num_relations must be non-negative."))
-        expected = Base.Checked.checked_mul(n * n, nr)
+        expected = _directed_relation_storage_size(n, nr)
         length(multiplicities) >= expected || throw(
-            DimensionMismatch("relation multiplicities must contain num_relations * num_vertices^2 entries"),
+            DimensionMismatch(
+                "relation multiplicities must contain num_relations * num_vertices^2 entries",
+            ),
         )
         values = Vector{Int}(undef, expected)
         @inbounds for index in 1:expected
             value = Int(multiplicities[index])
-            value >= 0 || throw(ArgumentError("relation multiplicities must be non-negative."))
+            value >= 0 ||
+                throw(ArgumentError("relation multiplicities must be non-negative."))
             values[index] = value
         end
         return new(n, nr, values)
     end
 
     function DirectedRelationGraph(
-        num_vertices::Int,
-        num_relations::Int,
-        multiplicities::Vector{Int},
-        ::Val{:borrow},
+        num_vertices::Int, num_relations::Int, multiplicities::Vector{Int}, ::Val{:borrow}
     )
-        expected = Base.Checked.checked_mul(num_vertices * num_vertices, num_relations)
+        expected = _directed_relation_storage_size(num_vertices, num_relations)
         length(multiplicities) >= expected || throw(
             DimensionMismatch("borrowed relation storage is smaller than the active graph"),
         )
@@ -57,9 +62,9 @@ end
 @inline function _directed_relation_multiplicity(
     graph::DirectedRelationGraph, relation::Int, source::Int, target::Int
 )::Int
-    return graph.multiplicities[
-        _directed_relation_slot(relation, source, target, graph.num_vertices)
-    ]
+    return graph.multiplicities[_directed_relation_slot(
+        relation, source, target, graph.num_vertices
+    )]
 end
 
 function DirectedRelationGraph(
@@ -71,13 +76,12 @@ function DirectedRelationGraph(
     nr = Int(num_relations)
     n >= 0 || throw(ArgumentError("num_vertices must be non-negative."))
     nr >= 0 || throw(ArgumentError("num_relations must be non-negative."))
-    multiplicities = zeros(Int, Base.Checked.checked_mul(n * n, nr))
+    multiplicities = zeros(Int, _directed_relation_storage_size(n, nr))
     @inbounds for edge in edges
         relation = Int(edge[1])
         source = Int(edge[2])
         target = Int(edge[3])
-        1 <= relation <= nr ||
-            throw(ArgumentError("Relation $relation is outside 1:$nr."))
+        1 <= relation <= nr || throw(ArgumentError("Relation $relation is outside 1:$nr."))
         1 <= source <= n || throw(ArgumentError("Source vertex $source is outside 1:$n."))
         1 <= target <= n || throw(ArgumentError("Target vertex $target is outside 1:$n."))
         slot = _directed_relation_slot(relation, source, target, n)
@@ -113,14 +117,12 @@ mutable struct DirectedRelationGraphBuffer
     multiplicities::Vector{Int}
 end
 
-function DirectedRelationGraphBuffer(
-    vertex_capacity::Integer, relation_capacity::Integer
-)
+function DirectedRelationGraphBuffer(vertex_capacity::Integer, relation_capacity::Integer)
     n = Int(vertex_capacity)
     nr = Int(relation_capacity)
     n >= 0 || throw(ArgumentError("vertex_capacity must be non-negative."))
     nr >= 0 || throw(ArgumentError("relation_capacity must be non-negative."))
-    storage = zeros(Int, Base.Checked.checked_mul(n * n, nr))
+    storage = zeros(Int, _directed_relation_storage_size(n, nr))
     return DirectedRelationGraphBuffer(n, nr, n, nr, storage)
 end
 
@@ -131,7 +133,7 @@ function _prepare_directed_relation_graph_buffer!(
         throw(DimensionMismatch("directed relation graph vertex capacity is too small"))
     0 <= num_relations <= graph.relation_capacity ||
         throw(DimensionMismatch("directed relation graph relation capacity is too small"))
-    active = Base.Checked.checked_mul(num_vertices * num_vertices, num_relations)
+    active = _directed_relation_storage_size(num_vertices, num_relations)
     @inbounds for slot in 1:active
         graph.multiplicities[slot] = 0
     end
@@ -159,8 +161,7 @@ function load_directed_relations!(
         relation = Int(edge[1])
         source = Int(edge[2])
         target = Int(edge[3])
-        1 <= relation <= nr ||
-            throw(ArgumentError("Relation $relation is outside 1:$nr."))
+        1 <= relation <= nr || throw(ArgumentError("Relation $relation is outside 1:$nr."))
         1 <= source <= n || throw(ArgumentError("Source vertex $source is outside 1:$n."))
         1 <= target <= n || throw(ArgumentError("Target vertex $target is outside 1:$n."))
         slot = _directed_relation_slot(relation, source, target, n)
@@ -193,28 +194,19 @@ mutable struct DirectedRelationCanonicalizationBuffer
 end
 
 function DirectedRelationCanonicalizationBuffer(
-    vertex_capacity::Integer,
-    relation_capacity::Integer;
-    materialize_canonical::Bool=true,
+    vertex_capacity::Integer, relation_capacity::Integer; materialize_canonical::Bool=true
 )
     n = Int(vertex_capacity)
     nr = Int(relation_capacity)
     n >= 0 || throw(ArgumentError("vertex_capacity must be non-negative."))
     nr >= 0 || throw(ArgumentError("relation_capacity must be non-negative."))
     canonical = if materialize_canonical
-        Vector{Int}(undef, Base.Checked.checked_mul(n * n, nr))
+        Vector{Int}(undef, _directed_relation_storage_size(n, nr))
     else
         Int[]
     end
     return DirectedRelationCanonicalizationBuffer(
-        canonical,
-        Vector{Int}(undef, n),
-        Vector{Int}(undef, n),
-        0,
-        n,
-        nr,
-        n,
-        nr,
+        canonical, Vector{Int}(undef, n), Vector{Int}(undef, n), 0, n, nr, n, nr
     )
 end
 
@@ -222,7 +214,8 @@ end
     buffer::DirectedRelationCanonicalizationBuffer, old_vertex::Integer
 )::Int
     vertex = Int(old_vertex)
-    1 <= vertex <= buffer.num_vertices || throw(BoundsError(buffer.old_to_canonical, vertex))
+    1 <= vertex <= buffer.num_vertices ||
+        throw(BoundsError(buffer.old_to_canonical, vertex))
     return buffer.old_to_canonical[vertex]
 end
 
@@ -230,7 +223,8 @@ end
     buffer::DirectedRelationCanonicalizationBuffer, canonical_vertex::Integer
 )::Int
     vertex = Int(canonical_vertex)
-    1 <= vertex <= buffer.num_vertices || throw(BoundsError(buffer.canonical_to_old, vertex))
+    1 <= vertex <= buffer.num_vertices ||
+        throw(BoundsError(buffer.canonical_to_old, vertex))
     return buffer.canonical_to_old[vertex]
 end
 
@@ -242,7 +236,7 @@ function canonical_graph(
 )::DirectedRelationGraph
     n = buffer.num_vertices
     nr = buffer.num_relations
-    active = nr * n * n
+    active = _directed_relation_storage_size(n, nr)
     if active > 0 && isempty(buffer.canonical_multiplicities)
         throw(
             ArgumentError(
@@ -331,14 +325,15 @@ function _check_directed_relation_capacity(
     nr = graph.num_relations
     n <= workspace.vertex_capacity ||
         throw(DimensionMismatch("directed relation workspace vertex capacity is too small"))
-    nr <= workspace.relation_capacity ||
-        throw(DimensionMismatch("directed relation workspace relation capacity is too small"))
+    nr <= workspace.relation_capacity || throw(
+        DimensionMismatch("directed relation workspace relation capacity is too small")
+    )
     n <= buffer.vertex_capacity ||
         throw(DimensionMismatch("directed relation result vertex capacity is too small"))
     nr <= buffer.relation_capacity ||
         throw(DimensionMismatch("directed relation result relation capacity is too small"))
     isempty(buffer.canonical_multiplicities) ||
-        length(buffer.canonical_multiplicities) >= nr * n * n ||
+        length(buffer.canonical_multiplicities) >= _directed_relation_storage_size(n, nr) ||
         throw(DimensionMismatch("directed relation result image capacity is too small"))
     return nothing
 end
@@ -393,9 +388,7 @@ end
 end
 
 function _relation_sort_signatures!(
-    workspace::DirectedRelationCanonicalizationWorkspace,
-    n::Int,
-    signature_length::Int,
+    workspace::DirectedRelationCanonicalizationWorkspace, n::Int, signature_length::Int
 )::Nothing
     @inbounds for vertex in 1:n
         workspace.order[vertex] = vertex
@@ -438,10 +431,12 @@ function _relation_refine_once!(
         for relation in 1:nr, other in 1:n
             cell = workspace.color_stack[other, depth]
             base = offset + 2 + 2 * ((relation - 1) * num_colors + cell - 1)
-            workspace.signatures[base] +=
-                _directed_relation_multiplicity(graph, relation, vertex, other)
-            workspace.signatures[base + 1] +=
-                _directed_relation_multiplicity(graph, relation, other, vertex)
+            workspace.signatures[base] += _directed_relation_multiplicity(
+                graph, relation, vertex, other
+            )
+            workspace.signatures[base + 1] += _directed_relation_multiplicity(
+                graph, relation, other, vertex
+            )
         end
     end
 
@@ -450,9 +445,8 @@ function _relation_refine_once!(
     previous_vertex = 0
     @inbounds for index in 1:n
         vertex = workspace.order[index]
-        if iszero(previous_vertex) || _relation_signature_less(
-            workspace, previous_vertex, vertex, signature_length
-        )
+        if iszero(previous_vertex) ||
+            _relation_signature_less(workspace, previous_vertex, vertex, signature_length)
             next_color += 1
         end
         workspace.refined_colors[vertex] = next_color
@@ -513,15 +507,15 @@ end
     n = graph.num_vertices
     @inbounds for relation in 1:(graph.num_relations)
         _directed_relation_multiplicity(graph, relation, left, left) ==
-            _directed_relation_multiplicity(graph, relation, right, right) || return false
+        _directed_relation_multiplicity(graph, relation, right, right) || return false
         _directed_relation_multiplicity(graph, relation, left, right) ==
-            _directed_relation_multiplicity(graph, relation, right, left) || return false
+        _directed_relation_multiplicity(graph, relation, right, left) || return false
         for other in 1:n
             (other == left || other == right) && continue
             _directed_relation_multiplicity(graph, relation, left, other) ==
-                _directed_relation_multiplicity(graph, relation, right, other) || return false
+            _directed_relation_multiplicity(graph, relation, right, other) || return false
             _directed_relation_multiplicity(graph, relation, other, left) ==
-                _directed_relation_multiplicity(graph, relation, other, right) || return false
+            _directed_relation_multiplicity(graph, relation, other, right) || return false
         end
     end
     return true
@@ -557,7 +551,8 @@ function _relation_record_candidate!(
 )::Nothing
     n = graph.num_vertices
     if !workspace.has_best
-        iszero(n) || copyto!(workspace.best_inverse_mapping, 1, workspace.inverse_mapping, 1, n)
+        iszero(n) ||
+            copyto!(workspace.best_inverse_mapping, 1, workspace.inverse_mapping, 1, n)
         workspace.automorphism_order = multiplicity
         workspace.has_best = true
         return nothing
@@ -566,7 +561,8 @@ function _relation_record_candidate!(
         graph, workspace.inverse_mapping, workspace.best_inverse_mapping
     )
     if comparison < 0
-        iszero(n) || copyto!(workspace.best_inverse_mapping, 1, workspace.inverse_mapping, 1, n)
+        iszero(n) ||
+            copyto!(workspace.best_inverse_mapping, 1, workspace.inverse_mapping, 1, n)
         workspace.automorphism_order = multiplicity
     elseif iszero(comparison)
         workspace.automorphism_order = Base.Checked.checked_add(
@@ -672,9 +668,9 @@ function _write_relation_buffer!(
         @inbounds for relation in 1:nr, canonical_source in 1:n, canonical_target in 1:n
             old_source = best_inverse[canonical_source]
             old_target = best_inverse[canonical_target]
-            buffer.canonical_multiplicities[
-                _directed_relation_slot(relation, canonical_source, canonical_target, n)
-            ] = _directed_relation_multiplicity(graph, relation, old_source, old_target)
+            buffer.canonical_multiplicities[_directed_relation_slot(relation, canonical_source, canonical_target, n)] = _directed_relation_multiplicity(
+                graph, relation, old_source, old_target
+            )
         end
     end
     buffer.automorphism_order = automorphism_order
@@ -753,9 +749,7 @@ function canonicalize_directed_relations(
     workspace = DirectedRelationCanonicalizationWorkspace(
         graph.num_vertices, graph.num_relations
     )
-    buffer = DirectedRelationCanonicalizationBuffer(
-        graph.num_vertices, graph.num_relations
-    )
+    buffer = DirectedRelationCanonicalizationBuffer(graph.num_vertices, graph.num_relations)
     canonicalize_directed_relations!(buffer, workspace, graph, vertex_colors)
     canonical = canonical_graph(buffer)
     relabeling = VertexRelabeling(copy(buffer.old_to_canonical[1:(graph.num_vertices)]))
