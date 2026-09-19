@@ -22,13 +22,13 @@ function recursive_restricted_growth_colorings(n::Int)
     function visit(position::Int, current_max::Int)
         if position > n
             push!(result, copy(current))
-            return
+            return nothing
         end
         for color in 1:(current_max + 1)
             current[position] = color
             visit(position + 1, max(current_max, color))
         end
-        return
+        return nothing
     end
 
     current[1] = 1
@@ -54,7 +54,7 @@ function assert_production_recursive_matches!(
 
     @inbounds for coordinate in 1:(n * n)
         base_buffer.canonical_multiplicities[coordinate] ==
-            recursive_buffer.canonical_multiplicities[coordinate] ||
+        recursive_buffer.canonical_multiplicities[coordinate] ||
             error("canonical image mismatch: $label")
     end
     @inbounds for vertex in 1:n
@@ -72,7 +72,7 @@ function assert_production_recursive_matches!(
         oracle_mapping = GC.vertex_mapping(GC.canonical_relabeling(oracle))
         @inbounds for coordinate in 1:(n * n)
             oracle_graph.multiplicities[coordinate] ==
-                recursive_buffer.canonical_multiplicities[coordinate] ||
+            recursive_buffer.canonical_multiplicities[coordinate] ||
                 error("independent canonical image mismatch: $label")
         end
         oracle_mapping == recursive_buffer.old_to_canonical[1:n] ||
@@ -92,7 +92,7 @@ function certify_recursive_n3_exhaustive()
     recursive_buffer = GC.DirectedCanonicalizationBuffer(n)
     cases = 0
 
-    for mask in UInt64(0):(UInt64(1) << (n * n)) - UInt64(1)
+    for mask in UInt64(0):((UInt64(1) << (n * n)) - UInt64(1))
         graph = recursive_graph_from_mask(n, mask)
         for colors in colorings
             cases += 1
@@ -121,7 +121,7 @@ function certify_recursive_n4_uniform_exhaustive()
     recursive_buffer = GC.DirectedCanonicalizationBuffer(n)
     cases = 0
 
-    for mask in UInt64(0):(UInt64(1) << (n * n)) - UInt64(1)
+    for mask in UInt64(0):((UInt64(1) << (n * n)) - UInt64(1))
         graph = recursive_graph_from_mask(n, mask)
         cases += 1
         assert_production_recursive_matches!(
@@ -177,11 +177,7 @@ end
 function certify_recursive_n5_deterministic_sample()
     n = 5
     colorings = (
-        ones(Int, n),
-        [1, 1, 1, 2, 2],
-        [1, 1, 2, 2, 3],
-        [1, 2, 1, 2, 1],
-        collect(1:n),
+        ones(Int, n), [1, 1, 1, 2, 2], [1, 1, 2, 2, 3], [1, 2, 1, 2, 1], collect(1:n)
     )
     base_workspace = GC.PackedDirectedCanonicalizationWorkspace(n)
     base_buffer = GC.DirectedCanonicalizationBuffer(n)
