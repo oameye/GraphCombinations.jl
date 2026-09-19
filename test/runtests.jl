@@ -106,6 +106,10 @@ else
         include("directed_recursive.jl")
     end
 
+    @testset "directed component decomposition" begin
+        include("directed_components.jl")
+    end
+
     @testset "Wick reference oracle" begin
         include("reference_oracle.jl")
     end
