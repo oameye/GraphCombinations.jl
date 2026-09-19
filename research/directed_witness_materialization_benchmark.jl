@@ -62,9 +62,11 @@ function benchmark_levelwise(
     GC.canonicalize_directed_simple!(full, workspace, graph, colors)
     GC.canonicalize_directed_simple!(witness, workspace, graph, colors)
     full.old_to_canonical[1:(graph.num_vertices)] ==
-    witness.old_to_canonical[1:(graph.num_vertices)] || error("levelwise witness mismatch: $name")
+    witness.old_to_canonical[1:(graph.num_vertices)] ||
+        error("levelwise witness mismatch: $name")
     full.canonical_to_old[1:(graph.num_vertices)] ==
-    witness.canonical_to_old[1:(graph.num_vertices)] || error("levelwise inverse mismatch: $name")
+    witness.canonical_to_old[1:(graph.num_vertices)] ||
+        error("levelwise inverse mismatch: $name")
     GC.canonical_automorphism_order(full) == GC.canonical_automorphism_order(witness) ||
         error("levelwise automorphism mismatch: $name")
 
@@ -80,7 +82,8 @@ function benchmark_levelwise(
         () -> GC.canonicalize_directed_simple!(full, workspace, graph, colors), repetitions
     )
     witness_ns = minimum_ns(
-        () -> GC.canonicalize_directed_simple!(witness, workspace, graph, colors), repetitions
+        () -> GC.canonicalize_directed_simple!(witness, workspace, graph, colors),
+        repetitions,
     )
     println(
         "WITNESS|levelwise|",
@@ -119,11 +122,15 @@ function benchmark_recursive(
     workspace = WitnessRecursiveGC.PackedRecursiveStabilizerWorkspace(capacity)
 
     WitnessRecursiveGC.canonicalize_recursive_stabilizers!(full, workspace, graph, colors)
-    WitnessRecursiveGC.canonicalize_recursive_stabilizers!(witness, workspace, graph, colors)
+    WitnessRecursiveGC.canonicalize_recursive_stabilizers!(
+        witness, workspace, graph, colors
+    )
     full.old_to_canonical[1:(graph.num_vertices)] ==
-    witness.old_to_canonical[1:(graph.num_vertices)] || error("recursive witness mismatch: $name")
+    witness.old_to_canonical[1:(graph.num_vertices)] ||
+        error("recursive witness mismatch: $name")
     full.canonical_to_old[1:(graph.num_vertices)] ==
-    witness.canonical_to_old[1:(graph.num_vertices)] || error("recursive inverse mismatch: $name")
+    witness.canonical_to_old[1:(graph.num_vertices)] ||
+        error("recursive inverse mismatch: $name")
     GC.canonical_automorphism_order(full) == GC.canonical_automorphism_order(witness) ||
         error("recursive automorphism mismatch: $name")
 
