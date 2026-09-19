@@ -20,6 +20,7 @@ using DispatchDoctor: @stable
     include("directed_recursive/DirectedRecursive.jl")
     include("directed_components.jl")
     include("directed_relations.jl")
+    include("directed_relation_packed.jl")
     include("partition_canonicalization.jl")
     include("matrix_canonicalization.jl")
     include("direct_generation.jl")
@@ -96,6 +97,7 @@ export allgraphs,
     DirectedRelationCanonicalizationResult,
     DirectedRelationCanonicalizationWorkspace,
     DirectedRelationCanonicalizationBuffer,
+    PackedDirectedRelationCanonicalizationWorkspace,
     VertexRelabeling,
     load_directed_graph!,
     load_directed_relations!,
