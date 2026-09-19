@@ -1,0 +1,40 @@
+name: Recursive production canonicalizer certification
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - production-recursive-stabilizer-kernel
+    paths:
+      - src/directed_recursive/**
+      - src/directed_workspace.jl
+      - src/directed_packed_workspace.jl
+      - research/recursive_production_certification.jl
+      - .github/workflows/RecursiveProductionCertification.yml
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: lts
+          arch: x64
+
+      - uses: julia-actions/cache@v3
+        with:
+          delete-old-caches: false
+
+      - name: Instantiate package
+        run: julia --project=. --color=yes -e 'using Pkg; Pkg.instantiate()'
+
+      - name: Run production recursive certification
+        run: |
+          set -o pipefail
+          julia --project=. --color=yes research/recursive_production_certification.jl \
+            | tee recursive-production-certification.txt

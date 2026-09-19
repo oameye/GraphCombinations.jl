@@ -1,0 +1,41 @@
+name: Recursive vs levelwise production benchmark
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - production-recursive-stabilizer-kernel
+    paths:
+      - src/directed_recursive/**
+      - src/directed_levelwise/**
+      - src/directed_packed_workspace.jl
+      - src/directed_workspace.jl
+      - research/recursive_levelwise_production_benchmark.jl
+      - .github/workflows/RecursiveLevelwiseProductionBenchmark.yml
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: lts
+          arch: x64
+
+      - uses: julia-actions/cache@v3
+        with:
+          delete-old-caches: false
+
+      - name: Instantiate package
+        run: julia --project=. --color=yes -e 'using Pkg; Pkg.instantiate()'
+
+      - name: Run production crossover benchmark
+        run: |
+          set -o pipefail
+          julia --project=. --color=yes research/recursive_levelwise_production_benchmark.jl \
+            | tee recursive-levelwise-production-benchmark.txt

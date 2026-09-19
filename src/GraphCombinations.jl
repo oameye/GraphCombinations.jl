@@ -17,6 +17,7 @@ using DispatchDoctor: @stable
     include("directed_input_buffer.jl")
     include("directed_packed_workspace.jl")
     include("directed_levelwise/DirectedLevelwise.jl")
+    include("directed_recursive/DirectedRecursive.jl")
     include("partition_canonicalization.jl")
     include("matrix_canonicalization.jl")
     include("direct_generation.jl")
