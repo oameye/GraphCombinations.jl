@@ -65,6 +65,12 @@ jobs:
       - uses: julia-actions/cache@v3
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
+      - name: Run directed workspace allocation contract without coverage
+        if: ${{ matrix.version == '1.13' }}
+        run: >-
+          julia --project=. -e 'using Test, GraphCombinations;
+          include("test/directed_canonicalization.jl");
+          include("test/directed_workspace.jl")'
       - name: Run static analysis
         if: ${{ matrix.version != 'lts' }}
         run: julia --project=. -e 'using Pkg; Pkg.test(; test_args=["static"])'
