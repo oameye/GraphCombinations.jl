@@ -268,14 +268,36 @@ function _directed_workspace_target_color!(
     return target_color
 end
 
+@inline function _directed_workspace_exact_twins(
+    graph::DirectedGCGraph, left::Int, right::Int
+)::Bool
+    left == right && return true
+    n = graph.num_vertices
+    multiplicities = graph.multiplicities
+    @inbounds begin
+        multiplicities[_directed_slot(left, left, n)] ==
+        multiplicities[_directed_slot(right, right, n)] || return false
+        multiplicities[_directed_slot(left, right, n)] ==
+        multiplicities[_directed_slot(right, left, n)] || return false
+        for other in 1:n
+            (other == left || other == right) && continue
+            multiplicities[_directed_slot(left, other, n)] ==
+            multiplicities[_directed_slot(right, other, n)] || return false
+            multiplicities[_directed_slot(other, left, n)] ==
+            multiplicities[_directed_slot(other, right, n)] || return false
+        end
+    end
+    return true
+end
+
 function _record_directed_workspace_candidate!(
-    workspace::DirectedCanonicalizationWorkspace, graph::DirectedGCGraph
+    workspace::DirectedCanonicalizationWorkspace, graph::DirectedGCGraph, multiplicity::Int
 )::Nothing
     n = graph.num_vertices
     if !workspace.has_best
         iszero(n) ||
             copyto!(workspace.best_inverse_mapping, 1, workspace.inverse_mapping, 1, n)
-        workspace.automorphism_order = 1
+        workspace.automorphism_order = multiplicity
         workspace.has_best = true
         return nothing
     end
@@ -286,15 +308,20 @@ function _record_directed_workspace_candidate!(
     if comparison < 0
         iszero(n) ||
             copyto!(workspace.best_inverse_mapping, 1, workspace.inverse_mapping, 1, n)
-        workspace.automorphism_order = 1
+        workspace.automorphism_order = multiplicity
     elseif iszero(comparison)
-        workspace.automorphism_order = _checked_increment(workspace.automorphism_order)
+        workspace.automorphism_order = Base.Checked.checked_add(
+            workspace.automorphism_order, multiplicity
+        )
     end
     return nothing
 end
 
 function _record_directed_workspace_leaf!(
-    workspace::DirectedCanonicalizationWorkspace, graph::DirectedGCGraph, depth::Int
+    workspace::DirectedCanonicalizationWorkspace,
+    graph::DirectedGCGraph,
+    depth::Int,
+    multiplicity::Int,
 )::Nothing
     n = graph.num_vertices
     @inbounds for vertex in 1:n
@@ -302,18 +329,21 @@ function _record_directed_workspace_leaf!(
         workspace.inverse_mapping[canonical_vertex] = vertex
     end
     workspace.search_leaves += 1
-    _record_directed_workspace_candidate!(workspace, graph)
+    _record_directed_workspace_candidate!(workspace, graph, multiplicity)
     return nothing
 end
 
 function _search_directed_partition_workspace!(
-    workspace::DirectedCanonicalizationWorkspace, graph::DirectedGCGraph, depth::Int
+    workspace::DirectedCanonicalizationWorkspace,
+    graph::DirectedGCGraph,
+    depth::Int,
+    multiplicity::Int,
 )::Nothing
     workspace.search_nodes += 1
     _directed_workspace_refine!(workspace, graph, depth)
     target_color = _directed_workspace_target_color!(workspace, graph, depth)
     if iszero(target_color)
-        _record_directed_workspace_leaf!(workspace, graph, depth)
+        _record_directed_workspace_leaf!(workspace, graph, depth, multiplicity)
         return nothing
     end
 
@@ -321,6 +351,26 @@ function _search_directed_partition_workspace!(
     child_depth = depth + 1
     @inbounds for chosen_vertex in 1:n
         workspace.color_stack[chosen_vertex, depth] == target_color || continue
+
+        has_earlier_twin = false
+        for earlier_vertex in 1:(chosen_vertex - 1)
+            workspace.color_stack[earlier_vertex, depth] == target_color || continue
+            if _directed_workspace_exact_twins(graph, chosen_vertex, earlier_vertex)
+                has_earlier_twin = true
+                break
+            end
+        end
+        has_earlier_twin && continue
+
+        twin_class_size = 1
+        for later_vertex in (chosen_vertex + 1):n
+            workspace.color_stack[later_vertex, depth] == target_color || continue
+            if _directed_workspace_exact_twins(graph, chosen_vertex, later_vertex)
+                twin_class_size += 1
+            end
+        end
+        child_multiplicity = Base.Checked.checked_mul(multiplicity, twin_class_size)
+
         for vertex in 1:n
             color = workspace.color_stack[vertex, depth]
             workspace.color_stack[vertex, child_depth] = if color < target_color
@@ -333,7 +383,9 @@ function _search_directed_partition_workspace!(
                 target_color + 1
             end
         end
-        _search_directed_partition_workspace!(workspace, graph, child_depth)
+        _search_directed_partition_workspace!(
+            workspace, graph, child_depth, child_multiplicity
+        )
     end
     return nothing
 end
@@ -398,7 +450,7 @@ function canonicalize_directed!(
 
     _reset_directed_workspace_search!(workspace)
     _directed_workspace_initialize_colors!(workspace, n)
-    _search_directed_partition_workspace!(workspace, graph, 1)
+    _search_directed_partition_workspace!(workspace, graph, 1, 1)
     workspace.has_best ||
         error("Internal error: directed canonical search produced no candidate.")
     _write_directed_buffer!(
@@ -419,7 +471,7 @@ function canonicalize_directed!(
     end
     _reset_directed_workspace_search!(workspace)
     _directed_workspace_initialize_colors!(workspace, n)
-    _search_directed_partition_workspace!(workspace, graph, 1)
+    _search_directed_partition_workspace!(workspace, graph, 1, 1)
     workspace.has_best ||
         error("Internal error: directed canonical search produced no candidate.")
     _write_directed_buffer!(
