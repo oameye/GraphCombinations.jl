@@ -24,6 +24,30 @@
     @test canonical_automorphism_order(buffer) == canonical_automorphism_order(expected)
 end
 
+@testset "exact twin branch multiplicities" begin
+    graph = DirectedGCGraph(Pair{Int,Int}[], 4)
+    workspace = DirectedCanonicalizationWorkspace(4)
+    buffer = DirectedCanonicalizationBuffer(4)
+
+    colors = ones(Int, 4)
+    expected = canonicalize_directed(graph, colors)
+    canonicalize_directed!(buffer, workspace, graph, colors)
+    @test canonical_graph(buffer) == canonical_graph(expected)
+    @test canonical_automorphism_order(buffer) ==
+        canonical_automorphism_order(expected) ==
+        24
+    @test workspace.search_leaves == 1
+
+    paired_colors = Int[1, 1, 2, 2]
+    paired_expected = canonicalize_directed(graph, paired_colors)
+    canonicalize_directed!(buffer, workspace, graph, paired_colors)
+    @test canonical_graph(buffer) == canonical_graph(paired_expected)
+    @test canonical_automorphism_order(buffer) ==
+        canonical_automorphism_order(paired_expected) ==
+        4
+    @test workspace.search_leaves == 1
+end
+
 @testset "flat workspace agrees exhaustively with certified search" begin
     workspace = DirectedCanonicalizationWorkspace(5)
     buffer = DirectedCanonicalizationBuffer(5)
