@@ -14,6 +14,7 @@ using DispatchDoctor: @stable
     include("directed_canonicalization.jl")
     include("directed_refinement.jl")
     include("directed_workspace.jl")
+    include("directed_input_buffer.jl")
     include("partition_canonicalization.jl")
     include("matrix_canonicalization.jl")
     include("direct_generation.jl")
@@ -38,10 +39,12 @@ export allgraphs,
     canonical_form,
     GCGraph,
     DirectedGCGraph,
+    DirectedGCGraphBuffer,
     DirectedCanonicalizationResult,
     DirectedCanonicalizationWorkspace,
     DirectedCanonicalizationBuffer,
     VertexRelabeling,
+    load_directed_graph!,
     canonicalize_directed,
     canonicalize_directed!,
     canonical_graph,

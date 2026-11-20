@@ -90,6 +90,10 @@ else
         include("directed_refinement.jl")
     end
 
+    @testset "directed reusable workspace" begin
+        include("directed_workspace.jl")
+    end
+
     @testset "Wick reference oracle" begin
         include("reference_oracle.jl")
     end
